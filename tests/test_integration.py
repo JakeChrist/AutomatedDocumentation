@@ -32,3 +32,21 @@ def test_docgenerator_generates_html(tmp_path: Path) -> None:
 
     html = (output_dir / "hello.html").read_text(encoding="utf-8")
     assert "summary" in html
+
+
+def test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("pass\n")
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.return_value = "summary"
+        monkeypatch.chdir(tmp_path)
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    assert (output_dir / "static" / "style.css").exists()

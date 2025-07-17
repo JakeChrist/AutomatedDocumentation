@@ -66,7 +66,9 @@ def main(argv: list[str] | None = None) -> int:
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copytree("static", output_dir / "static", dirs_exist_ok=True)
+    static_dir = Path(__file__).parent / "static"
+    # use absolute path so execution works from any current working directory
+    shutil.copytree(static_dir, output_dir / "static", dirs_exist_ok=True)
 
     cache = ResponseCache(str(output_dir / "cache.json"))
 
