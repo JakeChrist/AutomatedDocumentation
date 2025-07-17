@@ -39,11 +39,11 @@ Optional flags:
 
 The LLM must be running and reachable via `llm_client.py`.
 
-## Example: Running with LMStudio
+## Using LMStudio as the Backend
 
-1. Launch **LMStudio** and enable its API server on `http://localhost:1234`.
-2. Choose a local model in LMStudio.
-3. Run the documentation generator:
+1. Launch **LMStudio** and enable its API server (usually at `http://localhost:1234`).
+2. Choose the local model you want LMStudio to serve.
+3. Run the documentation generator and point it at the LMStudio API:
 
 ```bash
 python docgenerator.py ./my_project --output ./docs --llm-url http://localhost:1234 --model local
