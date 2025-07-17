@@ -1,7 +1,84 @@
 """HTML rendering utilities for DocGen-LM.
 
-Renders documentation pages using Jinja2 templates per the SRS.
+Renders documentation pages using simple template substitution.
 """
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Iterable, Tuple
+
+from pygments import highlight
+from pygments.lexers import PythonLexer, MatlabLexer, TextLexer
+from pygments.formatters import HtmlFormatter
+
+_TEMPLATE_PATH = Path(__file__).parent / "templates" / "template.html"
 
 
+def _highlight(code: str, language: str) -> str:
+    """Return ``code`` highlighted for ``language`` using pygments."""
+    if language.lower() == "matlab":
+        lexer = MatlabLexer()
+    elif language.lower() == "python":
+        lexer = PythonLexer()
+    else:
+        lexer = TextLexer()
+    formatter = HtmlFormatter(noclasses=True)
+    return highlight(code, lexer, formatter)
 
+
+def _render_html(title: str, header: str, body: str, nav_html: str) -> str:
+    template = _TEMPLATE_PATH.read_text(encoding="utf-8")
+    return template.format(
+        title=title,
+        header=header,
+        body=body,
+        navigation=nav_html,
+        static_path="static/style.css",
+    )
+
+
+def write_index(output_dir: str, project_summary: str, page_links: Iterable[Tuple[str, str]]) -> None:
+    """Render ``index.html`` with *project_summary* and navigation links."""
+    dest_dir = Path(output_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    nav_html = "\n".join(f'<li><a href="{link}">{text}</a></li>' for text, link in page_links)
+    body_parts = [f"<p>{project_summary}</p>", "<h2>Modules</h2>", "<ul>", nav_html, "</ul>"]
+    body = "\n".join(body_parts)
+    html = _render_html("Project Documentation", "Project Documentation", body, nav_html)
+    (dest_dir / "index.html").write_text(html, encoding="utf-8")
+
+
+def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: Iterable[Tuple[str, str]]) -> None:
+    """Render a module documentation page using ``module_data``."""
+    dest_dir = Path(output_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    name = module_data.get("name", "module")
+    language = module_data.get("language", "python")
+    nav_html = "\n".join(f'<li><a href="{link}">{text}</a></li>' for text, link in page_links)
+
+    body_parts = [f"<p>{module_data.get('summary', '')}</p>"]
+
+    classes = module_data.get("classes", [])
+    if classes:
+        body_parts.append("<h2>Classes</h2>")
+        for cls in classes:
+            body_parts.append(f'<h3 id="{cls.get("name")}">{cls.get("name")}</h3>')
+            if cls.get("docstring"):
+                body_parts.append(f'<p>{cls["docstring"]}</p>')
+            for method in cls.get("methods", []):
+                sig = method.get("signature")
+                if sig:
+                    body_parts.append(_highlight(sig, language))
+
+    functions = module_data.get("functions", [])
+    if functions:
+        body_parts.append("<h2>Functions</h2>")
+        for func in functions:
+            body_parts.append(f'<h3 id="{func.get("name")}">{func.get("name")}</h3>')
+            sig = func.get("signature")
+            if sig:
+                body_parts.append(_highlight(sig, language))
+
+    body = "\n".join(body_parts)
+    html = _render_html(name, name, body, nav_html)
+    (dest_dir / f"{name}.html").write_text(html, encoding="utf-8")

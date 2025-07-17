@@ -1,3 +1,22 @@
 /* Basic stylesheet for DocGen-LM output as referenced in the SRS. */
+body {
+    display: flex;
+    font-family: sans-serif;
+}
 
+.sidebar {
+    width: 200px;
+    background: #f0f0f0;
+    padding: 1rem;
+}
 
+.content {
+    flex: 1;
+    padding: 1rem;
+}
+
+pre {
+    background: #eee;
+    padding: 0.5rem;
+    overflow-x: auto;
+}

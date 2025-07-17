@@ -1,0 +1,32 @@
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from html_writer import write_index, write_module_page
+
+
+def test_write_index(tmp_path: Path) -> None:
+    links = [("module1", "module1.html"), ("module2", "module2.html")]
+    write_index(str(tmp_path), "Project summary", links)
+    html = (tmp_path / "index.html").read_text(encoding="utf-8")
+    assert "Project summary" in html
+    assert "module1.html" in html
+    assert "<h1>Project Documentation" in html
+
+
+def test_write_module_page(tmp_path: Path) -> None:
+    links = [("index", "index.html")]
+    module_data = {
+        "name": "module1",
+        "summary": "Module summary",
+        "functions": [
+            {"name": "foo", "signature": "def foo(): pass"}
+        ],
+    }
+    write_module_page(str(tmp_path), module_data, links)
+    html = (tmp_path / "module1.html").read_text(encoding="utf-8")
+    assert "Module summary" in html
+    assert "<h2>Functions" in html
+    assert "foo" in html
+    assert "<pre" in html
