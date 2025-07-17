@@ -30,6 +30,8 @@ Required flags:
 | `--output` | Output directory for HTML files  |
 | `--ignore` | Paths to skip                    |
 
+Directories named `.git` are ignored automatically.
+
 Optional flags:
 
 | Flag          | Description                      |
