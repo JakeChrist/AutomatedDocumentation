@@ -32,6 +32,15 @@ Required flags:
 
 The LLM must be running and reachable via `llm_client.py`.
 
+
+## Running Tests
+
+Install the test requirements (already included in requirements.txt) and run:
+
+```bash
+pytest
+```
+
 ## Documentation
 
 For the complete specification see [Docs/DocGen-LM_SRS.md](Docs/DocGen-LM_SRS.md).
