@@ -49,7 +49,7 @@ class LLMClient:
 
         for _ in range(3):
             try:
-                response = requests.post(self.endpoint, json=payload, timeout=30)
+                response = requests.post(self.endpoint, json=payload, timeout=None)
                 response.raise_for_status()
                 data = response.json()
                 return data["choices"][0]["message"]["content"].strip()
