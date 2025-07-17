@@ -32,6 +32,16 @@ Required flags:
 
 The LLM must be running and reachable via `llm_client.py`.
 
+## Example: Running with LMStudio
+
+1. Launch **LMStudio** and enable its API server on `http://localhost:1234`.
+2. Choose a local model in LMStudio.
+3. Run the documentation generator:
+
+```bash
+python docgenerator.py ./my_project --output ./docs
+```
+
 
 ## Running Tests
 
