@@ -1,19 +1,37 @@
 # DocGen-LM
 
-A small tool that generates HTML documentation for Python and MATLAB projects using a local LLM backend. It scans a source tree, summarizes code with the LLM and writes a set of static pages.
+DocGen-LM generates static HTML documentation for Python and MATLAB projects by analyzing source files and summarizing them with a local LLM.
 
-## Usage
+## Prerequisites
 
-Run the generator by pointing it at the project directory and an output location:
+- Python 3.7+
+- LMStudio (or another compatible local LLM server)
+
+## Installation
+
+Clone the repository and install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+The tool depends on `requests`, `jinja2` and `pygments`.
+
+## 7. 🧪 CLI Usage
 
 ```bash
 python docgenerator.py ./my_project --output ./docs
 ```
 
-Files or directories may be skipped with ``--ignore`` which can be repeated:
+Required flags:
 
-```bash
-python docgenerator.py ./my_project --output ./docs --ignore tests --ignore build
-```
+| Flag       | Description                      |
+|------------|----------------------------------|
+| `--output` | Output directory for HTML files  |
+| `--ignore` | Paths to skip                    |
 
-Ensure that LMStudio or another compatible LLM server is running and reachable before invoking the script.
+The LLM must be running and reachable via `llm_client.py`.
+
+## Documentation
+
+For the complete specification see [Docs/DocGen-LM_SRS.md](Docs/DocGen-LM_SRS.md).
