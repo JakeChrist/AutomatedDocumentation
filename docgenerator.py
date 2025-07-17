@@ -45,9 +45,19 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         help="Paths relative to source that should be ignored (repeatable)",
     )
+    parser.add_argument(
+        "--llm-url",
+        default="http://localhost:1234",
+        help="Base URL of the LLM API",
+    )
+    parser.add_argument(
+        "--model",
+        default="local",
+        help="Model name to use when contacting the LLM",
+    )
     args = parser.parse_args(argv)
 
-    client = LLMClient()
+    client = LLMClient(base_url=args.llm_url, model=args.model)
     try:
         client.ping()
     except ConnectionError as exc:

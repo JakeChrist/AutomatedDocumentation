@@ -30,6 +30,13 @@ Required flags:
 | `--output` | Output directory for HTML files  |
 | `--ignore` | Paths to skip                    |
 
+Optional flags:
+
+| Flag          | Description                      |
+|---------------|----------------------------------|
+| `--llm-url`   | Base URL of the LLM server       |
+| `--model`     | Model name to use                |
+
 The LLM must be running and reachable via `llm_client.py`.
 
 ## Example: Running with LMStudio
@@ -39,7 +46,7 @@ The LLM must be running and reachable via `llm_client.py`.
 3. Run the documentation generator:
 
 ```bash
-python docgenerator.py ./my_project --output ./docs
+python docgenerator.py ./my_project --output ./docs --llm-url http://localhost:1234 --model local
 ```
 
 
