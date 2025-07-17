@@ -60,3 +60,19 @@ def test_scan_directory_mixed_file_types(tmp_path: Path) -> None:
         str(tmp_path / "nested" / "six.m"),
     }
     assert set(result) == expected
+
+
+def test_scan_directory_skips_git_folder(tmp_path: Path) -> None:
+    create_files(
+        tmp_path,
+        [
+            "good.py",
+            os.path.join(".git", "ignored.py"),
+            os.path.join(".git", "sub", "also.py"),
+        ],
+    )
+
+    result = scan_directory(str(tmp_path), [])
+
+    assert str(tmp_path / "good.py") in result
+    assert not any(".git" in p for p in result)

@@ -33,6 +33,7 @@ This tool produces human-readable documentation for codebases written in Python 
 - Recursively scan a specified directory
 - Identify `.py` (Python) and `.m` (MATLAB) files
 - Allow exclusion of files or folders via `--ignore`
+- Automatically skip directories named `.git`
 
 ### 2.2 Language-Specific Parsing
 

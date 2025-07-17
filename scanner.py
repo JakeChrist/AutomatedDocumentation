@@ -39,8 +39,12 @@ def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
 
     for root, dirs, files in os.walk(base, topdown=True):
         root_path = Path(root)
-        # prune ignored directories
-        dirs[:] = [d for d in dirs if not any(_is_subpath(root_path / d, ig) for ig in ignore_paths)]
+        # prune ignored directories and internal .git folders
+        dirs[:] = [
+            d
+            for d in dirs
+            if d != ".git" and not any(_is_subpath(root_path / d, ig) for ig in ignore_paths)
+        ]
 
         for name in files:
             if not (name.endswith(".py") or name.endswith(".m")):
