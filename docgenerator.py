@@ -76,15 +76,20 @@ def main(argv: list[str] | None = None) -> int:
     modules = []
     for path in files:
         text = Path(path).read_text(encoding="utf-8")
+
+        try:
+            if path.endswith(".py"):
+                parsed = parse_python_file(path)
+                language = "python"
+            else:
+                parsed = parse_matlab_file(path)
+                language = "matlab"
+        except SyntaxError as exc:  # malformed file should be ignored
+            print(f"Skipping {path}: {exc}", file=sys.stderr)
+            continue
+
         key = ResponseCache.make_key(path, text)
         summary = _summarize(client, cache, key, text, "module-summary")
-
-        if path.endswith(".py"):
-            parsed = parse_python_file(path)
-            language = "python"
-        else:
-            parsed = parse_matlab_file(path)
-            language = "matlab"
 
         module = {"name": Path(path).stem, "language": language, "summary": summary}
         module.update(parsed)
