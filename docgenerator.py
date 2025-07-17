@@ -1,8 +1,95 @@
-"""CLI runner for DocGen-LM as specified in the SRS.
+"""Command line interface for DocGen-LM.
 
-This module coordinates scanning, parsing, LLM summarization, and HTML
-rendering. See `Docs/DocGen-LM_SRS.md` for detailed requirements.
+This script scans a source tree for Python and MATLAB files, parses them,
+requests summaries from a running LLM, and writes HTML documentation.
+
+Examples
+--------
+Generate documentation for ``./project`` into ``./docs`` while ignoring
+``tests`` and ``build`` directories::
+
+    python docgenerator.py ./project --output ./docs --ignore tests --ignore build
 """
 
+from __future__ import annotations
+
+import argparse
+import shutil
+import sys
+from pathlib import Path
+
+from cache import ResponseCache
+from html_writer import write_index, write_module_page
+from llm_client import LLMClient
+from parser_python import parse_python_file
+from parser_matlab import parse_matlab_file
+from scanner import scan_directory
 
 
+def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt: str) -> str:
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    summary = client.summarize(text, prompt)
+    cache.set(key, summary)
+    return summary
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Generate HTML documentation using a local LLM")
+    parser.add_argument("source", help="Path to the source directory")
+    parser.add_argument("--output", required=True, help="Destination directory for HTML output")
+    parser.add_argument(
+        "--ignore",
+        action="append",
+        default=[],
+        help="Paths relative to source that should be ignored (repeatable)",
+    )
+    args = parser.parse_args(argv)
+
+    client = LLMClient()
+    try:
+        client.ping()
+    except ConnectionError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copytree("static", output_dir / "static", dirs_exist_ok=True)
+
+    cache = ResponseCache(str(output_dir / "cache.json"))
+
+    files = scan_directory(args.source, args.ignore)
+    modules = []
+    for path in files:
+        text = Path(path).read_text(encoding="utf-8")
+        key = ResponseCache.make_key(path, text)
+        summary = _summarize(client, cache, key, text, "module-summary")
+
+        if path.endswith(".py"):
+            parsed = parse_python_file(path)
+            language = "python"
+        else:
+            parsed = parse_matlab_file(path)
+            language = "matlab"
+
+        module = {"name": Path(path).stem, "language": language, "summary": summary}
+        module.update(parsed)
+        modules.append(module)
+
+    page_links = [(m["name"], f"{m['name']}.html") for m in modules]
+
+    project_text = "\n".join(Path(p).name for p in files)
+    project_key = ResponseCache.make_key("PROJECT", project_text)
+    project_summary = _summarize(client, cache, project_key, project_text, "project-summary")
+
+    write_index(str(output_dir), project_summary, page_links)
+    for module in modules:
+        write_module_page(str(output_dir), module, page_links)
+
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover - CLI entry
+    raise SystemExit(main())
