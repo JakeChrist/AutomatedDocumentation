@@ -101,7 +101,7 @@ Each HTML page includes:
 ## 4. 💡 Non-Functional Requirements
 
 - Written entirely in Python
-- Python 3.7+
+- Python 3.9+
 - Must use a running LMStudio or compatible local LLM API
 - Works offline except for LLM queries
 - Only basic dependencies: `requests`, `jinja2`, `pygments`

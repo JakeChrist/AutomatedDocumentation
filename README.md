@@ -4,7 +4,7 @@ DocGen-LM generates static HTML documentation for Python and MATLAB projects by 
 
 ## Prerequisites
 
-- Python 3.7+
+- Python 3.9+
 - LMStudio (or another compatible local LLM server)
 
 ## Installation
