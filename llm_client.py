@@ -39,6 +39,9 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     "function": (
         "Summarize the function below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
     ),
+    "readme": (
+        "Summarize the documentation below.\n\n" + _COMMON_RULES + "{text}"
+    ),
     "project": (
         "You are a documentation generator.\n\n"
         "Write a short project summary using only the information provided below.\n"

@@ -119,3 +119,31 @@ def test_project_summary_is_sanitized(tmp_path: Path) -> None:
     html = (output_dir / "index.html").read_text(encoding="utf-8")
     assert "You can run this" not in html
     assert "It prints." in html
+
+
+def test_readme_summary_used(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("def foo():\n    pass\n")
+    (project_dir / "README.md").write_text("Project docs")
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.side_effect = [
+            "module summary",
+            "function summary",
+            "improved function doc",
+            "readme summary",
+            "project summary",
+        ]
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert "readme summary" in html
+    assert any(
+        args[1] == "readme" for args, _ in instance.summarize.call_args_list
+    )
