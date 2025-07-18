@@ -34,6 +34,44 @@ def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, pro
     return summary
 
 
+DOC_PROMPT = (
+    "You are a documentation generator.\n\n"
+    "Below is a Python function (or class) and, if present, its original docstring.\n"
+    "Your task is to rewrite or improve the documentation in a concise, factual, technical tone.\n\n"
+    "- Focus on describing what the function/class implements or controls.\n"
+    "- Keep it brief: 1 to 3 sentences.\n"
+    "- Do not address the user (e.g., no \"you can use this to...\").\n"
+    "- Do not say \"this function\", \"this class\", or \"the following code\".\n"
+    "- Do not refer to the original docstring or what is included or excluded.\n"
+    "- Do not explain how to run the code.\n"
+    "- Just provide a clean technical description.\n\n"
+    "Code:\n```python\n"
+    "{source}\n"
+    "Docstring:\n"
+    '\"\"\"{docstring}\"\"\"\n'
+    "```"
+)
+
+
+def _rewrite_docstring(
+    client: LLMClient,
+    cache: ResponseCache,
+    file_path: str,
+    item: dict[str, str],
+) -> None:
+    source = item.get("source", "")
+    docstring = item.get("docstring", "") or ""
+    if not source and not docstring:
+        print(f"Warning: no source or docstring for {file_path}:{item.get('name')}", file=sys.stderr)
+        return
+
+    prompt = DOC_PROMPT.format(source=source, docstring=docstring)
+    key_content = source + docstring
+    key = ResponseCache.make_key(f"REWRITE:{file_path}:{item.get('name')}", key_content)
+    result = _summarize(client, cache, key, prompt, "docstring")
+    item["docstring"] = sanitize_summary(result) or "No summary available."
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate HTML documentation using a local LLM")
     parser.add_argument("source", help="Path to the source directory")
@@ -108,6 +146,9 @@ def main(argv: list[str] | None = None) -> int:
             cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", cls_text)
             cls_summary = _summarize(client, cache, cls_key, cls_text, "class")
             cls["summary"] = cls_summary
+            _rewrite_docstring(client, cache, path, cls)
+            for method in cls.get("methods", []):
+                _rewrite_docstring(client, cache, path, method)
 
         # and for standalone functions
         for func in module.get("functions", []):
@@ -115,6 +156,7 @@ def main(argv: list[str] | None = None) -> int:
             func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", func_text)
             func_summary = _summarize(client, cache, func_key, func_text, "function")
             func["summary"] = func_summary
+            _rewrite_docstring(client, cache, path, func)
 
         modules.append(module)
 

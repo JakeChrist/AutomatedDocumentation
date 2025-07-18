@@ -48,6 +48,7 @@ PROMPT_TEMPLATES: Dict[str, str] = {
         "Avoid assistant-like phrasing. Just summarize what the code does.\n\n"
         "{text}"
     ),
+    "docstring": "{text}",
 }
 
 

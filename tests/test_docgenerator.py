@@ -42,14 +42,16 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
         instance.summarize.side_effect = [
             "module summary",
             "class summary",
+            "improved class doc",
             "function summary",
+            "improved function doc",
             "project summary",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
 
     html = (output_dir / "mod.html").read_text(encoding="utf-8")
-    assert "Doc" in html
+    assert "improved class doc" in html
     assert "function summary" in html
 
 
@@ -106,6 +108,7 @@ def test_project_summary_is_sanitized(tmp_path: Path) -> None:
         instance.summarize.side_effect = [
             "module summary",
             "function summary",
+            "improved function doc",
             "You can run this.\nIt prints.",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
