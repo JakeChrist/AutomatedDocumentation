@@ -48,6 +48,16 @@ def write_index(output_dir: str, project_summary: str, page_links: Iterable[Tupl
         for text, link in page_links
     )
     body_parts = [f"<p>{html.escape(project_summary)}</p>", "<h2>Modules</h2>"]
+
+    module_items = [
+        f'<li><a href="{link}">{html.escape(text)}</a></li>'
+        for text, link in page_links
+    ]
+    if module_items:
+        body_parts.append("<ul>")
+        body_parts.extend(module_items)
+        body_parts.append("</ul>")
+
     body = "\n".join(body_parts)
     html_out = _render_html(
         "Project Documentation", "Project Documentation", body, nav_html

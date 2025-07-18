@@ -185,12 +185,13 @@ def main(argv: list[str] | None = None) -> int:
     project_outline = "\n".join(project_lines)
 
     PROJECT_PROMPT = f"""
-You are a documentation generator.
+Summarize the purpose of this codebase in 1–2 sentences.
 
-Based only on the project structure listed below, generate a short summary (1–2 sentences) of what the code implements.
-
-Do not speculate. Do not guess what the code is for. Do not refer to this summary or what is or isn’t included.
-If structure is minimal, describe it factually.
+- Base your answer only on the provided structure.
+- Do not address the reader or give usage advice.
+- Do not say "the code defines" or "this summary".
+- Prefer concise technical descriptions of what is implemented.
+- Feel free to group related functionality (e.g., grid setup, game loop).
 
 Structure:
 {project_outline}
