@@ -42,10 +42,14 @@ def write_index(output_dir: str, project_summary: str, page_links: Iterable[Tupl
     """Render ``index.html`` with *project_summary* and navigation links."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
-    nav_html = "\n".join(f'<li><a href="{link}">{text}</a></li>' for text, link in page_links)
-    body_parts = [f"<p>{project_summary}</p>", "<h2>Modules</h2>", "<ul>", nav_html, "</ul>"]
+    nav_html = "\n".join(
+        f'<li><a href="{link}">{text}</a></li>' for text, link in page_links
+    )
+    body_parts = [f"<p>{project_summary}</p>", "<h2>Modules</h2>"]
     body = "\n".join(body_parts)
-    html = _render_html("Project Documentation", "Project Documentation", body, nav_html)
+    html = _render_html(
+        "Project Documentation", "Project Documentation", body, nav_html
+    )
     (dest_dir / "index.html").write_text(html, encoding="utf-8")
 
 

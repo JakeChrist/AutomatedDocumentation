@@ -11,7 +11,8 @@ def test_write_index(tmp_path: Path) -> None:
     write_index(str(tmp_path), "Project summary", links)
     html = (tmp_path / "index.html").read_text(encoding="utf-8")
     assert "Project summary" in html
-    assert "module1.html" in html
+    assert html.count("module1.html") == 1
+    assert html.count("module2.html") == 1
     assert "<h1>Project Documentation" in html
 
 
