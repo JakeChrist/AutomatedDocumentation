@@ -12,6 +12,25 @@ from typing import Any, Dict
 import requests
 from requests.exceptions import HTTPError, RequestException
 
+# Prompt definitions for the documentation model
+SYSTEM_PROMPT = (
+    "You are not an assistant. "
+    "You are a documentation engine that generates factual summaries of code files. "
+    "Do not help the user. Do not refer to yourself. Do not explain what you are doing. "
+    "Only describe what the code defines or implements."
+)
+
+USER_PROMPT = (
+    "Summarize the code below.\n\n"
+    "- Do not refer to yourself, the summary, or the response.\n"
+    "- Do not include instructions, usage advice, or disclaimers.\n"
+    "- Do not say what is or isn't included in the code.\n"
+    "- Do not explain how to run it.\n"
+    "- Do not use phrases like \"this script\", \"the code above\", or \"you can\".\n"
+    "- Just describe what is implemented in the file.\n\n"
+    "Code:\n```python\n{text}\n```"
+)
+
 
 def sanitize_summary(text: str) -> str:
     """Return ``text`` with meta commentary removed."""
@@ -84,34 +103,13 @@ class LLMClient:
     def summarize(self, text: str, prompt_type: str) -> str:
         """Return a summary for ``text``."""
 
-        prompt = f"""
-You are a documentation engine.
-
-Summarize the purpose and contents of the code file below.
-
-❌ Do not:
-- Explain how to run the code
-- Suggest improvements or extensions
-- Include example usage
-- Address the reader (e.g., no “you can…” or “note that…”)
-- Use phrases like “this script”, “the code above”, or “here’s how it works”
-
-✅ Do:
-- Begin directly with what the file does
-- State what is implemented (e.g., “Defines a class...", “Implements Conway’s Game of Life...”)
-- Mention any algorithms, classes, or patterns used
-- Keep it to 1–3 factual sentences
-
-Code:
-```python
-{text}
-```
-"""
+        prompt = USER_PROMPT.format(text=text)
 
         payload: Dict[str, Any] = {
             "model": self.model,
+            "temperature": 0,
             "messages": [
-                {"role": "system", "content": "You are a documentation engine."},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
             ],
         }
