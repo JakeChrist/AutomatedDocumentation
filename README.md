@@ -15,7 +15,7 @@ Clone the repository and install the required packages:
 pip install -r requirements.txt
 ```
 
-The tool depends on `requests`, `jinja2` and `pygments`.
+The tool depends on `requests` and `pygments`.
 
 ## 7. 🧪 CLI Usage
 
