@@ -49,7 +49,7 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
         assert ret == 0
 
     html = (output_dir / "mod.html").read_text(encoding="utf-8")
-    assert "class summary" in html
+    assert "Doc" in html
     assert "function summary" in html
 
 
