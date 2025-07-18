@@ -21,17 +21,37 @@ def test_write_module_page(tmp_path: Path) -> None:
         "name": "module1",
         "summary": "Module summary",
         "classes": [
-            {"name": "Bar", "summary": "Class summary", "methods": []}
+            {
+                "name": "Bar",
+                "summary": "Class summary",
+                "docstring": "Bar docs",
+                "methods": [
+                    {
+                        "name": "baz",
+                        "signature": "def baz(self): pass",
+                        "docstring": "Baz docs",
+                        "source": "def baz(self):\n    pass",
+                    }
+                ],
+            }
         ],
         "functions": [
-            {"name": "foo", "signature": "def foo(): pass", "summary": "Func summary"}
+            {
+                "name": "foo",
+                "signature": "def foo(): pass",
+                "summary": "Func summary",
+                "source": "def foo():\n    pass",
+            }
         ],
     }
     write_module_page(str(tmp_path), module_data, links)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
     assert "Module summary" in html
-    assert "Class summary" in html
+    assert "Class: Bar" in html
+    assert "Bar docs" in html
+    assert "Method: def baz(self): pass" in html
+    assert "Baz docs" in html
     assert "Func summary" in html
     assert "<h2>Functions" in html
-    assert "foo" in html
+    assert "def foo(): pass" in html
     assert "<pre" in html

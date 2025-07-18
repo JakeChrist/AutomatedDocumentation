@@ -52,37 +52,43 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
     """Render a module documentation page using ``module_data``."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
-    name = module_data.get("name", "module")
+    module_name = module_data.get("name", "module")
     language = module_data.get("language", "python")
     nav_html = "\n".join(f'<li><a href="{link}">{text}</a></li>' for text, link in page_links)
 
     body_parts = [f"<p>{module_data.get('summary', '')}</p>"]
 
-    classes = module_data.get("classes", [])
-    if classes:
-        body_parts.append("<h2>Classes</h2>")
-        for cls in classes:
-            body_parts.append(f'<h3 id="{cls.get("name")}">{cls.get("name")}</h3>')
-            if cls.get("summary"):
-                body_parts.append(f'<p>{cls["summary"]}</p>')
-            if cls.get("docstring"):
-                body_parts.append(f'<p>{cls["docstring"]}</p>')
-            for method in cls.get("methods", []):
-                sig = method.get("signature")
-                if sig:
-                    body_parts.append(_highlight(sig, language))
+    for cls in module_data.get("classes", []):
+        cls_name = cls.get("name", "")
+        body_parts.append(f'<h2 id="{cls_name}">Class: {cls_name}</h2>')
+        doc = cls.get("docstring") or cls.get("summary")
+        if doc:
+            body_parts.append(f"<p>{doc}</p>")
+        for method in cls.get("methods", []):
+            sig = method.get("signature") or method.get("name", "")
+            body_parts.append(f'<h3 id="{method.get("name")}">Method: {sig}</h3>')
+            if method.get("docstring"):
+                body_parts.append(f'<p>{method["docstring"]}</p>')
+            src = method.get("source")
+            if src:
+                body_parts.append("<pre><code>")
+                body_parts.append(_highlight(src, language))
+                body_parts.append("</code></pre>")
 
-    functions = module_data.get("functions", [])
-    if functions:
+    if module_data.get("functions"):
         body_parts.append("<h2>Functions</h2>")
-        for func in functions:
-            body_parts.append(f'<h3 id="{func.get("name")}">{func.get("name")}</h3>')
-            if func.get("summary"):
-                body_parts.append(f'<p>{func["summary"]}</p>')
-            sig = func.get("signature")
-            if sig:
-                body_parts.append(_highlight(sig, language))
+    for func in module_data.get("functions", []):
+        sig = func.get("signature") or func.get("name", "")
+        body_parts.append(f'<h3 id="{func.get("name")}">{sig}</h3>')
+        summary = func.get("summary")
+        if summary:
+            body_parts.append(f"<p>{summary}</p>")
+        src = func.get("source")
+        if src:
+            body_parts.append("<pre><code>")
+            body_parts.append(_highlight(src, language))
+            body_parts.append("</code></pre>")
 
     body = "\n".join(body_parts)
-    html = _render_html(name, name, body, nav_html)
-    (dest_dir / f"{name}.html").write_text(html, encoding="utf-8")
+    html = _render_html(module_name, module_name, body, nav_html)
+    (dest_dir / f"{module_name}.html").write_text(html, encoding="utf-8")
