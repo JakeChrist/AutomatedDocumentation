@@ -84,10 +84,14 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
     dest_dir.mkdir(parents=True, exist_ok=True)
     module_name = module_data.get("name", "module")
     language = module_data.get("language", "python")
-    nav_html = "\n".join(
+    nav_items = [
+        '<li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>'
+    ]
+    nav_items.extend(
         f'<li><a href="{link}">{html.escape(text)}</a></li>'
         for text, link in page_links
     )
+    nav_html = "\n".join(nav_items)
 
     body_parts = [f"<p>{html.escape(module_data.get('summary', ''))}</p>"]
 
