@@ -29,6 +29,17 @@ _COMMON_RULES = (
     "- Just describe what is implemented.\n\n"
 )
 
+README_PROMPT = (
+    "You are a documentation engine.\n\n"
+    "Below is Markdown content from a README or documentation file. "
+    "Use this to enrich the overall project summary. Focus on describing the code’s purpose, features, and architecture.\n\n"
+    "- Do not include setup or installation steps\n"
+    "- Do not refer to the Markdown file itself\n"
+    "- Avoid list formatting or markdown\n"
+    "- Output 2–3 sentences suitable for use in technical documentation\n"
+    "- Do not speculate. Use only the provided content."
+)
+
 PROMPT_TEMPLATES: Dict[str, str] = {
     "module": (
         "Summarize the module below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
@@ -39,9 +50,7 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     "function": (
         "Summarize the function below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
     ),
-    "readme": (
-        "Summarize the documentation below.\n\n" + _COMMON_RULES + "{text}"
-    ),
+    "readme": README_PROMPT + "\n{text}",
     "project": (
         "You are a documentation generator.\n\n"
         "Write a short project summary using only the information provided below.\n"
