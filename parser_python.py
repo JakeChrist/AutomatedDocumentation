@@ -104,6 +104,7 @@ def parse_python_file(path: str) -> Dict[str, Any]:
                 "name": node.name,
                 "docstring": ast.get_docstring(node),
                 "methods": [],
+                "source": ast.get_source_segment(source, node),
             }
             for item in node.body:
                 if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):

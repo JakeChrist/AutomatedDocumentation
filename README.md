@@ -38,6 +38,7 @@ Optional flags:
 |---------------|----------------------------------|
 | `--llm-url`   | Base URL of the LLM server       |
 | `--model`     | Model name to use                |
+| `--max-context-tokens` | Override the model's context window |
 
 The LLM must be running and reachable via `llm_client.py`.
 

@@ -22,6 +22,11 @@ from pathlib import Path
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary
+
+try:  # optional dependency used for token counting
+    import tiktoken
+except Exception:  # pragma: no cover - optional import
+    tiktoken = None
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from scanner import scan_directory
@@ -46,6 +51,68 @@ def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, pro
     summary = client.summarize(text, prompt_type)
     cache.set(key, summary)
     return summary
+
+
+def _get_tokenizer():
+    """Return a tokenizer object used for estimating token counts."""
+
+    if tiktoken is not None:  # pragma: no cover - optional branch
+        try:
+            return tiktoken.get_encoding("cl100k_base")
+        except Exception:  # pragma: no cover - fallback if model unknown
+            return tiktoken.encoding_for_model("gpt-3.5-turbo")
+
+    class _Simple:
+        def encode(self, text: str):
+            return text.split()
+
+        def decode(self, tokens):
+            return " ".join(tokens)
+
+    return _Simple()
+
+
+def chunk_text(text: str, tokenizer, chunk_size_tokens: int):
+    """Split ``text`` into chunks roughly ``chunk_size_tokens`` each."""
+
+    tokens = tokenizer.encode(text)
+    chunks = []
+    for i in range(0, len(tokens), chunk_size_tokens):
+        chunk = tokens[i : i + chunk_size_tokens]
+        chunks.append(tokenizer.decode(chunk))
+    return chunks
+
+
+def _summarize_chunked(
+    client: LLMClient,
+    cache: ResponseCache,
+    key_prefix: str,
+    text: str,
+    prompt_type: str,
+    tokenizer,
+    max_context_tokens: int,
+    chunk_token_budget: int,
+) -> str:
+    """Summarize ``text`` by chunking if necessary."""
+
+    if len(tokenizer.encode(text)) <= max_context_tokens:
+        key = ResponseCache.make_key(key_prefix, text)
+        return _summarize(client, cache, key, text, prompt_type)
+
+    parts = chunk_text(text, tokenizer, chunk_token_budget)
+    partials = []
+    for idx, part in enumerate(parts):
+        key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
+        partials.append(_summarize(client, cache, key, part, prompt_type))
+
+    merge_text = "\n".join(f"- {p}" for p in partials)
+    merge_prompt = (
+        "Merge the following chunk-level summaries into a single technical summary (2–3 sentences).\n\n"
+        + merge_text
+    )
+    merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
+    final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    return sanitize_summary(final_summary)
 
 
 DOC_PROMPT = (
@@ -163,6 +230,12 @@ def main(argv: list[str] | None = None) -> int:
         default="local",
         help="Model name to use when contacting the LLM",
     )
+    parser.add_argument(
+        "--max-context-tokens",
+        type=int,
+        default=4096,
+        help="Maximum token context window for the LLM",
+    )
     args = parser.parse_args(argv)
 
     client = LLMClient(base_url=args.llm_url, model=args.model)
@@ -171,6 +244,10 @@ def main(argv: list[str] | None = None) -> int:
     except ConnectionError as exc:
         print(str(exc), file=sys.stderr)
         return 1
+
+    tokenizer = _get_tokenizer()
+    max_context_tokens = args.max_context_tokens
+    chunk_token_budget = int(max_context_tokens * 0.75)
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -202,7 +279,16 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         key = ResponseCache.make_key(path, text)
-        summary = _summarize(client, cache, key, text, "module")
+        summary = _summarize_chunked(
+            client,
+            cache,
+            key,
+            text,
+            "module",
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+        )
 
         module = {
             "name": Path(path).stem,
@@ -321,7 +407,16 @@ Structure:
                 methods=methods_text,
             )
             cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", class_prompt)
-            cls_summary = _summarize(client, cache, cls_key, class_prompt, "docstring")
+            cls_summary = _summarize_chunked(
+                client,
+                cache,
+                cls_key,
+                class_prompt,
+                "docstring",
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
+            )
             cls["summary"] = cls_summary
             _rewrite_docstring(client, cache, path, cls)
 
