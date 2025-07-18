@@ -41,3 +41,14 @@ def test_summarize_retries_and_returns_summary() -> None:
         assert post.call_count == 2
         sleep.assert_called_once_with(1)
 
+
+def test_summarize_raises_runtime_error_with_message() -> None:
+    client = LLMClient("http://fake")
+    mock_response = Mock()
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(response=mock_response)
+    mock_response.json.side_effect = ValueError()
+    mock_response.text = "server exploded"
+    with patch("llm_client.requests.post", return_value=mock_response), patch("llm_client.time.sleep"):
+        with pytest.raises(RuntimeError, match="server exploded"):
+            client.summarize("text", "prompt")
+
