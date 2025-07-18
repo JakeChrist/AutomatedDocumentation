@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import requests
-from llm_client import LLMClient, sanitize_summary
+from llm_client import LLMClient, sanitize_summary, PROMPT_TEMPLATES
 
 
 def test_ping_success() -> None:
@@ -36,10 +36,12 @@ def test_summarize_retries_and_returns_summary() -> None:
     }
     with patch("llm_client.requests.post") as post, patch("llm_client.time.sleep") as sleep:
         post.side_effect = [requests.exceptions.RequestException("boom"), mock_response]
-        result = client.summarize("text", "prompt")
+        result = client.summarize("text", "module")
         assert result == "Defines a class."
         assert post.call_count == 2
         sleep.assert_called_once_with(1)
+        sent_prompt = post.call_args_list[1][1]["json"]["messages"][1]["content"]
+        assert sent_prompt == PROMPT_TEMPLATES["module"].format(text="text")
 
 
 def test_summarize_raises_runtime_error_with_message() -> None:
@@ -50,7 +52,7 @@ def test_summarize_raises_runtime_error_with_message() -> None:
     mock_response.text = "server exploded"
     with patch("llm_client.requests.post", return_value=mock_response), patch("llm_client.time.sleep"):
         with pytest.raises(RuntimeError, match="server exploded"):
-            client.summarize("text", "prompt")
+            client.summarize("text", "module")
 
 
 def test_sanitize_summary_filters_phrases() -> None:
@@ -63,4 +65,23 @@ def test_sanitize_summary_filters_phrases() -> None:
         "It prints output."
     )
     assert sanitize_summary(text) == "Defines a class.\nIt prints output."
+
+
+def test_prompt_varies_by_type() -> None:
+    client = LLMClient("http://fake")
+    mock_response = Mock()
+    mock_response.raise_for_status = Mock()
+    mock_response.json.return_value = {"choices": [{"message": {"content": "x"}}]}
+
+    with patch("llm_client.requests.post", return_value=mock_response) as post:
+        client.summarize("foo", "class")
+        class_prompt = post.call_args[1]["json"]["messages"][1]["content"]
+
+    with patch("llm_client.requests.post", return_value=mock_response) as post:
+        client.summarize("foo", "function")
+        func_prompt = post.call_args[1]["json"]["messages"][1]["content"]
+
+    assert class_prompt == PROMPT_TEMPLATES["class"].format(text="foo")
+    assert func_prompt == PROMPT_TEMPLATES["function"].format(text="foo")
+    assert class_prompt != func_prompt
 
