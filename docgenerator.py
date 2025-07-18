@@ -75,7 +75,11 @@ def main(argv: list[str] | None = None) -> int:
     files = scan_directory(args.source, args.ignore)
     modules = []
     for path in files:
-        text = Path(path).read_text(encoding="utf-8")
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:  # skip files with invalid encoding
+            print(f"Skipping {path}: {exc}", file=sys.stderr)
+            continue
 
         try:
             if path.endswith(".py"):
