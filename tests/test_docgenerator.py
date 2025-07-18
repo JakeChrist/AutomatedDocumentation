@@ -43,9 +43,9 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
             "module summary",
             "class summary",
             "improved class doc",
+            "project summary",
             "function summary",
             "improved function doc",
-            "project summary",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
@@ -109,9 +109,9 @@ def test_project_summary_is_sanitized(tmp_path: Path) -> None:
         instance.ping.return_value = True
         instance.summarize.side_effect = [
             "module summary",
+            "project summary",
             "function summary",
             "improved function doc",
-            "You can run this.\nIt prints.",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
@@ -134,10 +134,10 @@ def test_readme_summary_used(tmp_path: Path) -> None:
         instance.ping.return_value = True
         instance.summarize.side_effect = [
             "module summary",
-            "function summary",
-            "improved function doc",
             "readme summary",
             "project summary",
+            "function summary",
+            "improved function doc",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
