@@ -35,19 +35,15 @@ def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, pro
 
 
 DOC_PROMPT = (
-    "You are a documentation generator.\n\n"
-    "Below is a Python function (or class) and, if present, its original docstring.\n"
-    "Your task is to rewrite or improve the documentation in a concise, factual, technical tone.\n\n"
-    "- Focus on describing what the function/class implements or controls.\n"
-    "- Keep it brief: 1 to 3 sentences.\n"
-    "- Do not address the user (e.g., no \"you can use this to...\").\n"
-    "- Do not say \"this function\", \"this class\", or \"the following code\".\n"
-    "- Do not refer to the original docstring or what is included or excluded.\n"
-    "- Do not explain how to run the code.\n"
-    "- Just provide a clean technical description.\n\n"
+    "You are a documentation engine.\n\n"
+    "Generate a technical summary of the function or class below.\n"
+    "- Do not include suggestions or conversational language.\n"
+    "- Do not say \"this function\", \"you can\", or \"the following code\".\n"
+    "- Do not refer to the instructions or docstring.\n"
+    "- Just describe what the code implements, in 1–3 concise sentences.\n\n"
     "Code:\n```python\n"
     "{source}\n"
-    "Docstring:\n"
+    "Docstring (optional):\n"
     '\"\"\"{docstring}\"\"\"\n'
     "```"
 )

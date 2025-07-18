@@ -128,7 +128,7 @@ class LLMClient:
 
         payload: Dict[str, Any] = {
             "model": self.model,
-            "temperature": 0,
+            "temperature": 0.3,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
