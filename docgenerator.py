@@ -184,6 +184,30 @@ def main(argv: list[str] | None = None) -> int:
 
     project_outline = "\n".join(project_lines)
 
+    # gather markdown documentation
+    md_files = []
+    readme = Path(args.source) / "README.md"
+    if readme.exists():
+        md_files.append(readme)
+    for p in Path(args.source).rglob('*'):
+        if p.is_dir() and p.name.lower() == 'docs':
+            for md in p.rglob('*.md'):
+                md_files.append(md)
+
+    md_parts = []
+    for md_file in md_files:
+        try:
+            md_parts.append(md_file.read_text(encoding='utf-8'))
+        except Exception as exc:  # pragma: no cover - filesystem edge case
+            print(f"Skipping {md_file}: {exc}", file=sys.stderr)
+
+    md_context = "\n".join(md_parts).strip()
+    readme_summary = ""
+    if md_context:
+        readme_key = ResponseCache.make_key("README", md_context)
+        readme_summary = _summarize(client, cache, readme_key, md_context, "readme")
+        readme_summary = sanitize_summary(readme_summary)
+
     PROJECT_PROMPT = f"""
 Summarize the purpose of this codebase in 1–2 sentences.
 
@@ -200,6 +224,8 @@ Structure:
     project_key = ResponseCache.make_key("PROJECT", project_outline)
     raw_summary = _summarize(client, cache, project_key, PROJECT_PROMPT, "docstring")
     project_summary = sanitize_summary(raw_summary)
+    if readme_summary:
+        project_summary = f"{readme_summary}\n{project_summary}".strip()
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}
     write_index(str(output_dir), project_summary, page_links, module_summaries)
