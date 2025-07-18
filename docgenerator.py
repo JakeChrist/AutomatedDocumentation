@@ -48,6 +48,15 @@ DOC_PROMPT = (
     "```"
 )
 
+# Template for generating class-level summaries after methods are known
+CLASS_PROMPT = (
+    "You are summarizing the class `{class_name}`, which is part of a project that {project_summary}.\n\n"
+    "This class defines the following methods:\n{methods}\n\n"
+    "Based on this structure, generate a concise summary (1–3 sentences) of what this class does.\n\n"
+    "Do not include usage instructions. Do not mention unrelated domains like text-based games. "
+    "Stick to the provided methods and context."
+)
+
 
 def _build_function_prompt(
     source: str,
@@ -189,13 +198,16 @@ def main(argv: list[str] | None = None) -> int:
         }
         module.update(parsed)
 
-        # generate summaries for individual classes
+        # summarize methods now so class summaries can reference them later
         for cls in module.get("classes", []):
-            cls_text = cls.get("docstring") or cls.get("name", "")
-            cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", cls_text)
-            cls_summary = _summarize(client, cache, cls_key, cls_text, "class")
-            cls["summary"] = cls_summary
-            _rewrite_docstring(client, cache, path, cls)
+            cls["summary"] = ""
+            for method in cls.get("methods", []):
+                src = method.get("source") or method.get("signature") or method.get("name", "")
+                m_key = ResponseCache.make_key(
+                    f"{path}:{cls.get('name')}:{method.get('name')}", src
+                )
+                method_summary = _summarize(client, cache, m_key, src, "function")
+                method["summary"] = method_summary
 
         # and for standalone functions (summarized later with project context)
         for func in module.get("functions", []):
@@ -274,11 +286,30 @@ Structure:
     if readme_summary:
         project_summary = f"{readme_summary}\n{project_summary}".strip()
 
-    # Now that the project summary is available, generate function summaries
+    # Now that the project summary is available, generate class and function summaries
     # and rewrite method/function docstrings with context.
     for module in modules:
         path = module.get("path", "")
         for cls in module.get("classes", []):
+            method_lines = []
+            for method in cls.get("methods", []):
+                summary = method.get("summary", "")
+                name = method.get("name", "")
+                if summary:
+                    method_lines.append(f"- {name}: {summary}")
+                else:
+                    method_lines.append(f"- {name}")
+            methods_text = "\n".join(method_lines) if method_lines else "- (no methods)"
+            class_prompt = CLASS_PROMPT.format(
+                class_name=cls.get("name", ""),
+                project_summary=project_summary,
+                methods=methods_text,
+            )
+            cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", class_prompt)
+            cls_summary = _summarize(client, cache, cls_key, class_prompt, "docstring")
+            cls["summary"] = cls_summary
+            _rewrite_docstring(client, cache, path, cls)
+
             for method in cls.get("methods", []):
                 _rewrite_docstring(
                     client,
@@ -286,7 +317,7 @@ Structure:
                     path,
                     method,
                     class_name=cls.get("name"),
-                    class_summary=cls.get("summary"),
+                    class_summary=cls_summary,
                     project_summary=project_summary,
                 )
         for func in module.get("functions", []):
