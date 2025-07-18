@@ -54,6 +54,13 @@ def test_summarize_raises_runtime_error_with_message() -> None:
 
 
 def test_sanitize_summary_filters_phrases() -> None:
-    text = "You can run this.\nDefines a class."
-    assert sanitize_summary(text) == "Defines a class."
+    text = (
+        "You can run this.\n"
+        "Note that it is simple.\n"
+        "Defines a class.\n"
+        "This summary does not include disclaimers.\n"
+        "This script does nothing.\n"
+        "It prints output."
+    )
+    assert sanitize_summary(text) == "Defines a class.\nIt prints output."
 
