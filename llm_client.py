@@ -5,6 +5,7 @@ Handles communication with LMStudio to obtain summaries.
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Any, Dict
 
@@ -13,9 +14,9 @@ from requests.exceptions import HTTPError, RequestException
 
 
 def sanitize_summary(text: str) -> str:
-    """Return ``text`` with unprofessional phrases removed."""
+    """Return ``text`` with meta commentary removed."""
 
-    bad_phrases = [
+    BAD_START_PHRASES = [
         "you can",
         "note that",
         "the code above",
@@ -28,14 +29,31 @@ def sanitize_summary(text: str) -> str:
         "we can",
         "should you",
         "if you want",
+        "the summary",
+        "this explanation",
+        "this output",
+        "this description",
+        "this response",
     ]
 
     lines = text.strip().splitlines()
-    filtered = [
-        line
-        for line in lines
-        if not any(p in line.lower() for p in bad_phrases)
-    ]
+    filtered = []
+    for line in lines:
+        line_lower = line.strip().lower()
+        if any(line_lower.startswith(p) for p in BAD_START_PHRASES):
+            continue
+        if (
+            "this summary" in line_lower
+            or "this output" in line_lower
+            or "this response" in line_lower
+            or "does not include" in line_lower
+            or "avoids addressing" in line_lower
+        ):
+            continue
+        if re.match(r"^this (script|code|file) (does|is)\b", line_lower):
+            continue
+        filtered.append(line.strip())
+
     return "\n".join(filtered).strip()
 
 
@@ -104,9 +122,8 @@ Code:
                 response = requests.post(self.endpoint, json=payload, timeout=None)
                 response.raise_for_status()
                 data = response.json()
-                raw = data["choices"][0]["message"]["content"]
-                cleaned = sanitize_summary(raw)
-                return cleaned
+                content = data["choices"][0]["message"]["content"]
+                return sanitize_summary(content)
             except HTTPError as exc:
                 resp = exc.response or response
                 try:
