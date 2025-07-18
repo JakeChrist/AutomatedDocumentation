@@ -111,6 +111,8 @@ def parse_python_file(path: str) -> Dict[str, Any]:
                         {
                             "name": item.name,
                             "signature": _format_signature(item),
+                            "docstring": ast.get_docstring(item),
+                            "source": ast.get_source_segment(source, item),
                         }
                     )
             parsed["classes"].append(class_info)
@@ -120,6 +122,8 @@ def parse_python_file(path: str) -> Dict[str, Any]:
                     "name": node.name,
                     "signature": _format_signature(node),
                     "returns": ast.unparse(node.returns) if node.returns else None,
+                    "docstring": ast.get_docstring(node),
+                    "source": ast.get_source_segment(source, node),
                 }
             )
 
