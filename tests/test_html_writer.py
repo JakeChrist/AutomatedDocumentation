@@ -11,10 +11,12 @@ def test_write_index(tmp_path: Path) -> None:
     write_index(str(tmp_path), "Project <summary> & data", links)
     html = (tmp_path / "index.html").read_text(encoding="utf-8")
     assert "Project &lt;summary&gt; &amp; data" in html
-    assert html.count("module1.html") == 1
-    assert html.count("module2.html") == 1
+    assert html.count("module1.html") == 2
+    assert html.count("module2.html") == 2
     assert "module&lt;1&gt;" in html
     assert "module&amp;2" in html
+    assert "<h2>Modules" in html
+    assert "<ul>" in html
     assert "<h1>Project Documentation" in html
 
 
