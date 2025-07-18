@@ -51,3 +51,21 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
     html = (output_dir / "mod.html").read_text(encoding="utf-8")
     assert "class summary" in html
     assert "function summary" in html
+
+
+def test_skips_non_utf8_file(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "bad.py").write_bytes(b"\xff\xfe\xfd")
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.return_value = "summary"
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    assert (output_dir / "index.html").exists()
+    assert not (output_dir / "bad.html").exists()
