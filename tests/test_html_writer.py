@@ -40,6 +40,7 @@ def test_write_module_page(tmp_path: Path) -> None:
                 "name": "foo",
                 "signature": "def foo(): pass",
                 "summary": "Func summary",
+                "docstring": "Foo docs",
                 "source": "def foo():\n    pass",
             }
         ],
@@ -47,11 +48,11 @@ def test_write_module_page(tmp_path: Path) -> None:
     write_module_page(str(tmp_path), module_data, links)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
     assert "Module summary" in html
-    assert "Class: Bar" in html
+    assert "<h2 id=\"Bar\">Class: Bar</h2>" in html
     assert "Bar docs" in html
     assert "Method: def baz(self): pass" in html
     assert "Baz docs" in html
     assert "Func summary" in html
     assert "<h2>Functions" in html
     assert "def foo(): pass" in html
-    assert "<pre" in html
+    assert html.count("<pre><code>") == 2
