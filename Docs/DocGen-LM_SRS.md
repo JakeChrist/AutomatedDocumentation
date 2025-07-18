@@ -94,7 +94,7 @@ Each HTML page includes:
 | `parser_matlab.py` | Parse `.m` files                       |
 | `llm_client.py`    | Interface with LMStudio                |
 | `html_writer.py`   | Render output from templates           |
-| `template.html`    | Shared Jinja2 layout                   |
+| `template.html`    | Shared HTML template                   |
 | `cache.py`         | Cache LLM responses                    |
 
 ---
@@ -105,7 +105,7 @@ Each HTML page includes:
 - Python 3.9+
 - Must use a running LMStudio or compatible local LLM API
 - Works offline except for LLM queries
-- Only basic dependencies: `requests`, `jinja2`, `pygments`
+- Only basic dependencies: `requests`, `pygments`
 
 ---
 
