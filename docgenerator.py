@@ -93,6 +93,21 @@ def main(argv: list[str] | None = None) -> int:
 
         module = {"name": Path(path).stem, "language": language, "summary": summary}
         module.update(parsed)
+
+        # generate summaries for individual classes
+        for cls in module.get("classes", []):
+            cls_text = cls.get("docstring", cls.get("name", ""))
+            cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", cls_text)
+            cls_summary = _summarize(client, cache, cls_key, cls_text, "class-summary")
+            cls["summary"] = cls_summary
+
+        # and for standalone functions
+        for func in module.get("functions", []):
+            func_text = func.get("signature", func.get("name", ""))
+            func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", func_text)
+            func_summary = _summarize(client, cache, func_key, func_text, "function-summary")
+            func["summary"] = func_summary
+
         modules.append(module)
 
     page_links = [(m["name"], f"{m['name']}.html") for m in modules]
