@@ -5,7 +5,7 @@ Renders documentation pages using simple template substitution.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Iterable, Tuple
+from typing import Any, Iterable, Tuple, Dict
 import html
 
 from pygments import highlight
@@ -39,7 +39,12 @@ def _render_html(title: str, header: str, body: str, nav_html: str) -> str:
     )
 
 
-def write_index(output_dir: str, project_summary: str, page_links: Iterable[Tuple[str, str]]) -> None:
+def write_index(
+    output_dir: str,
+    project_summary: str,
+    page_links: Iterable[Tuple[str, str]],
+    module_summaries: Dict[str, str] | None = None,
+) -> None:
     """Render ``index.html`` with *project_summary* and navigation links."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -47,14 +52,22 @@ def write_index(output_dir: str, project_summary: str, page_links: Iterable[Tupl
         f'<li><a href="{link}">{html.escape(text)}</a></li>'
         for text, link in page_links
     )
-    body_parts = [f"<p>{html.escape(project_summary)}</p>", "<h2>Modules</h2>"]
+    body_parts = [f"<p>{html.escape(project_summary)}</p>", "<hr/>", "<h2>Modules</h2>"]
 
-    module_items = [
-        f'<li><a href="{link}">{html.escape(text)}</a></li>'
-        for text, link in page_links
-    ]
+    module_items: list[str] = []
+    for text, link in page_links:
+        summary = (module_summaries or {}).get(text, "")
+        item = (
+            f'<li style="margin-bottom: 1em;">'
+            f'<a href="{link}">{html.escape(text)}</a>'
+        )
+        if summary:
+            item += f"<br/><small>{html.escape(summary)}</small>"
+        item += "</li>"
+        module_items.append(item)
+
     if module_items:
-        body_parts.append("<ul>")
+        body_parts.append('<ul style="list-style-type: none; padding-left: 0;">')
         body_parts.extend(module_items)
         body_parts.append("</ul>")
 

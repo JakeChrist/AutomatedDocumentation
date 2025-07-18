@@ -8,7 +8,8 @@ from html_writer import write_index, write_module_page
 
 def test_write_index(tmp_path: Path) -> None:
     links = [("module<1>", "module1.html"), ("module&2", "module2.html")]
-    write_index(str(tmp_path), "Project <summary> & data", links)
+    summaries = {"module<1>": "First module.", "module&2": ""}
+    write_index(str(tmp_path), "Project <summary> & data", links, summaries)
     html = (tmp_path / "index.html").read_text(encoding="utf-8")
     assert "Project &lt;summary&gt; &amp; data" in html
     assert html.count("module1.html") == 2
@@ -16,7 +17,10 @@ def test_write_index(tmp_path: Path) -> None:
     assert "module&lt;1&gt;" in html
     assert "module&amp;2" in html
     assert "<h2>Modules" in html
-    assert "<ul>" in html
+    assert "<ul" in html
+    assert "<small>First module." in html
+    # only one summary should be rendered
+    assert html.count("<small>") == 1
     assert "<h1>Project Documentation" in html
 
 

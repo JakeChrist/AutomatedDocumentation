@@ -201,7 +201,8 @@ Structure:
     raw_summary = _summarize(client, cache, project_key, PROJECT_PROMPT, "docstring")
     project_summary = sanitize_summary(raw_summary)
 
-    write_index(str(output_dir), project_summary, page_links)
+    module_summaries = {m["name"]: m.get("summary", "") for m in modules}
+    write_index(str(output_dir), project_summary, page_links, module_summaries)
     for module in modules:
         write_module_page(str(output_dir), module, page_links)
 
