@@ -13,12 +13,14 @@ def test_parse_simple_module(tmp_path: Path) -> None:
         """Example module."""
 
         def add(x: int, y: int) -> int:
+            """Add two numbers."""
             return x + y
 
         class Greeter:
             """Says hi."""
 
             def greet(self, name: str = "World") -> str:
+                """Return a greeting."""
                 return f"Hello, {name}"
         '''
     )
@@ -32,13 +34,20 @@ def test_parse_simple_module(tmp_path: Path) -> None:
     cls = result["classes"][0]
     assert cls["name"] == "Greeter"
     assert cls["docstring"] == "Says hi."
-    assert cls["methods"][0]["signature"] == "greet(self, name: str='World') -> str"
+    method = cls["methods"][0]
+    assert method["signature"] == "greet(self, name: str='World') -> str"
+    assert method["docstring"] == "Return a greeting."
+    assert "def greet" in method["source"]
+    assert "Return a greeting." in method["source"]
 
     assert len(result["functions"]) == 1
     func = result["functions"][0]
     assert func["name"] == "add"
     assert func["signature"] == "add(x: int, y: int) -> int"
     assert func["returns"] == "int"
+    assert func["docstring"] == "Add two numbers."
+    assert "def add" in func["source"]
+    assert "Add two numbers." in func["source"]
 
 
 def test_parse_complex_signature(tmp_path: Path) -> None:
@@ -47,6 +56,7 @@ def test_parse_complex_signature(tmp_path: Path) -> None:
         """Docstring."""
 
         def complex(a, /, b, *, c: int = 1, **kw) -> None:
+            """Complex function."""
             pass
         '''
     )
@@ -56,5 +66,8 @@ def test_parse_complex_signature(tmp_path: Path) -> None:
     result = parse_python_file(str(file))
 
     sig = result["functions"][0]["signature"]
+    func = result["functions"][0]
     assert sig == "complex(a/, b, *, c: int=1, **kw) -> None"
+    assert func["docstring"] == "Complex function."
+    assert "Complex function." in func["source"]
 
