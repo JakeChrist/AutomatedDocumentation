@@ -6,7 +6,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import requests
-from llm_client import LLMClient
+from llm_client import LLMClient, sanitize_summary
 
 
 def test_ping_success() -> None:
@@ -31,13 +31,13 @@ def test_summarize_retries_and_returns_summary() -> None:
     mock_response.raise_for_status = Mock()
     mock_response.json.return_value = {
         "choices": [
-            {"message": {"content": " summary "}}
+            {"message": {"content": "You can run this.\nDefines a class."}}
         ]
     }
     with patch("llm_client.requests.post") as post, patch("llm_client.time.sleep") as sleep:
         post.side_effect = [requests.exceptions.RequestException("boom"), mock_response]
         result = client.summarize("text", "prompt")
-        assert result == "summary"
+        assert result == "Defines a class."
         assert post.call_count == 2
         sleep.assert_called_once_with(1)
 
@@ -51,4 +51,9 @@ def test_summarize_raises_runtime_error_with_message() -> None:
     with patch("llm_client.requests.post", return_value=mock_response), patch("llm_client.time.sleep"):
         with pytest.raises(RuntimeError, match="server exploded"):
             client.summarize("text", "prompt")
+
+
+def test_sanitize_summary_filters_phrases() -> None:
+    text = "You can run this.\nDefines a class."
+    assert sanitize_summary(text) == "Defines a class."
 
