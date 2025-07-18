@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>test_docgenerator</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>test_docgenerator</h1>
+        <p>The module defines several test functions to validate the behavior of a code documentation tool. It uses the `unittest.mock` library to mock interactions with an `LLMClient`, which is presumably used for generating summaries. The tests cover scenarios such as skipping invalid Python files, handling class and function summaries, dealing with non-UTF8 encoded files, managing class without docstrings, sanitizing project summaries, using README summaries, and ensuring that only relevant files are generated in the output directory.</p>
+<h2>Functions</h2>
+<h3 id="test_skips_invalid_python_file">test_skips_invalid_python_file(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the behavior of a documentation generator when encountering an invalid Python file. It creates a temporary project directory with a file containing invalid syntax due to a leading zero in a numeric literal. The function then attempts to generate documentation for this project using a mock LLM client that returns a predefined summary and ping response. After running the main function, it asserts that only the index page is generated in the output directory, while no HTML file is created for the invalid Python file.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_invalid_python_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    <span style="color: #3D7B7B; font-style: italic"># file with invalid syntax due to leading zero</span>
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;x = 08</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    <span style="color: #3D7B7B; font-style: italic"># only index page should be generated</span>
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
+</code></pre>
+<h3 id="test_generates_class_and_function_summaries">test_generates_class_and_function_summaries(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_generates_class_and_function_summaries` is a unit test for the `main` function of a documentation generator tool. It sets up a temporary project directory with a Python module containing a class and a function, and an output directory for the generated HTML documentation.
+
+It then mocks the `LLMClient` to simulate responses from a language model when summarizing the code elements. The test asserts that the `main` function runs successfully (returning 0) and that the generated HTML files contain the expected summaries of the class and function, as well as the module summary.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_generates_class_and_function_summaries</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(
+        <span style="color: #BA2121">&#39;class Foo:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    &quot;&quot;&quot;Doc&quot;&quot;&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&#39;</span> <span style="color: #BA2121">&quot;def bar():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    return 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [
+            <span style="color: #BA2121">&quot;module summary&quot;</span>,
+            <span style="color: #BA2121">&quot;project summary&quot;</span>,
+            <span style="color: #BA2121">&quot;class summary&quot;</span>,
+            <span style="color: #BA2121">&quot;improved class doc&quot;</span>,
+            <span style="color: #BA2121">&quot;function summary&quot;</span>,
+            <span style="color: #BA2121">&quot;improved function doc&quot;</span>,
+        ]
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;improved class doc&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;function summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    index_html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;module summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> index_html
+</code></pre>
+<h3 id="test_skips_non_utf8_file">test_skips_non_utf8_file(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the behavior of the `main` function when encountering a non-UTF-8 encoded file. It creates a temporary project directory with a non-UTF-8 encoded Python file and specifies an output directory for documentation. The function uses a mock LLM client to simulate successful ping and summary generation. When running the main function, it asserts that the return code is 0, indicating success. Additionally, it checks that only the index.html file exists in the output directory, while the bad.html file does not exist, suggesting that non-UTF-8 files are skipped during documentation generation.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_non_utf8_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.py&quot;</span>)<span style="color: #666666">.</span>write_bytes(<span style="color: #BA2121">b&quot;</span><span style="color: #AA5D1F; font-weight: bold">\xff\xfe\xfd</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
+</code></pre>
+<h3 id="test_handles_class_without_docstring">test_handles_class_without_docstring(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_handles_class_without_docstring` tests the handling of a Python class without a docstring by creating a temporary project directory, writing a Python module with an empty class to it, and then running the `main` function from the `docgenerator` module. It uses a mock LLM client to simulate responses for summarizing modules, projects, and classes. The test asserts that the return value of the `main` function is 0 (indicating success) and that the generated HTML file contains the summary for the class.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_handles_class_without_docstring</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;class Foo:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [
+            <span style="color: #BA2121">&quot;module summary&quot;</span>,
+            <span style="color: #BA2121">&quot;project summary&quot;</span>,
+            <span style="color: #BA2121">&quot;class summary&quot;</span>,
+        ]
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;class summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+</code></pre>
+<h3 id="test_project_summary_is_sanitized">test_project_summary_is_sanitized(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_project_summary_is_sanitized` is a unit test for the `main` function of the DocGen-LM tool. It creates a temporary project directory with a Python module, sets up a mock LLM client to simulate responses, and runs the main function with specified parameters. The test asserts that the output HTML file does not contain certain phrases (&quot;You can run this&quot; and &quot;It prints.&quot;) while verifying that the return code is 0.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_project_summary_is_sanitized</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;def foo():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [
+            <span style="color: #BA2121">&quot;module summary&quot;</span>,
+            <span style="color: #BA2121">&quot;project summary&quot;</span>,
+            <span style="color: #BA2121">&quot;function summary&quot;</span>,
+            <span style="color: #BA2121">&quot;improved function doc&quot;</span>,
+        ]
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;You can run this&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;It prints.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+</code></pre>
+<h3 id="test_readme_summary_used">test_readme_summary_used(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the generation of a README summary using the `main` function from the `docgenerator` module. It creates a temporary project directory with a Python module and a README file. The function then mocks an LLM client to simulate responses for summarizing different parts of the project, including the README. After running the `main` function with the specified project directory and output location, it asserts that the README summary is included in the generated HTML documentation and that the LLM client was called with the correct parameters to generate the README summary.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_readme_summary_used</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;def foo():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;README.md&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;Project docs&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [
+            <span style="color: #BA2121">&quot;module summary&quot;</span>,
+            <span style="color: #BA2121">&quot;readme summary&quot;</span>,
+            <span style="color: #BA2121">&quot;project summary&quot;</span>,
+            <span style="color: #BA2121">&quot;function summary&quot;</span>,
+            <span style="color: #BA2121">&quot;improved function doc&quot;</span>,
+        ]
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;readme summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(
+        args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;readme&quot;</span> <span style="color: #008000; font-weight: bold">for</span> args, _ <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list
+    )
+</code></pre>
+    </div>
+</body>
+</html>

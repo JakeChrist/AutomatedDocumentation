@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>test_reviewer</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>test_reviewer</h1>
+        <p>This module defines several functions and tests for a code review assistant. It includes:
+
+1. `_make_module`: A helper function to create a temporary module with specified summary and methods, then write an HTML page for it.
+2. `test_assistant_phrasing_detected`: Tests if the assistant detects phrasing like &quot;You can use this class&quot; in the module summary.
+3. `test_contradiction_detected`: Tests if the assistant detects contradictions between the module summary and the defined methods.
+4. `test_hallucination_detected`: Tests if the assistant detects when the module summary contains features not implemented by any method.
+5. `test_autofix_removes_phrasing`: Tests if the assistant can automatically remove phrasing like &quot;You can call this&quot; from the HTML output when using the `--autofix` option.
+
+The tests use a temporary path and capture system output to verify the behavior of the code review assistant.</p>
+<h2>Functions</h2>
+<h3 id="_make_module">_make_module(tmp_path: Path, summary: str, methods=None) -&gt; Path</h3>
+<p>The `_make_module` function creates a temporary module page for documentation purposes. It takes three parameters: `tmp_path`, which is the path to the temporary directory where the module page will be created; `summary`, which is a string summarizing the module; and `methods`, an optional parameter that specifies methods for a class within the module.
+
+The function constructs a dictionary `data` with keys for the module&#x27;s name, summary, classes, and functions. If `methods` are provided, it adds a class named &quot;Foo&quot; to the `classes` list in `data`. The function then calls `write_module_page` to generate the HTML content for the module page based on the `data` dictionary and saves it as &quot;mod.html&quot; in the temporary directory specified by `tmp_path`. Finally, it returns the path to the generated &quot;mod.html&quot; file.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_make_module</span>(tmp_path: Path, summary: <span style="color: #008000">str</span>, methods<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> Path:
+    data <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;mod&quot;</span>,
+        <span style="color: #BA2121">&quot;summary&quot;</span>: summary,
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [],
+    }
+    <span style="color: #008000; font-weight: bold">if</span> methods <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+        data[<span style="color: #BA2121">&quot;classes&quot;</span>] <span style="color: #666666">=</span> [
+            {<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;Foo&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;methods&quot;</span>: methods}
+        ]
+    write_module_page(<span style="color: #008000">str</span>(tmp_path), data, [(<span style="color: #BA2121">&quot;index&quot;</span>, <span style="color: #BA2121">&quot;index.html&quot;</span>)])
+    <span style="color: #008000; font-weight: bold">return</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>
+</code></pre>
+<h3 id="test_assistant_phrasing_detected">test_assistant_phrasing_detected(tmp_path: Path, capsys) -&gt; None</h3>
+<p>The function `test_assistant_phrasing_detected` is designed to test if assistant phrasing is detected and included in the generated documentation. It creates a temporary module with specific content, runs the main function of the DocGen-LM tool on this module, captures the output, and asserts that both &quot;[ASSISTANT]&quot; and &quot;mod.html&quot; are present in the output.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_assistant_phrasing_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    _make_module(tmp_path, <span style="color: #BA2121">&quot;You can use this class.&quot;</span>)
+    main([<span style="color: #008000">str</span>(tmp_path)])
+    out <span style="color: #666666">=</span> capsys<span style="color: #666666">.</span>readouterr()<span style="color: #666666">.</span>out
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[ASSISTANT]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;mod.html&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
+</code></pre>
+<h3 id="test_contradiction_detected">test_contradiction_detected(tmp_path: Path, capsys) -&gt; None</h3>
+<p>This function `test_contradiction_detected` tests if a contradiction is detected when summarizing code. It creates a temporary module with no methods defined and runs the main function with this directory as input. The output is captured and checked to ensure that the string &quot;[CONTRADICTION]&quot; is present, indicating that a contradiction was detected during the summary process.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_contradiction_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    methods <span style="color: #666666">=</span> [{<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;bar&quot;</span>, <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def bar()&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}]
+    _make_module(tmp_path, <span style="color: #BA2121">&quot;No methods defined&quot;</span>, methods)
+    main([<span style="color: #008000">str</span>(tmp_path)])
+    out <span style="color: #666666">=</span> capsys<span style="color: #666666">.</span>readouterr()<span style="color: #666666">.</span>out
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[CONTRADICTION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
+</code></pre>
+<h3 id="test_hallucination_detected">test_hallucination_detected(tmp_path: Path, capsys) -&gt; None</h3>
+<p>The function `test_hallucination_detected` is designed to test for the detection of hallucinations in documentation generated by the DocGen-LM tool. It creates a temporary Python module with specified content, runs the main function of the tool on this module, and captures the output. The function then asserts that the string &quot;[HALLUCINATION]&quot; is present in the captured output, indicating that the tool has detected a hallucination in the generated documentation.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_hallucination_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    _make_module(tmp_path, <span style="color: #BA2121">&quot;Implements tic-tac-toe features&quot;</span>)
+    main([<span style="color: #008000">str</span>(tmp_path)])
+    out <span style="color: #666666">=</span> capsys<span style="color: #666666">.</span>readouterr()<span style="color: #666666">.</span>out
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[HALLUCINATION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
+</code></pre>
+<h3 id="test_autofix_removes_phrasing">test_autofix_removes_phrasing(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_autofix_removes_phrasing` is designed to test the functionality of an autofix feature within a documentation generation tool. It creates a temporary Python module with a specific phrase, runs the main function of the tool with the `--autofix` option on this module, and then checks if the specified phrase has been removed from the generated HTML file.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_autofix_removes_phrasing</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    html_path <span style="color: #666666">=</span> _make_module(tmp_path, <span style="color: #BA2121">&quot;You can call this.&quot;</span>)
+    main([<span style="color: #008000">str</span>(tmp_path), <span style="color: #BA2121">&quot;--autofix&quot;</span>])
+    html <span style="color: #666666">=</span> html_path<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;You can&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+</code></pre>
+    </div>
+</body>
+</html>

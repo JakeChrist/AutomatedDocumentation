@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>scanner</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>scanner</h1>
+        <p>The module implements a function to recursively discover Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an ignore mechanism based on relative paths provided by the user. The function filters out ignored directories and files, ensuring that only relevant source files are returned in their absolute paths.</p>
+<h2>Functions</h2>
+<h3 id="_is_subpath">_is_subpath(path: Path, parent: Path) -&gt; bool</h3>
+<p>Determines whether a given path is a subpath of another path. Returns `True` if the path is equal to or within the parent directory, otherwise returns `False`.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_is_subpath</span>(path: Path, parent: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return True if *path* is equal to or inside *parent*.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">try</span>:
+        path<span style="color: #666666">.</span>relative_to(parent)
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">True</span>
+    <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">ValueError</span>:
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">False</span>
+</code></pre>
+<h3 id="scan_directory">scan_directory(base_path: str, ignore: List[str]) -&gt; List[str]</h3>
+<p>The `scan_directory` function recursively discovers Python (``.py``) and MATLAB (``.m``) files under a specified base directory while ignoring specified paths. It returns a list of absolute paths to the discovered source files, excluding those within ignored directories or matching any patterns in the ignore list. The function uses `os.walk` to traverse the directory tree and filters out unwanted file types and paths based on the provided criteria.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_directory</span>(base_path: <span style="color: #008000">str</span>, ignore: List[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively discover ``.py`` and ``.m`` files under *base_path*.</span>
+
+<span style="color: #BA2121; font-style: italic">    Parameters</span>
+<span style="color: #BA2121; font-style: italic">    ----------</span>
+<span style="color: #BA2121; font-style: italic">    base_path:</span>
+<span style="color: #BA2121; font-style: italic">        Directory to search.</span>
+<span style="color: #BA2121; font-style: italic">    ignore:</span>
+<span style="color: #BA2121; font-style: italic">        List of paths (relative to ``base_path``) that should be skipped.</span>
+<span style="color: #BA2121; font-style: italic">    Returns</span>
+<span style="color: #BA2121; font-style: italic">    -------</span>
+<span style="color: #BA2121; font-style: italic">    list[str]</span>
+<span style="color: #BA2121; font-style: italic">        Absolute paths to discovered source files.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    base <span style="color: #666666">=</span> Path(base_path)<span style="color: #666666">.</span>resolve()
+    ignore_paths <span style="color: #666666">=</span> {(base <span style="color: #666666">/</span> p)<span style="color: #666666">.</span>resolve() <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> ignore}
+    results: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+
+    <span style="color: #008000; font-weight: bold">for</span> root, dirs, files <span style="color: #AA22FF; font-weight: bold">in</span> os<span style="color: #666666">.</span>walk(base, topdown<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>):
+        root_path <span style="color: #666666">=</span> Path(root)
+        <span style="color: #3D7B7B; font-style: italic"># prune ignored directories and internal .git folders</span>
+        dirs[:] <span style="color: #666666">=</span> [
+            d
+            <span style="color: #008000; font-weight: bold">for</span> d <span style="color: #AA22FF; font-weight: bold">in</span> dirs
+            <span style="color: #008000; font-weight: bold">if</span> d <span style="color: #666666">!=</span> <span style="color: #BA2121">&quot;.git&quot;</span> <span style="color: #AA22FF; font-weight: bold">and</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">any</span>(_is_subpath(root_path <span style="color: #666666">/</span> d, ig) <span style="color: #008000; font-weight: bold">for</span> ig <span style="color: #AA22FF; font-weight: bold">in</span> ignore_paths)
+        ]
+
+        <span style="color: #008000; font-weight: bold">for</span> name <span style="color: #AA22FF; font-weight: bold">in</span> files:
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> (name<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;.py&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> name<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;.m&quot;</span>)):
+                <span style="color: #008000; font-weight: bold">continue</span>
+            file_path <span style="color: #666666">=</span> root_path <span style="color: #666666">/</span> name
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">any</span>(_is_subpath(file_path, ig) <span style="color: #008000; font-weight: bold">for</span> ig <span style="color: #AA22FF; font-weight: bold">in</span> ignore_paths):
+                <span style="color: #008000; font-weight: bold">continue</span>
+            results<span style="color: #666666">.</span>append(<span style="color: #008000">str</span>(file_path))
+
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">sorted</span>(results)
+</code></pre>
+    </div>
+</body>
+</html>

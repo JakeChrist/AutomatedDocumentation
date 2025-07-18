@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>test_llm_client</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>test_llm_client</h1>
+        <p>This module defines unit tests for an `LLMClient` class, which interacts with a language model. The tests cover the following functionalities:
+
+1. **Ping Method**: Verifies that the client can successfully ping the server and handle both successful and failed responses.
+2. **Summarize Method**: Tests the method&#x27;s ability to retry requests in case of failures and returns the correct summary text. It also checks how different types (class, function, readme) affect the prompt sent to the language model.
+3. **Sanitize Summary Function**: Ensures that certain phrases are filtered out from the summary text.
+
+The tests use mock objects for `requests` calls and `time.sleep` to simulate network delays and responses. They also utilize `pytest` for assertions and exception handling.</p>
+<h2>Functions</h2>
+<h3 id="test_ping_success">test_ping_success() -&gt; None</h3>
+<p>The function `test_ping_success` tests the `ping` method of an `LLMClient` class. It sets up a mock response that simulates a successful HTTP GET request and asserts that calling `client.ping()` returns `True`. The test also verifies that the `requests.get` method is called once with the specified URL and timeout, and that `raise_for_status` on the mock response is called to ensure the request was successful.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_ping_success</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    mock_response <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>raise_for_status <span style="color: #666666">=</span> Mock()
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;requests.get&quot;</span>, return_value<span style="color: #666666">=</span>mock_response) <span style="color: #008000; font-weight: bold">as</span> get:
+        <span style="color: #008000; font-weight: bold">assert</span> client<span style="color: #666666">.</span>ping() <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000; font-weight: bold">True</span>
+        get<span style="color: #666666">.</span>assert_called_once_with(<span style="color: #BA2121">&quot;http://fake&quot;</span>, timeout<span style="color: #666666">=2.0</span>)
+        mock_response<span style="color: #666666">.</span>raise_for_status<span style="color: #666666">.</span>assert_called_once()
+</code></pre>
+<h3 id="test_ping_failure">test_ping_failure() -&gt; None</h3>
+<p>This function tests the `ping` method of an `LLMClient` class. It uses a mock to simulate a request failure when attempting to connect to a specified URL. The test asserts that a `ConnectionError` is raised as expected when the ping operation fails due to a network issue or invalid server address.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_ping_failure</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;requests.get&quot;</span>, side_effect<span style="color: #666666">=</span>requests<span style="color: #666666">.</span>exceptions<span style="color: #666666">.</span>RequestException(<span style="color: #BA2121">&quot;fail&quot;</span>)):
+        <span style="color: #008000; font-weight: bold">with</span> pytest<span style="color: #666666">.</span>raises(<span style="color: #CB3F38; font-weight: bold">ConnectionError</span>):
+            client<span style="color: #666666">.</span>ping()
+</code></pre>
+<h3 id="test_summarize_retries_and_returns_summary">test_summarize_retries_and_returns_summary() -&gt; None</h3>
+<p>The function `test_summarize_retries_and_returns_summary` tests the `summarize` method of an `LLMClient` class. It uses a mock `requests.post` to simulate HTTP requests and a mock `time.sleep` to simulate delays. The test asserts that after two failed attempts due to exceptions, the method successfully receives a response from the LLM server, returns the summary content, and waits for 1 second between retries.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_retries_and_returns_summary</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    mock_response <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>raise_for_status <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>json<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;choices&quot;</span>: [
+            {<span style="color: #BA2121">&quot;message&quot;</span>: {<span style="color: #BA2121">&quot;content&quot;</span>: <span style="color: #BA2121">&quot;You can run this.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">Defines a class.&quot;</span>}}
+        ]
+    }
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;llm_client.requests.post&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> post, patch(<span style="color: #BA2121">&quot;llm_client.time.sleep&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> sleep:
+        post<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [requests<span style="color: #666666">.</span>exceptions<span style="color: #666666">.</span>RequestException(<span style="color: #BA2121">&quot;boom&quot;</span>), mock_response]
+        result <span style="color: #666666">=</span> client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;text&quot;</span>, <span style="color: #BA2121">&quot;module&quot;</span>)
+        <span style="color: #008000; font-weight: bold">assert</span> result <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;Defines a class.&quot;</span>
+        <span style="color: #008000; font-weight: bold">assert</span> post<span style="color: #666666">.</span>call_count <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+        sleep<span style="color: #666666">.</span>assert_called_once_with(<span style="color: #666666">1</span>)
+        sent_prompt <span style="color: #666666">=</span> post<span style="color: #666666">.</span>call_args_list[<span style="color: #666666">1</span>][<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;json&quot;</span>][<span style="color: #BA2121">&quot;messages&quot;</span>][<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+        <span style="color: #008000; font-weight: bold">assert</span> sent_prompt <span style="color: #666666">==</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;text&quot;</span>)
+</code></pre>
+<h3 id="test_summarize_raises_runtime_error_with_message">test_summarize_raises_runtime_error_with_message() -&gt; None</h3>
+<p>The function `test_summarize_raises_runtime_error_with_message` is a unit test for the `summarize` method of an `LLMClient`. It tests that a `RuntimeError` with the message &quot;server exploded&quot; is raised when the LLM server returns an HTTP error and a JSON parsing error. The test uses mocking to simulate the behavior of the `requests.post` method and the `time.sleep` function, and it asserts that the expected exception is raised using the `pytest.raises` context manager.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_raises_runtime_error_with_message</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    mock_response <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>raise_for_status<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> requests<span style="color: #666666">.</span>exceptions<span style="color: #666666">.</span>HTTPError(response<span style="color: #666666">=</span>mock_response)
+    mock_response<span style="color: #666666">.</span>json<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> <span style="color: #CB3F38; font-weight: bold">ValueError</span>()
+    mock_response<span style="color: #666666">.</span>text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;server exploded&quot;</span>
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;llm_client.requests.post&quot;</span>, return_value<span style="color: #666666">=</span>mock_response), patch(<span style="color: #BA2121">&quot;llm_client.time.sleep&quot;</span>):
+        <span style="color: #008000; font-weight: bold">with</span> pytest<span style="color: #666666">.</span>raises(<span style="color: #CB3F38; font-weight: bold">RuntimeError</span>, match<span style="color: #666666">=</span><span style="color: #BA2121">&quot;server exploded&quot;</span>):
+            client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;text&quot;</span>, <span style="color: #BA2121">&quot;module&quot;</span>)
+</code></pre>
+<h3 id="test_sanitize_summary_filters_phrases">test_sanitize_summary_filters_phrases() -&gt; None</h3>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_sanitize_summary_filters_phrases</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    text <span style="color: #666666">=</span> (
+        <span style="color: #BA2121">&quot;You can run this.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;Note that it is simple.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;Defines a class.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;This summary does not include disclaimers.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;This script does nothing.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;It prints output.&quot;</span>
+    )
+    <span style="color: #008000; font-weight: bold">assert</span> sanitize_summary(text) <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;Defines a class.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">It prints output.&quot;</span>
+</code></pre>
+<h3 id="test_prompt_varies_by_type">test_prompt_varies_by_type() -&gt; None</h3>
+<p>This function tests the `summarize` method of an `LLMClient` class, which generates prompts for summarizing Python and MATLAB code using a language model. The test ensures that the prompts vary by type (class vs. function) when called with different parameters. It uses mocking to simulate HTTP requests and assertions to verify that the generated prompts match expected templates and are distinct for different types of code elements.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_prompt_varies_by_type</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    mock_response <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>raise_for_status <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>json<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;choices&quot;</span>: [{<span style="color: #BA2121">&quot;message&quot;</span>: {<span style="color: #BA2121">&quot;content&quot;</span>: <span style="color: #BA2121">&quot;x&quot;</span>}}]}
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;llm_client.requests.post&quot;</span>, return_value<span style="color: #666666">=</span>mock_response) <span style="color: #008000; font-weight: bold">as</span> post:
+        client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;foo&quot;</span>, <span style="color: #BA2121">&quot;class&quot;</span>)
+        class_prompt <span style="color: #666666">=</span> post<span style="color: #666666">.</span>call_args[<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;json&quot;</span>][<span style="color: #BA2121">&quot;messages&quot;</span>][<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;llm_client.requests.post&quot;</span>, return_value<span style="color: #666666">=</span>mock_response) <span style="color: #008000; font-weight: bold">as</span> post:
+        client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;foo&quot;</span>, <span style="color: #BA2121">&quot;function&quot;</span>)
+        func_prompt <span style="color: #666666">=</span> post<span style="color: #666666">.</span>call_args[<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;json&quot;</span>][<span style="color: #BA2121">&quot;messages&quot;</span>][<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+
+    <span style="color: #008000; font-weight: bold">assert</span> class_prompt <span style="color: #666666">==</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;class&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;foo&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> func_prompt <span style="color: #666666">==</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;function&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;foo&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> class_prompt <span style="color: #666666">!=</span> func_prompt
+</code></pre>
+<h3 id="test_readme_prompt_template_used">test_readme_prompt_template_used() -&gt; None</h3>
+<p>This function tests the use of a README prompt template in an LLMClient&#x27;s summarize method. It sets up a mock response from an LLM server and patches the requests.post method to return this mock response. The function then calls client.summarize with &quot;foo&quot; as the text and &quot;readme&quot; as the language, capturing the generated README prompt from the post call arguments. Finally, it asserts that the captured prompt matches the expected format of the README template with &quot;foo&quot; inserted into it.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_readme_prompt_template_used</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
+    mock_response <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>raise_for_status <span style="color: #666666">=</span> Mock()
+    mock_response<span style="color: #666666">.</span>json<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;choices&quot;</span>: [{<span style="color: #BA2121">&quot;message&quot;</span>: {<span style="color: #BA2121">&quot;content&quot;</span>: <span style="color: #BA2121">&quot;x&quot;</span>}}]}
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;llm_client.requests.post&quot;</span>, return_value<span style="color: #666666">=</span>mock_response) <span style="color: #008000; font-weight: bold">as</span> post:
+        client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;foo&quot;</span>, <span style="color: #BA2121">&quot;readme&quot;</span>)
+        readme_prompt <span style="color: #666666">=</span> post<span style="color: #666666">.</span>call_args[<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;json&quot;</span>][<span style="color: #BA2121">&quot;messages&quot;</span>][<span style="color: #666666">1</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+
+    <span style="color: #008000; font-weight: bold">assert</span> readme_prompt <span style="color: #666666">==</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;readme&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;foo&quot;</span>)
+</code></pre>
+    </div>
+</body>
+</html>

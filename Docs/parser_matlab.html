@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>parser_matlab</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>parser_matlab</h1>
+        <p>This module defines a function `parse_matlab_file` that takes the path to a MATLAB `.m` file and returns a dictionary containing the file&#x27;s header comments and any `function` declarations found. Each function entry provides the name of the function and a list of arguments. The parsing uses simple line-based techniques as outlined in the Software Requirements Specification (SRS).</p>
+<h2>Functions</h2>
+<h3 id="parse_matlab_file">parse_matlab_file(path: str) -&gt; Dict[str, Any]</h3>
+<p>The `parse_matlab_file` function reads and parses a MATLAB `.m` file to extract its basic structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found. The function identifies the start of the body by looking for non-comment lines, extracts comment lines as the header, and uses a regular expression to find and parse function declarations, capturing their names and arguments.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
+
+<span style="color: #BA2121; font-style: italic">    Parameters</span>
+<span style="color: #BA2121; font-style: italic">    ----------</span>
+<span style="color: #BA2121; font-style: italic">    path:</span>
+<span style="color: #BA2121; font-style: italic">        File to parse.</span>
+
+<span style="color: #BA2121; font-style: italic">    Returns</span>
+<span style="color: #BA2121; font-style: italic">    -------</span>
+<span style="color: #BA2121; font-style: italic">    dict</span>
+<span style="color: #BA2121; font-style: italic">        Dictionary containing the file header comments and any ``function``</span>
+<span style="color: #BA2121; font-style: italic">        declarations found. Each function entry provides the name of the</span>
+<span style="color: #BA2121; font-style: italic">        function and a list of arguments.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+    text <span style="color: #666666">=</span> Path(path)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>splitlines()
+
+    <span style="color: #3D7B7B; font-style: italic"># Extract leading comment lines as the file header</span>
+    header_lines: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    body_start <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    <span style="color: #008000; font-weight: bold">for</span> i, line <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(lines):
+        stripped <span style="color: #666666">=</span> line<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> stripped<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;%&quot;</span>):
+            header_lines<span style="color: #666666">.</span>append(stripped<span style="color: #666666">.</span>lstrip(<span style="color: #BA2121">&quot;% &quot;</span>))
+        <span style="color: #008000; font-weight: bold">elif</span> stripped <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
+            <span style="color: #3D7B7B; font-style: italic"># allow blank lines before the header ends</span>
+            header_lines<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> header_lines <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>
+        <span style="color: #008000; font-weight: bold">else</span>:
+            body_start <span style="color: #666666">=</span> i
+            <span style="color: #008000; font-weight: bold">break</span>
+    <span style="color: #008000; font-weight: bold">else</span>:
+        body_start <span style="color: #666666">=</span> <span style="color: #008000">len</span>(lines)
+
+    header <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(header_lines)<span style="color: #666666">.</span>strip()
+
+    func_re <span style="color: #666666">=</span> re<span style="color: #666666">.</span>compile(
+        <span style="color: #BA2121">r&quot;^\s*function\s+(?:\[[^\]]*\]|[^=]+)?=?\s*(\w+)\s*(?:\(([^)]*)\))?&quot;</span>,
+        re<span style="color: #666666">.</span>IGNORECASE,
+    )
+    functions: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
+
+    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #AA22FF; font-weight: bold">in</span> lines[body_start:]:
+        m <span style="color: #666666">=</span> func_re<span style="color: #666666">.</span>match(line)
+        <span style="color: #008000; font-weight: bold">if</span> m:
+            name <span style="color: #666666">=</span> m<span style="color: #666666">.</span>group(<span style="color: #666666">1</span>)
+            args <span style="color: #666666">=</span> m<span style="color: #666666">.</span>group(<span style="color: #666666">2</span>) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;&quot;</span>
+            arg_list <span style="color: #666666">=</span> [a<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #AA22FF; font-weight: bold">in</span> args<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>strip()] <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> args <span style="color: #008000; font-weight: bold">else</span> [a<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #AA22FF; font-weight: bold">in</span> args<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;,&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>strip()]
+            functions<span style="color: #666666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;args&quot;</span>: arg_list})
+
+    <span style="color: #008000; font-weight: bold">return</span> {<span style="color: #BA2121">&quot;header&quot;</span>: header, <span style="color: #BA2121">&quot;functions&quot;</span>: functions}
+</code></pre>
+    </div>
+</body>
+</html>

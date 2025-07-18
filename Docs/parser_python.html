@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>parser_python</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>parser_python</h1>
+        <p>This module provides a parser for Python files using the `ast` module to extract structured information according to the Software Requirements Specification (SRS). It includes functions to format function arguments and signatures, parse Python source files, and return structured data containing module docstring, classes, and functions. Each class and function is represented with its name, signature, docstring, and source code segment.</p>
+<h2>Functions</h2>
+<h3 id="_format_arg">_format_arg(arg: ast.arg) -&gt; str</h3>
+<p>Formats a function argument by appending its type annotation, if present.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arg</span>(arg: ast<span style="color: #666666">.</span>arg) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``arg`` formatted with its annotation if present.&quot;&quot;&quot;</span>
+    text <span style="color: #666666">=</span> arg<span style="color: #666666">.</span>arg
+    <span style="color: #008000; font-weight: bold">if</span> arg<span style="color: #666666">.</span>annotation <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+        text <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot;: </span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(arg<span style="color: #666666">.</span>annotation)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> text
+</code></pre>
+<h3 id="_format_arguments">_format_arguments(args: ast.arguments) -&gt; str</h3>
+<p>Formats the arguments of a function or method into a string representation. Handles positional-only, regular, variable positional, and variable keyword arguments, including their default values if provided.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arguments</span>(args: ast<span style="color: #666666">.</span>arguments) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string representation of ``args``.&quot;&quot;&quot;</span>
+
+    parts: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+
+    pos_only <span style="color: #666666">=</span> args<span style="color: #666666">.</span>posonlyargs
+    defaults <span style="color: #666666">=</span> [<span style="color: #008000; font-weight: bold">None</span>] <span style="color: #666666">*</span> (<span style="color: #008000">len</span>(pos_only <span style="color: #666666">+</span> args<span style="color: #666666">.</span>args) <span style="color: #666666">-</span> <span style="color: #008000">len</span>(args<span style="color: #666666">.</span>defaults)) <span style="color: #666666">+</span> <span style="color: #008000">list</span>(args<span style="color: #666666">.</span>defaults)
+    default_iter <span style="color: #666666">=</span> <span style="color: #008000">iter</span>(defaults)
+
+    <span style="color: #3D7B7B; font-style: italic"># positional only</span>
+    <span style="color: #008000; font-weight: bold">for</span> arg <span style="color: #AA22FF; font-weight: bold">in</span> pos_only:
+        text <span style="color: #666666">=</span> _format_arg(arg)
+        default <span style="color: #666666">=</span> <span style="color: #008000">next</span>(default_iter)
+        <span style="color: #008000; font-weight: bold">if</span> default <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+            text <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot;=</span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(default)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+        parts<span style="color: #666666">.</span>append(text)
+    <span style="color: #008000; font-weight: bold">if</span> pos_only:
+        parts[<span style="color: #666666">-1</span>] <span style="color: #666666">+=</span> <span style="color: #BA2121">&quot;/&quot;</span>
+
+    <span style="color: #3D7B7B; font-style: italic"># regular arguments</span>
+    <span style="color: #008000; font-weight: bold">for</span> arg <span style="color: #AA22FF; font-weight: bold">in</span> args<span style="color: #666666">.</span>args:
+        text <span style="color: #666666">=</span> _format_arg(arg)
+        default <span style="color: #666666">=</span> <span style="color: #008000">next</span>(default_iter)
+        <span style="color: #008000; font-weight: bold">if</span> default <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+            text <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot;=</span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(default)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+        parts<span style="color: #666666">.</span>append(text)
+
+    <span style="color: #3D7B7B; font-style: italic"># var positional</span>
+    <span style="color: #008000; font-weight: bold">if</span> args<span style="color: #666666">.</span>vararg:
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;*&quot;</span> <span style="color: #666666">+</span> _format_arg(args<span style="color: #666666">.</span>vararg))
+    <span style="color: #008000; font-weight: bold">elif</span> args<span style="color: #666666">.</span>kwonlyargs:
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;*&quot;</span>)
+
+    <span style="color: #3D7B7B; font-style: italic"># keyword only</span>
+    <span style="color: #008000; font-weight: bold">for</span> arg, default <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">zip</span>(args<span style="color: #666666">.</span>kwonlyargs, args<span style="color: #666666">.</span>kw_defaults):
+        text <span style="color: #666666">=</span> _format_arg(arg)
+        <span style="color: #008000; font-weight: bold">if</span> default <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+            text <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot;=</span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(default)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+        parts<span style="color: #666666">.</span>append(text)
+
+    <span style="color: #3D7B7B; font-style: italic"># var keyword</span>
+    <span style="color: #008000; font-weight: bold">if</span> args<span style="color: #666666">.</span>kwarg:
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;**&quot;</span> <span style="color: #666666">+</span> _format_arg(args<span style="color: #666666">.</span>kwarg))
+
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;, &quot;</span><span style="color: #666666">.</span>join(parts)
+</code></pre>
+<h3 id="_format_signature">_format_signature(func: ast.FunctionDef | ast.AsyncFunctionDef) -&gt; str</h3>
+<p>This function `_format_signature` takes an `ast.FunctionDef` or `ast.AsyncFunctionDef` object as input and returns a string representing the signature of the function. It formats the function name, parameters, and return type (if present) into a readable string.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_signature</span>(func: ast<span style="color: #666666">.</span>FunctionDef <span style="color: #666666">|</span> ast<span style="color: #666666">.</span>AsyncFunctionDef) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string signature for ``func``.&quot;&quot;&quot;</span>
+
+    params <span style="color: #666666">=</span> _format_arguments(func<span style="color: #666666">.</span>args)
+    result <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>func<span style="color: #666666">.</span>name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">(</span><span style="color: #A45A77; font-weight: bold">{</span>params<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">)&quot;</span>
+    <span style="color: #008000; font-weight: bold">if</span> func<span style="color: #666666">.</span>returns <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+        result <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot; -&gt; </span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(func<span style="color: #666666">.</span>returns)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+    <span style="color: #008000; font-weight: bold">return</span> result
+</code></pre>
+<h3 id="parse_python_file">parse_python_file(path: str) -&gt; Dict[str, Any]</h3>
+<p>The `parse_python_file` function reads a Python source file and extracts structured information such as the module docstring, classes, and functions. It uses the `ast` module to parse the source code and extract relevant details about each class and function, including their names, signatures, docstrings, and source code segments. The parsed information is returned as a dictionary.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_python_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a Python source file and return structured information.</span>
+
+<span style="color: #BA2121; font-style: italic">    Parameters</span>
+<span style="color: #BA2121; font-style: italic">    ----------</span>
+<span style="color: #BA2121; font-style: italic">    path:</span>
+<span style="color: #BA2121; font-style: italic">        File to parse.</span>
+
+<span style="color: #BA2121; font-style: italic">    Returns</span>
+<span style="color: #BA2121; font-style: italic">    -------</span>
+<span style="color: #BA2121; font-style: italic">    dict</span>
+<span style="color: #BA2121; font-style: italic">        Dictionary containing module docstring, classes, and functions.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    source <span style="color: #666666">=</span> Path(path)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    module <span style="color: #666666">=</span> ast<span style="color: #666666">.</span>parse(source)
+
+    parsed: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;module_docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(module),
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [],
+    }
+
+    <span style="color: #008000; font-weight: bold">for</span> node <span style="color: #AA22FF; font-weight: bold">in</span> module<span style="color: #666666">.</span>body:
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(node, ast<span style="color: #666666">.</span>ClassDef):
+            class_info <span style="color: #666666">=</span> {
+                <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
+                <span style="color: #BA2121">&quot;methods&quot;</span>: [],
+            }
+            <span style="color: #008000; font-weight: bold">for</span> item <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>body:
+                <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(item, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
+                    class_info[<span style="color: #BA2121">&quot;methods&quot;</span>]<span style="color: #666666">.</span>append(
+                        {
+                            <span style="color: #BA2121">&quot;name&quot;</span>: item<span style="color: #666666">.</span>name,
+                            <span style="color: #BA2121">&quot;signature&quot;</span>: _format_signature(item),
+                            <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(item),
+                            <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, item),
+                        }
+                    )
+            parsed[<span style="color: #BA2121">&quot;classes&quot;</span>]<span style="color: #666666">.</span>append(class_info)
+        <span style="color: #008000; font-weight: bold">elif</span> <span style="color: #008000">isinstance</span>(node, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
+            parsed[<span style="color: #BA2121">&quot;functions&quot;</span>]<span style="color: #666666">.</span>append(
+                {
+                    <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
+                    <span style="color: #BA2121">&quot;signature&quot;</span>: _format_signature(node),
+                    <span style="color: #BA2121">&quot;returns&quot;</span>: ast<span style="color: #666666">.</span>unparse(node<span style="color: #666666">.</span>returns) <span style="color: #008000; font-weight: bold">if</span> node<span style="color: #666666">.</span>returns <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>,
+                    <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
+                    <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, node),
+                }
+            )
+
+    <span style="color: #008000; font-weight: bold">return</span> parsed
+</code></pre>
+    </div>
+</body>
+</html>

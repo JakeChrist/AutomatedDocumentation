@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>test_integration</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>test_integration</h1>
+        <p>The module defines two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML files from Python and MATLAB code in a project directory. It uses a mock LLMClient to simulate responses and verifies that HTML files are created with expected content.
+
+The second function, `test_static_copied_from_any_cwd`, tests the copying of static files (like CSS) into the output directory regardless of the current working directory. It also uses a mock LLMClient and asserts that the static file is correctly copied to the output directory.</p>
+<h2>Functions</h2>
+<h3 id="test_docgenerator_generates_html">test_docgenerator_generates_html(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_docgenerator_generates_html` tests the `main` function of a documentation generator tool. It creates a temporary project directory with Python and MATLAB files, sets up a mock LLM client to return a predefined summary, and runs the main function with specified project and output directories. The test asserts that the main function returns 0 (indicating success), and checks that HTML files for the project, including summaries, are created in the output directory.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_docgenerator_generates_html</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;project&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    <span style="color: #3D7B7B; font-style: italic"># simple python file</span>
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&#39;def hi():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    &quot;&quot;&quot;Say hi.&quot;&quot;&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    return &quot;hi&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span>)
+    <span style="color: #3D7B7B; font-style: italic"># simple matlab file</span>
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;util.m&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&#39;</span><span style="color: #A45A77; font-weight: bold">% u</span><span style="color: #BA2121">til function</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">function y = util(x)</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121"> y = x;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">end</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;out&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    <span style="color: #3D7B7B; font-style: italic"># verify html files created</span>
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;util.html&quot;</span>)<span style="color: #666666">.</span>exists()
+
+    html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+</code></pre>
+<h3 id="test_static_copied_from_any_cwd">test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -&gt; None</h3>
+<p>The function `test_static_copied_from_any_cwd` tests the generation of static HTML documentation for a Python project using the DocGen-LM tool. It creates a temporary project directory with a single Python module, sets up a mock LLM client to return a predefined summary, and runs the main function with the specified project and output directories. The test asserts that the `style.css` file is generated in the output directory&#x27;s static folder.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_static_copied_from_any_cwd</span>(tmp_path: Path, monkeypatch) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        monkeypatch<span style="color: #666666">.</span>chdir(tmp_path)
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;static&quot;</span> <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;style.css&quot;</span>)<span style="color: #666666">.</span>exists()
+</code></pre>
+    </div>
+</body>
+</html>

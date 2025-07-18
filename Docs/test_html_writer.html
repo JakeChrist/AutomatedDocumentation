@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>test_html_writer</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>test_html_writer</h1>
+        <p>The module defines two functions, `test_write_index` and `test_write_module_page`, which are used to test the functionality of writing HTML index and module pages. The tests use a temporary path to create files and verify their contents against expected output.</p>
+<h2>Functions</h2>
+<h3 id="test_write_index">test_write_index(tmp_path: Path) -&gt; None</h3>
+<p>The `test_write_index` function tests the `write_index` function, which generates an HTML index file for a project documentation. It creates a temporary directory, defines links and summaries for modules, calls `write_index`, reads the generated HTML file, and asserts that various elements are present in the HTML, including the project title, module links, summaries, and headers. The test ensures that the HTML structure is correct and that the summaries are rendered as expected.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_index</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>, <span style="color: #BA2121">&quot;module1.html&quot;</span>), (<span style="color: #BA2121">&quot;module&amp;2&quot;</span>, <span style="color: #BA2121">&quot;module2.html&quot;</span>)]
+    summaries <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>: <span style="color: #BA2121">&quot;First module.&quot;</span>, <span style="color: #BA2121">&quot;module&amp;2&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}
+    write_index(<span style="color: #008000">str</span>(tmp_path), <span style="color: #BA2121">&quot;Project &lt;summary&gt; &amp; data&quot;</span>, links, summaries)
+    html <span style="color: #666666">=</span> (tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Project &amp;lt;summary&amp;gt; &amp;amp; data&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;module1.html&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;module2.html&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;module&amp;lt;1&amp;gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;module&amp;amp;2&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h2&gt;Modules&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;ul&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;small&gt;First module.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #3D7B7B; font-style: italic"># only one summary should be rendered</span>
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;small&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h1&gt;Project Documentation&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+</code></pre>
+<h3 id="test_write_module_page">test_write_module_page(tmp_path: Path) -&gt; None</h3>
+<p>This function `test_write_module_page` tests the generation of an HTML module page. It takes a temporary path, module data, and links as input. The function writes the module page to the specified path using the provided data and links. It then reads the generated HTML file and asserts that it contains various elements such as project overview links, external module links, class summaries, method signatures with docstrings, function summaries, and code snippets.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_module_page</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;OtherModule&quot;</span>, <span style="color: #BA2121">&quot;other.html&quot;</span>)]
+    module_data <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;module1&quot;</span>,
+        <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;Module &lt;summary&gt;&quot;</span>,
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;Bar&quot;</span>,
+                <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;Class &lt;summary&gt;&quot;</span>,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;Bar docs &amp; stuff&quot;</span>,
+                <span style="color: #BA2121">&quot;methods&quot;</span>: [
+                    {
+                        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;baz&quot;</span>,
+                        <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def baz(self): pass&quot;</span>,
+                        <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;Baz &lt;docs&gt;&quot;</span>,
+                        <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;def baz(self):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass&quot;</span>,
+                    }
+                ],
+            }
+        ],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;foo&quot;</span>,
+                <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def foo(): pass&quot;</span>,
+                <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;Func summary &amp; stuff&quot;</span>,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;Foo docs&quot;</span>,
+                <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;def foo():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass&quot;</span>,
+            }
+        ],
+    }
+    write_module_page(<span style="color: #008000">str</span>(tmp_path), module_data, links)
+    html <span style="color: #666666">=</span> (tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;module1.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&#39;&lt;a href=&quot;index.html&quot;&gt;&lt;strong&gt;🏠 Project Overview&lt;/strong&gt;&lt;/a&gt;&#39;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&#39;other.html&#39;</span>) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Module &amp;lt;summary&amp;gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h2 id=</span><span style="color: #AA5D1F; font-weight: bold">\&quot;</span><span style="color: #BA2121">Bar</span><span style="color: #AA5D1F; font-weight: bold">\&quot;</span><span style="color: #BA2121">&gt;Class: Bar&lt;/h2&gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Bar docs &amp;amp; stuff&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Method: def baz(self): pass&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Baz &amp;lt;docs&amp;gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Func summary &amp;amp; stuff&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h2&gt;Functions&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;def foo(): pass&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+</code></pre>
+    </div>
+</body>
+</html>

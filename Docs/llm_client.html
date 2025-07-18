@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>llm_client</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Navigation</h2>
+        <ul>
+        <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
+<li><a href="cache.html">cache</a></li>
+<li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="html_writer.html">html_writer</a></li>
+<li><a href="llm_client.html">llm_client</a></li>
+<li><a href="parser_matlab.html">parser_matlab</a></li>
+<li><a href="parser_python.html">parser_python</a></li>
+<li><a href="reviewer.html">reviewer</a></li>
+<li><a href="scanner.html">scanner</a></li>
+<li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_html_writer.html">test_html_writer</a></li>
+<li><a href="test_integration.html">test_integration</a></li>
+<li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
+<li><a href="test_parser_python.html">test_parser_python</a></li>
+<li><a href="test_reviewer.html">test_reviewer</a></li>
+<li><a href="test_scanner.html">test_scanner</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <h1>llm_client</h1>
+        <p>This module defines an interface to a local language model backend called LMStudio. It includes:
+
+- Constants for system prompts and common rules.
+- A function `sanitize_summary` to clean up generated summaries by removing unwanted phrases.
+- A class `LLMClient` that:
+- Initializes with a base URL and model name.
+- Includes a method `ping` to check if the LMStudio API is reachable.
+- Implements a method `summarize` to generate summaries for given text using specified prompt types, handling retries on errors.</p>
+<h2 id="LLMClient">Class: LLMClient</h2>
+<p>A thin wrapper around the LMStudio HTTP API.</p>
+<h3 id="__init__">Method: __init__(self, base_url: str=&#x27;http://localhost:1234&#x27;, model: str=&#x27;local&#x27;) -&gt; None</h3>
+<p>The `__init__` method initializes a new instance of the `LLMClient` class. It sets up the client with the base URL and model name for interacting with an LLM server. The base URL is configured to point to a local LLM server running on &quot;http://localhost:1234&quot; by default, but it can be customized. The endpoint for sending requests to generate completions is derived from the base URL. Additionally, the model parameter specifies which language model to use; it defaults to &quot;local&quot; if not provided.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, base_url: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;http://localhost:1234&quot;</span>, model: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;local&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>base_url <span style="color: #666666">=</span> base_url<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;/&quot;</span>)
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">/v1/chat/completions&quot;</span>
+        <span style="color: #008000">self</span><span style="color: #666666">.</span>model <span style="color: #666666">=</span> model
+</code></pre>
+<h3 id="ping">Method: ping(self, timeout: float=2.0) -&gt; bool</h3>
+<p>The `ping` method of the `LLMClient` class checks if the Large Language Model (LLM) server is reachable. It sends a GET request to the server&#x27;s base URL with an optional timeout parameter. If the server responds successfully, it returns `True`. If there is any issue in contacting the server, such as network problems or the server being down, it raises a `ConnectionError` with a message indicating that the LLM server cannot be reached.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ping</span>(<span style="color: #008000">self</span>, timeout: <span style="color: #008000">float</span> <span style="color: #666666">=</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
+<span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``True`` if the API is reachable.</span>
+
+<span style="color: #BA2121; font-style: italic">        Raises</span>
+<span style="color: #BA2121; font-style: italic">        ------</span>
+<span style="color: #BA2121; font-style: italic">        ConnectionError</span>
+<span style="color: #BA2121; font-style: italic">            If the server cannot be contacted.</span>
+<span style="color: #BA2121; font-style: italic">        &quot;&quot;&quot;</span>
+
+        <span style="color: #008000; font-weight: bold">try</span>:
+            response <span style="color: #666666">=</span> requests<span style="color: #666666">.</span>get(<span style="color: #008000">self</span><span style="color: #666666">.</span>base_url, timeout<span style="color: #666666">=</span>timeout)
+            response<span style="color: #666666">.</span>raise_for_status()
+            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">True</span>
+        <span style="color: #008000; font-weight: bold">except</span> RequestException <span style="color: #008000; font-weight: bold">as</span> exc:
+            <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">ConnectionError</span>(<span style="color: #BA2121">f&quot;Unable to reach LMStudio at </span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>) <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">exc</span>
+</code></pre>
+<h3 id="summarize">Method: summarize(self, text: str, prompt_type: str) -&gt; str</h3>
+<p>The `summarize` method in the `LLMClient` class generates a summary for a given piece of code (`text`) using a specified prompt type (`prompt_type`). It uses a template from `PROMPT_TEMPLATES` to format the input text into a prompt. The method constructs a payload with the model name, temperature, and formatted prompt, then sends this payload to an LLM server at `self.endpoint`. If the request fails due to HTTP errors or other exceptions, it retries up to three times before raising a `RuntimeError` with the accumulated error message.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a summary for ``text`` using ``prompt_type`` template.&quot;&quot;&quot;</span>
+
+        template <span style="color: #666666">=</span> PROMPT_TEMPLATES<span style="color: #666666">.</span>get(prompt_type, PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>])
+        prompt <span style="color: #666666">=</span> template<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span>text)
+
+        payload: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {
+            <span style="color: #BA2121">&quot;model&quot;</span>: <span style="color: #008000">self</span><span style="color: #666666">.</span>model,
+            <span style="color: #BA2121">&quot;temperature&quot;</span>: <span style="color: #666666">0.3</span>,
+            <span style="color: #BA2121">&quot;messages&quot;</span>: [
+                {<span style="color: #BA2121">&quot;role&quot;</span>: <span style="color: #BA2121">&quot;system&quot;</span>, <span style="color: #BA2121">&quot;content&quot;</span>: SYSTEM_PROMPT},
+                {<span style="color: #BA2121">&quot;role&quot;</span>: <span style="color: #BA2121">&quot;user&quot;</span>, <span style="color: #BA2121">&quot;content&quot;</span>: prompt},
+            ],
+        }
+
+        error_message <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;&quot;</span>
+        <span style="color: #008000; font-weight: bold">for</span> _ <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">3</span>):
+            <span style="color: #008000; font-weight: bold">try</span>:
+                response <span style="color: #666666">=</span> requests<span style="color: #666666">.</span>post(<span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint, json<span style="color: #666666">=</span>payload, timeout<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>)
+                response<span style="color: #666666">.</span>raise_for_status()
+                data <span style="color: #666666">=</span> response<span style="color: #666666">.</span>json()
+                content <span style="color: #666666">=</span> data[<span style="color: #BA2121">&quot;choices&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;message&quot;</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+                <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(content)
+            <span style="color: #008000; font-weight: bold">except</span> HTTPError <span style="color: #008000; font-weight: bold">as</span> exc:
+                resp <span style="color: #666666">=</span> exc<span style="color: #666666">.</span>response <span style="color: #AA22FF; font-weight: bold">or</span> response
+                <span style="color: #008000; font-weight: bold">try</span>:
+                    err_json <span style="color: #666666">=</span> resp<span style="color: #666666">.</span>json()
+                    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(err_json, <span style="color: #008000">dict</span>):
+                        error_message <span style="color: #666666">=</span> err_json<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;error&quot;</span>, resp<span style="color: #666666">.</span>text)
+                    <span style="color: #008000; font-weight: bold">else</span>:
+                        error_message <span style="color: #666666">=</span> resp<span style="color: #666666">.</span>text
+                <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">ValueError</span>:
+                    error_message <span style="color: #666666">=</span> resp<span style="color: #666666">.</span>text
+                time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1</span>)
+            <span style="color: #008000; font-weight: bold">except</span> RequestException <span style="color: #008000; font-weight: bold">as</span> exc:
+                error_message <span style="color: #666666">=</span> <span style="color: #008000">str</span>(exc)
+                time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1</span>)
+
+        <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">RuntimeError</span>(<span style="color: #BA2121">f&quot;LLM request failed: </span><span style="color: #A45A77; font-weight: bold">{</span>error_message<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>)
+</code></pre>
+<h2>Functions</h2>
+<h3 id="sanitize_summary">sanitize_summary(text: str) -&gt; str</h3>
+<p>The `sanitize_summary` function removes meta-commentary from a given text by filtering out lines that start with specific phrases or contain certain keywords related to summaries, outputs, and responses. It processes the input text by splitting it into lines, checking each line against predefined bad start phrases and keywords, and appending only those lines that do not match these criteria to a filtered list. Finally, it joins the filtered lines back into a single string and returns the sanitized result.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sanitize_summary</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with meta commentary removed.&quot;&quot;&quot;</span>
+
+    BAD_START_PHRASES <span style="color: #666666">=</span> [
+        <span style="color: #BA2121">&quot;you can&quot;</span>,
+        <span style="color: #BA2121">&quot;note that&quot;</span>,
+        <span style="color: #BA2121">&quot;the code above&quot;</span>,
+        <span style="color: #BA2121">&quot;this script&quot;</span>,
+        <span style="color: #BA2121">&quot;here&#39;s how&quot;</span>,
+        <span style="color: #BA2121">&quot;to run this&quot;</span>,
+        <span style="color: #BA2121">&quot;let&#39;s&quot;</span>,
+        <span style="color: #BA2121">&quot;for example&quot;</span>,
+        <span style="color: #BA2121">&quot;you might&quot;</span>,
+        <span style="color: #BA2121">&quot;we can&quot;</span>,
+        <span style="color: #BA2121">&quot;should you&quot;</span>,
+        <span style="color: #BA2121">&quot;if you want&quot;</span>,
+        <span style="color: #BA2121">&quot;the summary&quot;</span>,
+        <span style="color: #BA2121">&quot;this explanation&quot;</span>,
+        <span style="color: #BA2121">&quot;this output&quot;</span>,
+        <span style="color: #BA2121">&quot;this description&quot;</span>,
+        <span style="color: #BA2121">&quot;this response&quot;</span>,
+    ]
+
+    lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>strip()<span style="color: #666666">.</span>splitlines()
+    filtered <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #AA22FF; font-weight: bold">in</span> lines:
+        line_lower <span style="color: #666666">=</span> line<span style="color: #666666">.</span>strip()<span style="color: #666666">.</span>lower()
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">any</span>(line_lower<span style="color: #666666">.</span>startswith(p) <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> BAD_START_PHRASES):
+            <span style="color: #008000; font-weight: bold">continue</span>
+        <span style="color: #008000; font-weight: bold">if</span> (
+            <span style="color: #BA2121">&quot;this summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line_lower
+            <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;this output&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line_lower
+            <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;this response&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line_lower
+            <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;does not include&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line_lower
+            <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;avoids addressing&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line_lower
+        ):
+            <span style="color: #008000; font-weight: bold">continue</span>
+        <span style="color: #008000; font-weight: bold">if</span> re<span style="color: #666666">.</span>match(<span style="color: #BA2121">r&quot;^this (script|code|file) (does|is)\b&quot;</span>, line_lower):
+            <span style="color: #008000; font-weight: bold">continue</span>
+        filtered<span style="color: #666666">.</span>append(line<span style="color: #666666">.</span>strip())
+
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(filtered)<span style="color: #666666">.</span>strip()
+</code></pre>
+    </div>
+</body>
+</html>
