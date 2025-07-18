@@ -158,21 +158,46 @@ def main(argv: list[str] | None = None) -> int:
 
     page_links = [(m["name"], f"{m['name']}.html") for m in modules]
 
-    structured_lines = ["This project contains the following files:"]
+    project_lines = ["Project structure:"]
     for mod in modules:
-        classes = ", ".join(c.get("name", "") for c in mod.get("classes", [])) or "(none)"
-        functions = ", ".join(f.get("name", "") for f in mod.get("functions", [])) or "(none)"
-        doc = mod.get("module_docstring") or mod.get("header") or ""
-        doc_line = doc.splitlines()[0] if doc else ""
-        structured_lines.append(f"- {mod['filename']}")
-        structured_lines.append(f"  - Classes: {classes}")
-        structured_lines.append(f"  - Functions: {functions}")
-        if doc_line:
-            structured_lines.append(f"  - Docstring: \"{doc_line}\"")
+        project_lines.append(f"- {mod['filename']}")
+        classes = mod.get("classes", []) or []
+        functions = mod.get("functions", []) or []
 
-    project_text = "\n".join(structured_lines)
-    project_key = ResponseCache.make_key("PROJECT", project_text)
-    raw_summary = _summarize(client, cache, project_key, project_text, "project")
+        if not classes and not functions:
+            print(
+                f"Warning: {mod['filename']} has no classes or functions",
+                file=sys.stderr,
+            )
+            project_lines.append("  - (no classes or functions defined)")
+            continue
+
+        for cls in classes:
+            project_lines.append(f"  - Class: {cls.get('name', '')}")
+            method_names = [m.get("name", "") for m in cls.get("methods", [])]
+            methods_text = ", ".join(method_names) if method_names else "(none)"
+            project_lines.append(f"    - Methods: {methods_text}")
+
+        if functions:
+            func_names = ", ".join(f.get("name", "") for f in functions)
+            project_lines.append(f"  - Functions: {func_names}")
+
+    project_outline = "\n".join(project_lines)
+
+    PROJECT_PROMPT = f"""
+You are a documentation generator.
+
+Based only on the project structure listed below, generate a short summary (1–2 sentences) of what the code implements.
+
+Do not speculate. Do not guess what the code is for. Do not refer to this summary or what is or isn’t included.
+If structure is minimal, describe it factually.
+
+Structure:
+{project_outline}
+"""
+
+    project_key = ResponseCache.make_key("PROJECT", project_outline)
+    raw_summary = _summarize(client, cache, project_key, PROJECT_PROMPT, "docstring")
     project_summary = sanitize_summary(raw_summary)
 
     write_index(str(output_dir), project_summary, page_links)
