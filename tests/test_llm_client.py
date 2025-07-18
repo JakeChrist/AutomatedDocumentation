@@ -85,3 +85,16 @@ def test_prompt_varies_by_type() -> None:
     assert func_prompt == PROMPT_TEMPLATES["function"].format(text="foo")
     assert class_prompt != func_prompt
 
+
+def test_readme_prompt_template_used() -> None:
+    client = LLMClient("http://fake")
+    mock_response = Mock()
+    mock_response.raise_for_status = Mock()
+    mock_response.json.return_value = {"choices": [{"message": {"content": "x"}}]}
+
+    with patch("llm_client.requests.post", return_value=mock_response) as post:
+        client.summarize("foo", "readme")
+        readme_prompt = post.call_args[1]["json"]["messages"][1]["content"]
+
+    assert readme_prompt == PROMPT_TEMPLATES["readme"].format(text="foo")
+
