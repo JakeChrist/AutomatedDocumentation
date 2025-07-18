@@ -25,7 +25,7 @@ def test_write_index(tmp_path: Path) -> None:
 
 
 def test_write_module_page(tmp_path: Path) -> None:
-    links = [("index", "index.html")]
+    links = [("OtherModule", "other.html")]
     module_data = {
         "name": "module1",
         "summary": "Module <summary>",
@@ -56,6 +56,8 @@ def test_write_module_page(tmp_path: Path) -> None:
     }
     write_module_page(str(tmp_path), module_data, links)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
+    assert '<a href="index.html"><strong>🏠 Project Overview</strong></a>' in html
+    assert html.count('other.html') == 1
     assert "Module &lt;summary&gt;" in html
     assert "<h2 id=\"Bar\">Class: Bar</h2>" in html
     assert "Bar docs &amp; stuff" in html
