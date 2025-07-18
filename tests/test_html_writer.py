@@ -7,12 +7,14 @@ from html_writer import write_index, write_module_page
 
 
 def test_write_index(tmp_path: Path) -> None:
-    links = [("module1", "module1.html"), ("module2", "module2.html")]
-    write_index(str(tmp_path), "Project summary", links)
+    links = [("module<1>", "module1.html"), ("module&2", "module2.html")]
+    write_index(str(tmp_path), "Project <summary> & data", links)
     html = (tmp_path / "index.html").read_text(encoding="utf-8")
-    assert "Project summary" in html
+    assert "Project &lt;summary&gt; &amp; data" in html
     assert html.count("module1.html") == 1
     assert html.count("module2.html") == 1
+    assert "module&lt;1&gt;" in html
+    assert "module&amp;2" in html
     assert "<h1>Project Documentation" in html
 
 
@@ -20,17 +22,17 @@ def test_write_module_page(tmp_path: Path) -> None:
     links = [("index", "index.html")]
     module_data = {
         "name": "module1",
-        "summary": "Module summary",
+        "summary": "Module <summary>",
         "classes": [
             {
                 "name": "Bar",
-                "summary": "Class summary",
-                "docstring": "Bar docs",
+                "summary": "Class <summary>",
+                "docstring": "Bar docs & stuff",
                 "methods": [
                     {
                         "name": "baz",
                         "signature": "def baz(self): pass",
-                        "docstring": "Baz docs",
+                        "docstring": "Baz <docs>",
                         "source": "def baz(self):\n    pass",
                     }
                 ],
@@ -40,7 +42,7 @@ def test_write_module_page(tmp_path: Path) -> None:
             {
                 "name": "foo",
                 "signature": "def foo(): pass",
-                "summary": "Func summary",
+                "summary": "Func summary & stuff",
                 "docstring": "Foo docs",
                 "source": "def foo():\n    pass",
             }
@@ -48,12 +50,12 @@ def test_write_module_page(tmp_path: Path) -> None:
     }
     write_module_page(str(tmp_path), module_data, links)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
-    assert "Module summary" in html
+    assert "Module &lt;summary&gt;" in html
     assert "<h2 id=\"Bar\">Class: Bar</h2>" in html
-    assert "Bar docs" in html
+    assert "Bar docs &amp; stuff" in html
     assert "Method: def baz(self): pass" in html
-    assert "Baz docs" in html
-    assert "Func summary" in html
+    assert "Baz &lt;docs&gt;" in html
+    assert "Func summary &amp; stuff" in html
     assert "<h2>Functions" in html
     assert "def foo(): pass" in html
     assert html.count("<pre><code>") == 2
