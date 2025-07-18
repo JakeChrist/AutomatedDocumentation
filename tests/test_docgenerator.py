@@ -69,3 +69,25 @@ def test_skips_non_utf8_file(tmp_path: Path) -> None:
 
     assert (output_dir / "index.html").exists()
     assert not (output_dir / "bad.html").exists()
+
+
+def test_handles_class_without_docstring(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("class Foo:\n    pass\n")
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.side_effect = [
+            "module summary",
+            "class summary",
+            "project summary",
+        ]
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    html = (output_dir / "mod.html").read_text(encoding="utf-8")
+    assert "class summary" in html
