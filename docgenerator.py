@@ -20,16 +20,10 @@ from pathlib import Path
 
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
-from llm_client import LLMClient
+from llm_client import LLMClient, sanitize_summary
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from scanner import scan_directory
-
-
-def sanitize_llm_output(text: str) -> str:
-    """Return ``text`` stripped of leading/trailing whitespace."""
-    return text.strip()
-
 
 def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str) -> str:
     cached = cache.get(key)
@@ -141,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
     project_text = "\n".join(structured_lines)
     project_key = ResponseCache.make_key("PROJECT", project_text)
     raw_summary = _summarize(client, cache, project_key, project_text, "project")
-    project_summary = sanitize_llm_output(raw_summary)
+    project_summary = sanitize_summary(raw_summary)
 
     write_index(str(output_dir), project_summary, page_links)
     for module in modules:
