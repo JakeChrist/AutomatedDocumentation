@@ -26,6 +26,22 @@ from parser_matlab import parse_matlab_file
 from scanner import scan_directory
 
 
+def sanitize_llm_output(text: str) -> str:
+    """Return ``text`` stripped of leading/trailing whitespace."""
+    return text.strip()
+
+
+PROJECT_PROMPT = """
+You are a documentation generator.
+
+Write a short project summary using only the information provided below.
+Do not make assumptions. Do not explain how to run the code.
+Do not mention imports or visualization libraries unless explicitly listed.
+Do not say "the script starts by" or "you can".
+Avoid assistant-like phrasing. Just summarize what the code does.
+"""
+
+
 def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt: str) -> str:
     cached = cache.get(key)
     if cached is not None:
@@ -95,7 +111,12 @@ def main(argv: list[str] | None = None) -> int:
         key = ResponseCache.make_key(path, text)
         summary = _summarize(client, cache, key, text, "module-summary")
 
-        module = {"name": Path(path).stem, "language": language, "summary": summary}
+        module = {
+            "name": Path(path).stem,
+            "language": language,
+            "summary": summary,
+            "filename": Path(path).name,
+        }
         module.update(parsed)
 
         # generate summaries for individual classes
@@ -116,9 +137,22 @@ def main(argv: list[str] | None = None) -> int:
 
     page_links = [(m["name"], f"{m['name']}.html") for m in modules]
 
-    project_text = "\n".join(Path(p).name for p in files)
+    structured_lines = ["This project contains the following files:"]
+    for mod in modules:
+        classes = ", ".join(c.get("name", "") for c in mod.get("classes", [])) or "(none)"
+        functions = ", ".join(f.get("name", "") for f in mod.get("functions", [])) or "(none)"
+        doc = mod.get("module_docstring") or mod.get("header") or ""
+        doc_line = doc.splitlines()[0] if doc else ""
+        structured_lines.append(f"- {mod['filename']}")
+        structured_lines.append(f"  - Classes: {classes}")
+        structured_lines.append(f"  - Functions: {functions}")
+        if doc_line:
+            structured_lines.append(f"  - Docstring: \"{doc_line}\"")
+
+    project_text = "\n".join(structured_lines)
     project_key = ResponseCache.make_key("PROJECT", project_text)
-    project_summary = _summarize(client, cache, project_key, project_text, "project-summary")
+    raw_summary = _summarize(client, cache, project_key, project_text, PROJECT_PROMPT)
+    project_summary = sanitize_llm_output(raw_summary)
 
     write_index(str(output_dir), project_summary, page_links)
     for module in modules:
