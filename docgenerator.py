@@ -49,21 +49,73 @@ DOC_PROMPT = (
 )
 
 
+def _build_function_prompt(
+    source: str,
+    class_name: str | None = None,
+    class_summary: str | None = None,
+    project_summary: str | None = None,
+) -> str:
+    """Return a context-enriched prompt for summarizing ``source``."""
+
+    lines = ["You are a documentation generator."]
+    if class_name:
+        lines.append(f"The following function is part of the class `{class_name}`.")
+    if class_summary:
+        lines.append(f"This class {class_summary}")
+    if project_summary:
+        lines.append(f"This project {project_summary}")
+    lines.extend(
+        [
+            "Summarize the function based on its source code below.",
+            "- Do not include assistant phrasing or usage instructions.",
+            "- Do not mention unrelated games or systems.",
+            "- Only use the context and code provided.",
+            "",
+            "```python",
+            source,
+            "```",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _rewrite_docstring(
     client: LLMClient,
     cache: ResponseCache,
     file_path: str,
     item: dict[str, str],
+    *,
+    class_name: str | None = None,
+    class_summary: str | None = None,
+    project_summary: str | None = None,
 ) -> None:
+    """Rewrite ``item`` docstring using optional context."""
+
     source = item.get("source", "")
     docstring = item.get("docstring", "") or ""
     if not source and not docstring:
-        print(f"Warning: no source or docstring for {file_path}:{item.get('name')}", file=sys.stderr)
+        print(
+            f"Warning: no source or docstring for {file_path}:{item.get('name')}",
+            file=sys.stderr,
+        )
         return
 
-    prompt = DOC_PROMPT.format(source=source, docstring=docstring)
-    key_content = source + docstring
-    key = ResponseCache.make_key(f"REWRITE:{file_path}:{item.get('name')}", key_content)
+    if class_name or class_summary or project_summary:
+        prompt = _build_function_prompt(
+            source,
+            class_name=class_name,
+            class_summary=class_summary,
+            project_summary=project_summary,
+        )
+        key_content = source + (class_name or "") + (class_summary or "") + (project_summary or "")
+    else:
+        prompt = DOC_PROMPT.format(source=source, docstring=docstring)
+        key_content = source + docstring
+
+    key = ResponseCache.make_key(
+        f"REWRITE:{file_path}:{item.get('name')}",
+        key_content,
+    )
     result = _summarize(client, cache, key, prompt, "docstring")
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
@@ -133,6 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             "language": language,
             "summary": summary,
             "filename": Path(path).name,
+            "path": path,
         }
         module.update(parsed)
 
@@ -143,16 +196,10 @@ def main(argv: list[str] | None = None) -> int:
             cls_summary = _summarize(client, cache, cls_key, cls_text, "class")
             cls["summary"] = cls_summary
             _rewrite_docstring(client, cache, path, cls)
-            for method in cls.get("methods", []):
-                _rewrite_docstring(client, cache, path, method)
 
-        # and for standalone functions
+        # and for standalone functions (summarized later with project context)
         for func in module.get("functions", []):
-            func_text = func.get("signature") or func.get("name", "")
-            func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", func_text)
-            func_summary = _summarize(client, cache, func_key, func_text, "function")
-            func["summary"] = func_summary
-            _rewrite_docstring(client, cache, path, func)
+            func["summary"] = ""
 
         modules.append(module)
 
@@ -226,6 +273,35 @@ Structure:
     project_summary = sanitize_summary(raw_summary)
     if readme_summary:
         project_summary = f"{readme_summary}\n{project_summary}".strip()
+
+    # Now that the project summary is available, generate function summaries
+    # and rewrite method/function docstrings with context.
+    for module in modules:
+        path = module.get("path", "")
+        for cls in module.get("classes", []):
+            for method in cls.get("methods", []):
+                _rewrite_docstring(
+                    client,
+                    cache,
+                    path,
+                    method,
+                    class_name=cls.get("name"),
+                    class_summary=cls.get("summary"),
+                    project_summary=project_summary,
+                )
+        for func in module.get("functions", []):
+            src = func.get("source") or func.get("signature") or func.get("name", "")
+            prompt = _build_function_prompt(src, project_summary=project_summary)
+            func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", prompt)
+            func_summary = _summarize(client, cache, func_key, prompt, "docstring")
+            func["summary"] = func_summary
+            _rewrite_docstring(
+                client,
+                cache,
+                path,
+                func,
+                project_summary=project_summary,
+            )
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}
     write_index(str(output_dir), project_summary, page_links, module_summaries)
