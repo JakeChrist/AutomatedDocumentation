@@ -31,22 +31,11 @@ def sanitize_llm_output(text: str) -> str:
     return text.strip()
 
 
-PROJECT_PROMPT = """
-You are a documentation generator.
-
-Write a short project summary using only the information provided below.
-Do not make assumptions. Do not explain how to run the code.
-Do not mention imports or visualization libraries unless explicitly listed.
-Do not say "the script starts by" or "you can".
-Avoid assistant-like phrasing. Just summarize what the code does.
-"""
-
-
-def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt: str) -> str:
+def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str) -> str:
     cached = cache.get(key)
     if cached is not None:
         return cached
-    summary = client.summarize(text, prompt)
+    summary = client.summarize(text, prompt_type)
     cache.set(key, summary)
     return summary
 
@@ -109,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         key = ResponseCache.make_key(path, text)
-        summary = _summarize(client, cache, key, text, "module-summary")
+        summary = _summarize(client, cache, key, text, "module")
 
         module = {
             "name": Path(path).stem,
@@ -123,14 +112,14 @@ def main(argv: list[str] | None = None) -> int:
         for cls in module.get("classes", []):
             cls_text = cls.get("docstring") or cls.get("name", "")
             cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", cls_text)
-            cls_summary = _summarize(client, cache, cls_key, cls_text, "class-summary")
+            cls_summary = _summarize(client, cache, cls_key, cls_text, "class")
             cls["summary"] = cls_summary
 
         # and for standalone functions
         for func in module.get("functions", []):
             func_text = func.get("signature") or func.get("name", "")
             func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", func_text)
-            func_summary = _summarize(client, cache, func_key, func_text, "function-summary")
+            func_summary = _summarize(client, cache, func_key, func_text, "function")
             func["summary"] = func_summary
 
         modules.append(module)
@@ -151,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
 
     project_text = "\n".join(structured_lines)
     project_key = ResponseCache.make_key("PROJECT", project_text)
-    raw_summary = _summarize(client, cache, project_key, project_text, PROJECT_PROMPT)
+    raw_summary = _summarize(client, cache, project_key, project_text, "project")
     project_summary = sanitize_llm_output(raw_summary)
 
     write_index(str(output_dir), project_summary, page_links)

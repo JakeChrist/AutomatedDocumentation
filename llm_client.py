@@ -20,16 +20,35 @@ SYSTEM_PROMPT = (
     "Only describe what the code defines or implements."
 )
 
-USER_PROMPT = (
-    "Summarize the code below.\n\n"
+_COMMON_RULES = (
     "- Do not refer to yourself, the summary, or the response.\n"
     "- Do not include instructions, usage advice, or disclaimers.\n"
     "- Do not say what is or isn't included in the code.\n"
     "- Do not explain how to run it.\n"
     "- Do not use phrases like \"this script\", \"the code above\", or \"you can\".\n"
-    "- Just describe what is implemented in the file.\n\n"
-    "Code:\n```python\n{text}\n```"
+    "- Just describe what is implemented.\n\n"
 )
+
+PROMPT_TEMPLATES: Dict[str, str] = {
+    "module": (
+        "Summarize the module below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
+    ),
+    "class": (
+        "Summarize the class below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
+    ),
+    "function": (
+        "Summarize the function below.\n\n" + _COMMON_RULES + "Code:\n```python\n{text}\n```"
+    ),
+    "project": (
+        "You are a documentation generator.\n\n"
+        "Write a short project summary using only the information provided below.\n"
+        "Do not make assumptions. Do not explain how to run the code.\n"
+        "Do not mention imports or visualization libraries unless explicitly listed.\n"
+        "Do not say \"the script starts by\" or \"you can\".\n"
+        "Avoid assistant-like phrasing. Just summarize what the code does.\n\n"
+        "{text}"
+    ),
+}
 
 
 def sanitize_summary(text: str) -> str:
@@ -101,9 +120,10 @@ class LLMClient:
             raise ConnectionError(f"Unable to reach LMStudio at {self.base_url}") from exc
 
     def summarize(self, text: str, prompt_type: str) -> str:
-        """Return a summary for ``text``."""
+        """Return a summary for ``text`` using ``prompt_type`` template."""
 
-        prompt = USER_PROMPT.format(text=text)
+        template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
+        prompt = template.format(text=text)
 
         payload: Dict[str, Any] = {
             "model": self.model,
