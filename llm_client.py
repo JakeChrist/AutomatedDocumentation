@@ -9,7 +9,7 @@ import time
 from typing import Any, Dict
 
 import requests
-from requests.exceptions import RequestException
+from requests.exceptions import HTTPError, RequestException
 
 
 class LLMClient:
@@ -47,16 +47,29 @@ class LLMClient:
             ],
         }
 
+        error_message = ""
         for _ in range(3):
             try:
                 response = requests.post(self.endpoint, json=payload, timeout=None)
                 response.raise_for_status()
                 data = response.json()
                 return data["choices"][0]["message"]["content"].strip()
-            except RequestException:
+            except HTTPError as exc:
+                resp = exc.response or response
+                try:
+                    err_json = resp.json()
+                    if isinstance(err_json, dict):
+                        error_message = err_json.get("error", resp.text)
+                    else:
+                        error_message = resp.text
+                except ValueError:
+                    error_message = resp.text
+                time.sleep(1)
+            except RequestException as exc:
+                error_message = str(exc)
                 time.sleep(1)
 
-        raise RuntimeError("LLM request failed")
+        raise RuntimeError(f"LLM request failed: {error_message}")
 
 
 
