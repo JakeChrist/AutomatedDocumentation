@@ -53,6 +53,8 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
     html = (output_dir / "mod.html").read_text(encoding="utf-8")
     assert "improved class doc" in html
     assert "function summary" in html
+    index_html = (output_dir / "index.html").read_text(encoding="utf-8")
+    assert "module summary" in index_html
 
 
 def test_skips_non_utf8_file(tmp_path: Path) -> None:
