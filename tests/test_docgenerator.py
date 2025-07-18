@@ -41,9 +41,9 @@ def test_generates_class_and_function_summaries(tmp_path: Path) -> None:
         instance.ping.return_value = True
         instance.summarize.side_effect = [
             "module summary",
+            "project summary",
             "class summary",
             "improved class doc",
-            "project summary",
             "function summary",
             "improved function doc",
         ]
@@ -87,8 +87,8 @@ def test_handles_class_without_docstring(tmp_path: Path) -> None:
         instance.ping.return_value = True
         instance.summarize.side_effect = [
             "module summary",
-            "class summary",
             "project summary",
+            "class summary",
         ]
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
