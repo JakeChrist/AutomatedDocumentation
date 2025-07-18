@@ -22,8 +22,9 @@ def _highlight(code: str, language: str) -> str:
         lexer = PythonLexer()
     else:
         lexer = TextLexer()
-    formatter = HtmlFormatter(noclasses=True)
-    return highlight(code, lexer, formatter)
+    formatter = HtmlFormatter(noclasses=True, nowrap=True)
+    highlighted = highlight(code, lexer, formatter)
+    return f"<pre><code>{highlighted}</code></pre>"
 
 
 def _render_html(title: str, header: str, body: str, nav_html: str) -> str:
@@ -71,9 +72,7 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
                 body_parts.append(f'<p>{method["docstring"]}</p>')
             src = method.get("source")
             if src:
-                body_parts.append("<pre><code>")
                 body_parts.append(_highlight(src, language))
-                body_parts.append("</code></pre>")
 
     if module_data.get("functions"):
         body_parts.append("<h2>Functions</h2>")
@@ -85,9 +84,7 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
             body_parts.append(f"<p>{summary}</p>")
         src = func.get("source")
         if src:
-            body_parts.append("<pre><code>")
             body_parts.append(_highlight(src, language))
-            body_parts.append("</code></pre>")
 
     body = "\n".join(body_parts)
     html = _render_html(module_name, module_name, body, nav_html)
