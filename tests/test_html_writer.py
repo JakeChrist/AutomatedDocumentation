@@ -20,13 +20,18 @@ def test_write_module_page(tmp_path: Path) -> None:
     module_data = {
         "name": "module1",
         "summary": "Module summary",
+        "classes": [
+            {"name": "Bar", "summary": "Class summary", "methods": []}
+        ],
         "functions": [
-            {"name": "foo", "signature": "def foo(): pass"}
+            {"name": "foo", "signature": "def foo(): pass", "summary": "Func summary"}
         ],
     }
     write_module_page(str(tmp_path), module_data, links)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
     assert "Module summary" in html
+    assert "Class summary" in html
+    assert "Func summary" in html
     assert "<h2>Functions" in html
     assert "foo" in html
     assert "<pre" in html

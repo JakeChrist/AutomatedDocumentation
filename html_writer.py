@@ -63,6 +63,8 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
         body_parts.append("<h2>Classes</h2>")
         for cls in classes:
             body_parts.append(f'<h3 id="{cls.get("name")}">{cls.get("name")}</h3>')
+            if cls.get("summary"):
+                body_parts.append(f'<p>{cls["summary"]}</p>')
             if cls.get("docstring"):
                 body_parts.append(f'<p>{cls["docstring"]}</p>')
             for method in cls.get("methods", []):
@@ -75,6 +77,8 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
         body_parts.append("<h2>Functions</h2>")
         for func in functions:
             body_parts.append(f'<h3 id="{func.get("name")}">{func.get("name")}</h3>')
+            if func.get("summary"):
+                body_parts.append(f'<p>{func["summary"]}</p>')
             sig = func.get("signature")
             if sig:
                 body_parts.append(_highlight(sig, language))
