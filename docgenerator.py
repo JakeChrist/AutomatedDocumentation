@@ -18,6 +18,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
@@ -315,6 +316,96 @@ def _rewrite_docstring(
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
 
+def _summarize_methods_recursive(
+    class_data: dict[str, Any],
+    path: str,
+    client: LLMClient,
+    cache: ResponseCache,
+) -> None:
+    """Summarize methods of ``class_data`` and any subclasses."""
+
+    for method in class_data.get("methods", []):
+        src = method.get("source") or method.get("signature") or method.get("name", "")
+        key = ResponseCache.make_key(
+            f"{path}:{class_data.get('name')}:{method.get('name')}", src
+        )
+        summary = _summarize(client, cache, key, src, "function")
+        method["summary"] = summary
+        method["docstring"] = summary
+
+    for sub in class_data.get("subclasses", []):
+        _summarize_methods_recursive(sub, path, client, cache)
+
+
+def _summarize_class_recursive(
+    class_data: dict[str, Any],
+    path: str,
+    project_summary: str,
+    tokenizer,
+    client: LLMClient,
+    cache: ResponseCache,
+    max_context_tokens: int,
+    chunk_token_budget: int,
+) -> None:
+    """Summarize ``class_data`` and rewrite its docstring and methods."""
+
+    _summarize_methods_recursive(class_data, path, client, cache)
+
+    method_lines = []
+    for method in class_data.get("methods", []):
+        summary = method.get("summary", "")
+        name = method.get("name", "")
+        method_lines.append(f"- {name}: {summary}" if summary else f"- {name}")
+
+    methods_text = "\n".join(method_lines) if method_lines else "- (no methods)"
+    class_prompt = CLASS_PROMPT.format(
+        class_name=class_data.get("name", ""),
+        project_summary=project_summary,
+        methods=methods_text,
+    )
+    cls_key = ResponseCache.make_key(f"{path}:{class_data.get('name')}", class_prompt)
+    cls_summary = _summarize_chunked(
+        client,
+        cache,
+        cls_key,
+        class_prompt,
+        "docstring",
+        tokenizer,
+        max_context_tokens,
+        chunk_token_budget,
+    )
+    cls_summary = sanitize_summary(cls_summary)
+    original_doc = class_data.get("docstring", "")
+    class_data["summary"] = cls_summary
+    class_data["docstring"] = cls_summary
+    if original_doc:
+        class_data["docstring"] = original_doc
+        _rewrite_docstring(client, cache, path, class_data)
+
+    for method in class_data.get("methods", []):
+        _rewrite_docstring(
+            client,
+            cache,
+            path,
+            method,
+            class_name=class_data.get("name"),
+            class_summary=cls_summary,
+            project_summary=project_summary,
+        )
+
+    for sub in class_data.get("subclasses", []):
+        _summarize_class_recursive(
+            sub,
+            path,
+            project_summary,
+            tokenizer,
+            client,
+            cache,
+            max_context_tokens,
+            chunk_token_budget,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Generate HTML documentation using a local LLM")
     parser.add_argument("source", help="Path to the source directory")
@@ -406,14 +497,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # summarize methods now so class summaries can reference them later
         for cls in module.get("classes", []):
-            cls["summary"] = ""
-            for method in cls.get("methods", []):
-                src = method.get("source") or method.get("signature") or method.get("name", "")
-                m_key = ResponseCache.make_key(
-                    f"{path}:{cls.get('name')}:{method.get('name')}", src
-                )
-                method_summary = _summarize(client, cache, m_key, src, "function")
-                method["summary"] = method_summary
+            _summarize_methods_recursive(cls, path, client, cache)
 
         # and for standalone functions (summarized later with project context)
         for func in module.get("functions", []):
@@ -502,44 +586,16 @@ def main(argv: list[str] | None = None) -> int:
     for module in modules:
         path = module.get("path", "")
         for cls in module.get("classes", []):
-            method_lines = []
-            for method in cls.get("methods", []):
-                summary = method.get("summary", "")
-                name = method.get("name", "")
-                if summary:
-                    method_lines.append(f"- {name}: {summary}")
-                else:
-                    method_lines.append(f"- {name}")
-            methods_text = "\n".join(method_lines) if method_lines else "- (no methods)"
-            class_prompt = CLASS_PROMPT.format(
-                class_name=cls.get("name", ""),
-                project_summary=project_summary,
-                methods=methods_text,
-            )
-            cls_key = ResponseCache.make_key(f"{path}:{cls.get('name')}", class_prompt)
-            cls_summary = _summarize_chunked(
+            _summarize_class_recursive(
+                cls,
+                path,
+                project_summary,
+                tokenizer,
                 client,
                 cache,
-                cls_key,
-                class_prompt,
-                "docstring",
-                tokenizer,
                 max_context_tokens,
                 chunk_token_budget,
             )
-            cls["summary"] = cls_summary
-            _rewrite_docstring(client, cache, path, cls)
-
-            for method in cls.get("methods", []):
-                _rewrite_docstring(
-                    client,
-                    cache,
-                    path,
-                    method,
-                    class_name=cls.get("name"),
-                    class_summary=cls_summary,
-                    project_summary=project_summary,
-                )
         for func in module.get("functions", []):
             src = func.get("source") or func.get("signature") or func.get("name", "")
             prompt = _build_function_prompt(src, project_summary=project_summary)

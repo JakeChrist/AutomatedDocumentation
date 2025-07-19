@@ -297,3 +297,24 @@ def test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -> None
         method_sources = {m["source"] for m in methods}
         assert len(chunks) == len(methods)
         assert set(chunks) == method_sources
+
+
+def test_subclass_methods_are_summarized(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text(
+        "class A:\n    class B:\n        def m(self):\n            pass\n"
+    )
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient, patch(
+        "docgenerator._summarize",
+        return_value="summary",
+    ) as mock_sum:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    assert any("B:m" in call.args[2] for call in mock_sum.call_args_list)
