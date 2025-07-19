@@ -69,3 +69,71 @@ def test_write_module_page(tmp_path: Path) -> None:
     assert "<h2>Functions" in html
     assert "def foo(): pass" in html
     assert html.count("<pre><code>") == 2
+
+
+def test_subfunction_rendering(tmp_path: Path) -> None:
+    links = []
+    module_data = {
+        "name": "mod",
+        "summary": "",
+        "classes": [],
+        "functions": [
+            {
+                "name": "outer",
+                "signature": "def outer(x)",
+                "source": "def outer(x):\n    def inner(y):\n        pass\n    return inner(x)",
+                "subfunctions": [
+                    {
+                        "name": "inner",
+                        "signature": "def inner(y)",
+                        "docstring": "Inner docs",
+                        "source": "def inner(y):\n    pass",
+                        "subfunctions": [],
+                    }
+                ],
+            }
+        ],
+    }
+    write_module_page(str(tmp_path), module_data, links)
+    html = (tmp_path / "mod.html").read_text(encoding="utf-8")
+    assert "<details>" in html
+    assert "Subfunction: def inner(y)" in html
+    # outer and inner source should both be highlighted
+    assert html.count("<pre><code>") == 2
+
+
+def test_subclass_rendering(tmp_path: Path) -> None:
+    links = []
+    module_data = {
+        "name": "mod",
+        "summary": "",
+        "functions": [],
+        "classes": [
+            {
+                "name": "A",
+                "docstring": "",
+                "methods": [],
+                "subclasses": [
+                    {
+                        "name": "B",
+                        "docstring": "B docs",
+                        "methods": [
+                            {
+                                "name": "m",
+                                "signature": "def m(self)",
+                                "source": "def m(self):\n    pass",
+                                "subfunctions": [],
+                            }
+                        ],
+                        "subclasses": [],
+                    }
+                ],
+            }
+        ],
+    }
+    write_module_page(str(tmp_path), module_data, links)
+    html = (tmp_path / "mod.html").read_text(encoding="utf-8")
+    assert "<details>" in html
+    assert "Class: B" in html
+    assert "def m(self)" in html
+    assert html.count("<pre><code>") == 1
