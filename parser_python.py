@@ -75,6 +75,45 @@ def _format_signature(func: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     return result
 
 
+def parse_function(node: ast.FunctionDef | ast.AsyncFunctionDef, source: str) -> Dict[str, Any]:
+    """Return a dictionary describing ``node`` and any nested functions."""
+
+    func_info: Dict[str, Any] = {
+        "name": node.name,
+        "signature": _format_signature(node),
+        "returns": ast.unparse(node.returns) if node.returns else None,
+        "docstring": ast.get_docstring(node),
+        "source": ast.get_source_segment(source, node),
+        "subfunctions": [],
+    }
+
+    for item in node.body:
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            func_info["subfunctions"].append(parse_function(item, source))
+
+    return func_info
+
+
+def parse_class(node: ast.ClassDef, source: str) -> Dict[str, Any]:
+    """Return a dictionary describing ``node`` and any nested classes."""
+
+    cls_info: Dict[str, Any] = {
+        "name": node.name,
+        "docstring": ast.get_docstring(node),
+        "methods": [],
+        "subclasses": [],
+        "source": ast.get_source_segment(source, node),
+    }
+
+    for item in node.body:
+        if isinstance(item, ast.ClassDef):
+            cls_info["subclasses"].append(parse_class(item, source))
+        elif isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            cls_info["methods"].append(parse_function(item, source))
+
+    return cls_info
+
+
 def parse_python_file(path: str) -> Dict[str, Any]:
     """Parse a Python source file and return structured information.
 
@@ -100,33 +139,9 @@ def parse_python_file(path: str) -> Dict[str, Any]:
 
     for node in module.body:
         if isinstance(node, ast.ClassDef):
-            class_info = {
-                "name": node.name,
-                "docstring": ast.get_docstring(node),
-                "methods": [],
-                "source": ast.get_source_segment(source, node),
-            }
-            for item in node.body:
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    class_info["methods"].append(
-                        {
-                            "name": item.name,
-                            "signature": _format_signature(item),
-                            "docstring": ast.get_docstring(item),
-                            "source": ast.get_source_segment(source, item),
-                        }
-                    )
-            parsed["classes"].append(class_info)
+            parsed["classes"].append(parse_class(node, source))
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            parsed["functions"].append(
-                {
-                    "name": node.name,
-                    "signature": _format_signature(node),
-                    "returns": ast.unparse(node.returns) if node.returns else None,
-                    "docstring": ast.get_docstring(node),
-                    "source": ast.get_source_segment(source, node),
-                }
-            )
+            parsed["functions"].append(parse_function(node, source))
 
     return parsed
 
