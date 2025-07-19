@@ -79,6 +79,55 @@ def write_index(
     (dest_dir / "index.html").write_text(html_out, encoding="utf-8")
 
 
+def _render_function(func: dict[str, Any], language: str, level: int = 3, prefix: str = "") -> list[str]:
+    """Return HTML parts for ``func`` and any nested subfunctions."""
+
+    parts: list[str] = []
+    tag = f"h{min(level, 6)}"
+    sig = func.get("signature") or func.get("name", "")
+    parts.append(f'<{tag} id="{func.get("name")}">{prefix}{html.escape(sig)}</{tag}>')
+
+    summary = func.get("summary") or func.get("docstring")
+    if summary:
+        parts.append(f"<p>{html.escape(summary)}</p>")
+
+    src = func.get("source")
+    if src:
+        parts.append(_highlight(src, language))
+
+    for sub in func.get("subfunctions", []):
+        sub_sig = sub.get("signature") or sub.get("name", "")
+        parts.append("<details>")
+        parts.append(f"<summary>Subfunction: {html.escape(sub_sig)}</summary>")
+        parts.extend(_render_function(sub, language, level + 1))
+        parts.append("</details>")
+
+    return parts
+
+
+def _render_class(cls: dict[str, Any], language: str, level: int = 2) -> list[str]:
+    """Return HTML parts for ``cls`` and any subclasses."""
+
+    parts: list[str] = []
+    tag = f"h{min(level, 6)}"
+    cls_name = cls.get("name", "")
+    parts.append(f'<{tag} id="{cls_name}">Class: {html.escape(cls_name)}</{tag}>')
+    doc = cls.get("docstring") or cls.get("summary")
+    if doc:
+        parts.append(f"<p>{html.escape(doc)}</p>")
+
+    for method in cls.get("methods", []):
+        parts.extend(_render_function(method, language, level + 1, "Method: "))
+
+    for sub in cls.get("subclasses", []):
+        parts.append("<details>")
+        parts.append(f"<summary>Class: {html.escape(sub.get('name', ''))}</summary>")
+        parts.extend(_render_class(sub, language, level + 1))
+        parts.append("</details>")
+
+    return parts
+
+
 def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: Iterable[Tuple[str, str]]) -> None:
     """Render a module documentation page using ``module_data``."""
     dest_dir = Path(output_dir)
@@ -97,33 +146,12 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
     body_parts = [f"<p>{html.escape(module_data.get('summary', ''))}</p>"]
 
     for cls in module_data.get("classes", []):
-        cls_name = cls.get("name", "")
-        body_parts.append(f'<h2 id="{cls_name}">Class: {html.escape(cls_name)}</h2>')
-        doc = cls.get("docstring") or cls.get("summary")
-        if doc:
-            body_parts.append(f"<p>{html.escape(doc)}</p>")
-        for method in cls.get("methods", []):
-            sig = method.get("signature") or method.get("name", "")
-            body_parts.append(
-                f'<h3 id="{method.get("name")}">Method: {html.escape(sig)}</h3>'
-            )
-            if method.get("docstring"):
-                body_parts.append(f'<p>{html.escape(method["docstring"])}</p>')
-            src = method.get("source")
-            if src:
-                body_parts.append(_highlight(src, language))
+        body_parts.extend(_render_class(cls, language, 2))
 
     if module_data.get("functions"):
         body_parts.append("<h2>Functions</h2>")
     for func in module_data.get("functions", []):
-        sig = func.get("signature") or func.get("name", "")
-        body_parts.append(f'<h3 id="{func.get("name")}">{html.escape(sig)}</h3>')
-        summary = func.get("summary")
-        if summary:
-            body_parts.append(f"<p>{html.escape(summary)}</p>")
-        src = func.get("source")
-        if src:
-            body_parts.append(_highlight(src, language))
+        body_parts.extend(_render_function(func, language, 3))
 
     body = "\n".join(body_parts)
     html_out = _render_html(
