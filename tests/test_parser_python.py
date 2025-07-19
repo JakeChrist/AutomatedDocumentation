@@ -71,3 +71,37 @@ def test_parse_complex_signature(tmp_path: Path) -> None:
     assert func["docstring"] == "Complex function."
     assert "Complex function." in func["source"]
 
+
+def test_parse_nested_structures(tmp_path: Path) -> None:
+    src = textwrap.dedent(
+        '''
+        def outer(x):
+            def inner(y):
+                return y * 2
+            return inner(x)
+
+        class A:
+            class B:
+                def method(self):
+                    pass
+        '''
+    )
+    file = tmp_path / "sample.py"
+    file.write_text(src)
+
+    result = parse_python_file(str(file))
+
+    outer = result["functions"][0]
+    assert outer["name"] == "outer"
+    assert len(outer.get("subfunctions", [])) == 1
+    assert outer["subfunctions"][0]["name"] == "inner"
+    assert "def inner" in outer["subfunctions"][0]["source"]
+
+    cls = result["classes"][0]
+    assert cls["name"] == "A"
+    assert len(cls.get("subclasses", [])) == 1
+    sub = cls["subclasses"][0]
+    assert sub["name"] == "B"
+    assert len(sub.get("methods", [])) == 1
+    assert sub["methods"][0]["name"] == "method"
+
