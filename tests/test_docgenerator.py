@@ -207,3 +207,93 @@ def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
             chunk_token_budget=100,
         )
         assert mock_sum.call_count > 1
+
+
+def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
+    from cache import ResponseCache
+    from parser_python import parse_python_file
+    from docgenerator import _get_tokenizer, _summarize_module_chunked
+    from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    src = (
+        "def f1():\n"
+        "    x = 1\n"
+        + "    x += 1\n" * 5
+        + "    return x\n\n"
+        "def f2():\n"
+        "    y = 1\n"
+        + "    y += 1\n" * 5
+        + "    return y\n"
+    )
+    file = tmp_path / "m.py"
+    file.write_text(src)
+    parsed = parse_python_file(str(file))
+
+    tokenizer = _get_tokenizer()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+
+    with patch("docgenerator._summarize", return_value="sum") as mock_sum:
+        flen = len(tokenizer.encode(parsed["functions"][0]["source"]))
+        budget = flen + 5
+        overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(tokenizer.encode(PROMPT_TEMPLATES["module"].format(text="")))
+        _summarize_module_chunked(
+            client=object(),
+            cache=cache,
+            key_prefix="k",
+            module_text=src,
+            module=parsed,
+            tokenizer=tokenizer,
+            max_context_tokens=overhead + budget,
+            chunk_token_budget=budget,
+        )
+
+        chunks = [c.args[3] for c in mock_sum.call_args_list if c.args[4] == "module"]
+        assert len(chunks) == 2
+        func_sources = {f["source"] for f in parsed["functions"]}
+        assert set(chunks) == func_sources
+
+
+def test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -> None:
+    from cache import ResponseCache
+    from parser_python import parse_python_file
+    from docgenerator import _get_tokenizer, _summarize_module_chunked
+    from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    class_src = (
+        "class Foo:\n"
+        "    def a(self):\n"
+        + "        x = 1\n"
+        + "        x += 1\n" * 5
+        + "        return x\n\n"
+        "    def b(self):\n"
+        + "        y = 1\n"
+        + "        y += 1\n" * 5
+        + "        return y\n"
+    )
+    file = tmp_path / "m.py"
+    file.write_text(class_src)
+    parsed = parse_python_file(str(file))
+
+    tokenizer = _get_tokenizer()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+
+    with patch("docgenerator._summarize", return_value="sum") as mock_sum:
+        mlen = len(tokenizer.encode(parsed["classes"][0]["methods"][0]["source"]))
+        budget = mlen + 5
+        overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(tokenizer.encode(PROMPT_TEMPLATES["module"].format(text="")))
+        _summarize_module_chunked(
+            client=object(),
+            cache=cache,
+            key_prefix="k",
+            module_text=class_src,
+            module=parsed,
+            tokenizer=tokenizer,
+            max_context_tokens=overhead + budget,
+            chunk_token_budget=budget,
+        )
+
+        chunks = [c.args[3] for c in mock_sum.call_args_list if c.args[4] == "module"]
+        methods = parsed["classes"][0]["methods"]
+        method_sources = {m["source"] for m in methods}
+        assert len(chunks) == len(methods)
+        assert set(chunks) == method_sources
