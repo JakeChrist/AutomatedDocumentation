@@ -382,21 +382,17 @@ def main(argv: list[str] | None = None) -> int:
         )
         readme_summary = sanitize_summary(readme_summary)
 
-    PROJECT_PROMPT = f"""
-Summarize the purpose of this codebase in 1–2 sentences.
-
-- Base your answer only on the provided structure.
-- Do not address the reader or give usage advice.
-- Do not say "the code defines" or "this summary".
-- Prefer concise technical descriptions of what is implemented.
-- Feel free to group related functionality (e.g., grid setup, game loop).
-
-Structure:
-{project_outline}
-"""
-
     project_key = ResponseCache.make_key("PROJECT", project_outline)
-    raw_summary = _summarize(client, cache, project_key, PROJECT_PROMPT, "docstring")
+    raw_summary = _summarize_chunked(
+        client,
+        cache,
+        project_key,
+        project_outline,
+        "project",
+        tokenizer,
+        max_context_tokens,
+        chunk_token_budget,
+    )
     project_summary = sanitize_summary(raw_summary)
     if readme_summary:
         project_summary = f"{readme_summary}\n{project_summary}".strip()
