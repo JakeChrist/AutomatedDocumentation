@@ -119,6 +119,7 @@ def test_project_summary_is_sanitized(tmp_path: Path) -> None:
     html = (output_dir / "index.html").read_text(encoding="utf-8")
     assert "You can run this" not in html
     assert "It prints." in html
+    assert any(call.args[1] == "project" for call in instance.summarize.call_args_list)
 
 
 def test_readme_summary_used(tmp_path: Path) -> None:
