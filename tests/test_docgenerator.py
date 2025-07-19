@@ -132,21 +132,13 @@ def test_readme_summary_used(tmp_path: Path) -> None:
     with patch("docgenerator.LLMClient") as MockClient:
         instance = MockClient.return_value
         instance.ping.return_value = True
-        instance.summarize.side_effect = [
-            "module summary",
-            "readme summary",
-            "project summary",
-            "function summary",
-            "improved function doc",
-        ]
+        instance.summarize.side_effect = lambda text, pt: f"{pt} summary"
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
 
     html = (output_dir / "index.html").read_text(encoding="utf-8")
     assert "readme summary" in html
-    assert any(
-        args[1] == "readme" for args, _ in instance.summarize.call_args_list
-    )
+    assert any(call.args[1] == "readme" for call in instance.summarize.call_args_list)
 
 
 def test_clean_output_dir(tmp_path: Path) -> None:
