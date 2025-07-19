@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,10 +33,10 @@
     </div>
     <div class="content">
         <h1>test_parser_matlab</h1>
-        <p>This module defines two test functions to verify the functionality of a MATLAB file parser. The `test_parse_simple_matlab` function checks if the parser correctly extracts the header and a single function from a simple MATLAB file. The `test_parse_multiple_functions` function ensures that the parser can handle multiple functions within a single MATLAB file, including checking the names and arguments of each function.</p>
+        <p>The module defines two test functions to verify the functionality of a `parse_matlab_file` function. The tests create temporary MATLAB files with different contents, parse them using the `parse_matlab_file` function, and then check if the parsed results match expected values for headers and function details.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_simple_matlab">test_parse_simple_matlab(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_parse_simple_matlab`, tests the parsing of a simple MATLAB file. It creates a temporary file with MATLAB code and uses the `parse_matlab_file` function to parse it. The test checks that the header is correctly extracted and that there is one function defined in the file. It further verifies that the function&#x27;s name, arguments, and body are accurately parsed.</p>
+<p>The function `test_parse_simple_matlab` tests the parsing of a simple MATLAB file. It creates a temporary file with MATLAB code, calls the `parse_matlab_file` function to parse it, and asserts that the parsed header and functions match the expected values.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_simple_matlab</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
@@ -58,7 +59,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> func[<span style="color: #BA2121">&quot;args&quot;</span>] <span style="color: #666666">==</span> [<span style="color: #BA2121">&quot;x&quot;</span>, <span style="color: #BA2121">&quot;y&quot;</span>]
 </code></pre>
 <h3 id="test_parse_multiple_functions">test_parse_multiple_functions(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_parse_multiple_functions` tests the `parse_matlab_file` function by providing it with a MATLAB file containing multiple functions. It asserts that the parsed output includes two functions named &quot;compute&quot; and &quot;square&quot;, with the correct arguments for each function. The test ensures that the parser correctly identifies and extracts function names and argument lists from the source code.</p>
+<p>This function tests the `parse_matlab_file` function from the `parser_matlab.py` module. It creates a temporary MATLAB file with multiple functions and uses the parser to extract information about these functions. The test checks that the parser correctly identifies two functions, their names, arguments, and outputs.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_multiple_functions</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>

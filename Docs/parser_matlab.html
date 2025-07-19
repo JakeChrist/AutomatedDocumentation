@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,10 +33,10 @@
     </div>
     <div class="content">
         <h1>parser_matlab</h1>
-        <p>This module provides a parser for MATLAB `.m` files. It extracts the file&#x27;s header comments and any function declarations found within the file. Each function entry includes the function name and a list of arguments. The parsing uses simple line-based techniques as specified in the Software Requirements Specification (SRS).</p>
+        <p>This module defines a function `parse_matlab_file` that takes the path to a MATLAB `.m` file and returns a dictionary containing the file&#x27;s header comments and any function declarations found. Each function entry includes the function name and a list of arguments. The parsing uses simple line-based techniques as specified in the Software Requirements Specification (SRS).</p>
 <h2>Functions</h2>
 <h3 id="parse_matlab_file">parse_matlab_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract its header comments and function declarations. It returns a dictionary containing the extracted header as a string and a list of dictionaries, each representing a function declaration with its name and arguments. The function uses regular expressions to identify and parse function definitions within the file&#x27;s body.</p>
+<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract its header comments and function declarations. It returns a dictionary containing the extracted header as a string and a list of dictionaries for each function found in the body of the file. Each function dictionary includes the function&#x27;s name and a list of its arguments.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
 

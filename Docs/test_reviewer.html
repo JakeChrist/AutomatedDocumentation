@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -34,18 +35,20 @@
         <h1>test_reviewer</h1>
         <p>This module defines several functions and tests for a code review tool. It includes:
 
-1. `_make_module`: Creates a temporary module page with specified summary and methods.
-2. `test_assistant_phrasing_detected`: Tests if the assistant phrasing is detected and reported.
-3. `test_contradiction_detected`: Tests if contradictions in method definitions are detected and reported.
-4. `test_hallucination_detected`: Tests if hallucinations (incorrect claims about code features) are detected and reported.
-5. `test_autofix_removes_phrasing`: Tests if autofix removes specified phrases from the generated HTML.</p>
+1. `_make_module`: A helper function that creates a temporary module with specified summary and methods, then writes an HTML page for it.
+2. `test_assistant_phrasing_detected`: Tests if the reviewer detects phrasing indicative of assistant-generated content.
+3. `test_contradiction_detected`: Tests if the reviewer detects contradictions in the module&#x27;s documentation.
+4. `test_hallucination_detected`: Tests if the reviewer detects statements that are not supported by the code.
+5. `test_autofix_removes_phrasing`: Tests if the autofix option removes phrasing from the HTML output.
+
+The tests use a temporary directory to create test modules and capture the output of the reviewer function to verify its behavior.</p>
 <h2>Functions</h2>
 <h3 id="_make_module">_make_module(tmp_path: Path, summary: str, methods=None) -&gt; Path</h3>
-<p>This function `_make_module` generates a temporary HTML module page for documentation purposes. It takes three parameters: `tmp_path`, which is the path to a temporary directory where the module page will be created; `summary`, which is a string summarizing the module; and `methods`, an optional list of dictionaries representing methods within the module.
+<p>This function `_make_module` creates a mock module page for testing purposes. It takes three parameters: `tmp_path`, which is the temporary directory path where the module page will be created; `summary`, which is a string summarizing the module; and `methods`, an optional list of methods to include in the &quot;Foo&quot; class within the module.
 
-The function constructs a dictionary `data` with keys for the module&#x27;s name, summary, classes, and functions. If `methods` are provided, it adds a class named &quot;Foo&quot; to the `classes` list in `data`. Each method is represented as a dictionary with keys for the method&#x27;s name, docstring, summary, and methods (which recursively includes nested methods).
+The function initializes a dictionary `data` with keys for the module&#x27;s name, summary, classes, and functions. If `methods` is provided, it adds a &quot;Foo&quot; class to the `classes` list with the specified methods.
 
-The function then calls `write_module_page`, passing the temporary path, the constructed `data`, and a tuple specifying the index file and its name. Finally, it returns the path to the generated module HTML file (`mod.html`).</p>
+It then calls `write_module_page`, passing the temporary path, the data dictionary, and a tuple specifying the index file and its name. Finally, it returns the path to the generated module page (`mod.html`).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_make_module</span>(tmp_path: Path, summary: <span style="color: #008000">str</span>, methods<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> Path:
     data <span style="color: #666666">=</span> {
         <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;mod&quot;</span>,
@@ -61,7 +64,7 @@ The function then calls `write_module_page`, passing the temporary path, the con
     <span style="color: #008000; font-weight: bold">return</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>
 </code></pre>
 <h3 id="test_assistant_phrasing_detected">test_assistant_phrasing_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>This function `test_assistant_phrasing_detected` is designed to test if the assistant phrasing &quot;[ASSISTANT]&quot; is detected and included in the output when generating documentation for a Python module. It creates a temporary directory, generates a simple Python module with the specified content, runs the main function of the DocGen-LM tool on this directory, captures the standard output, and asserts that both the assistant phrasing and the generated HTML file name &quot;mod.html&quot; are present in the output.</p>
+<p>The function `test_assistant_phrasing_detected` is designed to test the detection of assistant phrasing in generated documentation. It creates a temporary module with a class definition containing an assistant phrase, then runs the main function with the path to this temporary directory. The function captures the standard output and checks if both &quot;[ASSISTANT]&quot; and &quot;mod.html&quot; are present in the output, indicating that the assistant phrasing was detected and the HTML file for the module was generated.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_assistant_phrasing_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     _make_module(tmp_path, <span style="color: #BA2121">&quot;You can use this class.&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path)])
@@ -70,7 +73,7 @@ The function then calls `write_module_page`, passing the temporary path, the con
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;mod.html&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_contradiction_detected">test_contradiction_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>The function `test_contradiction_detected` is a unit test that checks if the system detects and reports contradictions in documentation summaries. It creates a temporary module with no methods defined, runs the main function of the project on this module, and captures the output. The test asserts that the string &quot;[CONTRADICTION]&quot; appears in the output, indicating that the system has detected a contradiction.</p>
+<p>This function tests if a contradiction is detected during the documentation generation process. It creates a temporary module with no methods, runs the main function with the path to this module, and checks if the output contains the string &quot;[CONTRADICTION]&quot;.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_contradiction_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     methods <span style="color: #666666">=</span> [{<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;bar&quot;</span>, <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def bar()&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}]
     _make_module(tmp_path, <span style="color: #BA2121">&quot;No methods defined&quot;</span>, methods)
@@ -79,7 +82,7 @@ The function then calls `write_module_page`, passing the temporary path, the con
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[CONTRADICTION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_hallucination_detected">test_hallucination_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>This function `test_hallucination_detected` is designed to test for the detection of hallucinations in documentation generation. It creates a temporary module with a specified docstring, runs the main function with the path to this module, and captures the output. The function asserts that the string &quot;[HALLUCINATION]&quot; appears in the captured output, indicating that a hallucination has been detected during the documentation generation process.</p>
+<p>This function tests for the detection of hallucination in generated documentation. It creates a module with a specified description, runs the main function with the temporary path containing the module, captures the output, and asserts that the string &quot;[HALLUCINATION]&quot; is present in the output.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_hallucination_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     _make_module(tmp_path, <span style="color: #BA2121">&quot;Implements tic-tac-toe features&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path)])
@@ -87,7 +90,7 @@ The function then calls `write_module_page`, passing the temporary path, the con
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[HALLUCINATION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_autofix_removes_phrasing">test_autofix_removes_phrasing(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_autofix_removes_phrasing` tests the functionality of an autofix feature within a documentation generation tool. It creates a temporary directory, generates a module with specific phrasing (&quot;You can call this.&quot;), and then runs the main function with the `--autofix` option. After execution, it reads the generated HTML file and asserts that the specified phrasing has been removed from the content.</p>
+<p>This function tests the `--autofix` option of a command-line tool. It creates a temporary directory with a Python module containing a docstring with unnecessary phrasing (&quot;You can call this.&quot;). The function then runs the main command with the `--autofix` flag, which is expected to remove such phrasing from the documentation. After running the command, it reads the generated HTML file and asserts that the unnecessary phrasing has been removed.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_autofix_removes_phrasing</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     html_path <span style="color: #666666">=</span> _make_module(tmp_path, <span style="color: #BA2121">&quot;You can call this.&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path), <span style="color: #BA2121">&quot;--autofix&quot;</span>])

@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,14 +33,10 @@
     </div>
     <div class="content">
         <h1>test_parser_python</h1>
-        <p>This module contains tests for parsing Python files using a custom `parse_python_file` function. It includes two test functions:
-
-1. `test_parse_simple_module`: Tests parsing a simple Python module with a class and a function, verifying the extracted docstrings, signatures, and source code.
-
-2. `test_parse_complex_signature`: Tests parsing a function with complex signature parameters, ensuring the correct handling of positional-only arguments (`/`), keyword-only arguments (`*`), default values, and variable-length keyword arguments (`**kw`).</p>
+        <p>This module contains tests for a Python parser function named `parse_python_file`. The tests create temporary Python files with different structures, such as simple modules, complex signatures, and nested classes/functions. They then parse these files using the `parse_python_file` function and assert that the parsed results match the expected structure and content of the source code.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_simple_module">test_parse_simple_module(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_parse_simple_module` tests the parsing of a simple Python module. It creates a temporary file with sample Python code, then uses the `parse_python_file` function to parse this file. The test checks that the parsed results include the correct module docstring, class name and docstring, method signature and docstring, function signature and returns information, as well as snippets of the source code for verification.</p>
+<p>This function tests the `parse_python_file` function from the `parser_python.py` module. It creates a temporary Python file with a simple module containing one class and one function, each with docstrings. The function then parses this file and asserts that the parsed results match the expected values for the module, class, method, and function.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_simple_module</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -83,7 +80,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Add two numbers.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> func[<span style="color: #BA2121">&quot;source&quot;</span>]
 </code></pre>
 <h3 id="test_parse_complex_signature">test_parse_complex_signature(tmp_path: Path) -&gt; None</h3>
-<p>The `test_parse_complex_signature` function tests the parsing of a Python file containing a complex function signature. It creates a temporary Python file with the specified content, parses it using the `parse_python_file` function, and then checks if the parsed signature, docstring, and source code are correctly extracted. The test asserts that the function signature matches the expected format, the docstring is accurately captured, and the docstring is present in the original source code.</p>
+<p>This function tests the parsing of a complex Python function signature. It creates a temporary file with a sample Python code snippet containing a function with various parameters and a docstring. The function then parses this file using `parse_python_file` from `parser_python.py`. It asserts that the parsed signature matches the expected value, and that the docstring is correctly extracted and included in the parsed result.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_complex_signature</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -104,6 +101,41 @@
     <span style="color: #008000; font-weight: bold">assert</span> sig <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;complex(a/, b, *, c: int=1, **kw) -&gt; None&quot;</span>
     <span style="color: #008000; font-weight: bold">assert</span> func[<span style="color: #BA2121">&quot;docstring&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;Complex function.&quot;</span>
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Complex function.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> func[<span style="color: #BA2121">&quot;source&quot;</span>]
+</code></pre>
+<h3 id="test_parse_nested_structures">test_parse_nested_structures(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the parsing of nested structures in Python files using the `parse_python_file` function. It creates a temporary file with nested functions and classes, then asserts that the parsed result correctly identifies the outer function, its inner function, and the nested class within the outer class. The test checks for the presence of specific names and source code snippets in the parsed results.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_nested_structures</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
+<span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
+<span style="color: #BA2121; font-style: italic">        def outer(x):</span>
+<span style="color: #BA2121; font-style: italic">            def inner(y):</span>
+<span style="color: #BA2121; font-style: italic">                return y * 2</span>
+<span style="color: #BA2121; font-style: italic">            return inner(x)</span>
+
+<span style="color: #BA2121; font-style: italic">        class A:</span>
+<span style="color: #BA2121; font-style: italic">            class B:</span>
+<span style="color: #BA2121; font-style: italic">                def method(self):</span>
+<span style="color: #BA2121; font-style: italic">                    pass</span>
+<span style="color: #BA2121; font-style: italic">        &#39;&#39;&#39;</span>
+    )
+    file <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;sample.py&quot;</span>
+    file<span style="color: #666666">.</span>write_text(src)
+
+    result <span style="color: #666666">=</span> parse_python_file(<span style="color: #008000">str</span>(file))
+
+    outer <span style="color: #666666">=</span> result[<span style="color: #BA2121">&quot;functions&quot;</span>][<span style="color: #666666">0</span>]
+    <span style="color: #008000; font-weight: bold">assert</span> outer[<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;outer&quot;</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(outer<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;subfunctions&quot;</span>, [])) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">assert</span> outer[<span style="color: #BA2121">&quot;subfunctions&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;inner&quot;</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;def inner&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> outer[<span style="color: #BA2121">&quot;subfunctions&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;source&quot;</span>]
+
+    <span style="color: #008000">cls</span> <span style="color: #666666">=</span> result[<span style="color: #BA2121">&quot;classes&quot;</span>][<span style="color: #666666">0</span>]
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">cls</span>[<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;A&quot;</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(<span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;subclasses&quot;</span>, [])) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
+    sub <span style="color: #666666">=</span> <span style="color: #008000">cls</span>[<span style="color: #BA2121">&quot;subclasses&quot;</span>][<span style="color: #666666">0</span>]
+    <span style="color: #008000; font-weight: bold">assert</span> sub[<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;B&quot;</span>
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(sub<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;methods&quot;</span>, [])) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">assert</span> sub[<span style="color: #BA2121">&quot;methods&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;method&quot;</span>
 </code></pre>
     </div>
 </body>

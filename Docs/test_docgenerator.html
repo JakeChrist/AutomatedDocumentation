@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,10 +33,23 @@
     </div>
     <div class="content">
         <h1>test_docgenerator</h1>
-        <p>This module contains unit tests for a code documentation generator. It uses the `unittest.mock` library to patch the `docgenerator.LLMClient` class and test various scenarios, such as skipping invalid Python files, handling different types of summaries (module, class, function), sanitizing project summaries, using README content for summaries, and cleaning up existing output directories before generating new documentation.</p>
+        <p>The module contains unit tests for a documentation generation tool. It uses the `unittest.mock` library to patch dependencies and the `pathlib` library for file operations. The tests cover various scenarios, including:
+
+1. Skipping invalid Python files due to syntax errors.
+2. Generating summaries for classes and functions with valid Python code.
+3. Handling non-UTF8 encoded files.
+4. Summarizing classes without docstrings.
+5. Sanitizing project summaries.
+6. Using README content as a summary if available.
+7. Cleaning the output directory before generating new documentation.
+8. Splitting long texts into chunks for summarization.
+9. Ensuring that functions and methods are summarized atomically within their respective modules or classes.
+10. Summarizing subclass methods correctly.
+
+The tests interact with an `LLMClient` mock to simulate responses from a language model, ensuring that the documentation generation logic works as expected under different conditions.</p>
 <h2>Functions</h2>
 <h3 id="test_skips_invalid_python_file">test_skips_invalid_python_file(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the behavior of a documentation generator when encountering an invalid Python file. It creates a temporary project directory with a file containing invalid syntax due to a leading zero in a number. The function then calls the `main` function with this project directory and specifies an output directory for the generated documentation. A mock LLM client is used to simulate responses, ensuring that only the index page is generated and no documentation is created for the invalid file.</p>
+<p>The function `test_skips_invalid_python_file` tests the behavior of the `main` function when encountering a Python file with invalid syntax. It creates a temporary project directory containing an invalid Python file (`bad.py`) and specifies an output directory for documentation. The function uses a mock LLM client to simulate successful pinging and summarization. When the `main` function is called, it processes the project directory and generates documentation. The test asserts that only the index page is generated, while the documentation for the invalid file is skipped.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_invalid_python_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -56,7 +70,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
 </code></pre>
 <h3 id="test_generates_class_and_function_summaries">test_generates_class_and_function_summaries(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_generates_class_and_function_summaries` is a unit test for the `main` function of the DocGen-LM tool. It creates a temporary project directory with a Python module containing a class and a function, sets up a mock LLM client to return predefined summaries, runs the main function with specified input and output directories, and asserts that the generated HTML files contain the expected summaries for the class and function.</p>
+<p>The function `test_generates_class_and_function_summaries` tests the generation of summaries for classes and functions within a Python project. It creates a temporary project directory with a Python file containing a class `Foo` and a function `bar`. The function then uses a mock LLM client to simulate responses for summarizing the module, project, class, improved class documentation, function, and improved function documentation. After running the main function with the specified project and output directories, it asserts that the generated HTML files contain the expected summaries for the class and function.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_generates_class_and_function_summaries</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -87,7 +101,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;module summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> index_html
 </code></pre>
 <h3 id="test_skips_non_utf8_file">test_skips_non_utf8_file(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_skips_non_utf8_file` tests the behavior of a documentation generator when encountering a non-UTF-8 encoded file. It sets up a temporary project directory with a non-UTF-8 encoded Python file and an output directory for documentation. The function then mocks an LLM client to simulate successful pinging and summarization. When running the main function with the specified directories, it asserts that the return value is 0 (indicating success) and that only an `index.html` file is generated in the output directory, while a non-UTF-8 encoded file (`bad.py`) does not result in a corresponding documentation file (`bad.html`).</p>
+<p>This function tests the behavior of the `main` function when encountering a non-UTF-8 encoded Python file. It sets up a temporary project directory with a non-UTF-8 encoded file and an output directory. The function uses a mock LLM client to simulate successful pinging and summarization. When running the `main` function, it asserts that the return value is 0 (indicating success) and checks that an index.html file exists in the output directory while no bad.html file is created due to the non-UTF-8 encoded file being skipped.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_non_utf8_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -106,7 +120,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
 </code></pre>
 <h3 id="test_handles_class_without_docstring">test_handles_class_without_docstring(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the handling of a Python class without a docstring. It creates a temporary project directory with a single module containing an empty class named `Foo`. The function then calls the `main` function with this project directory and specifies an output directory for the documentation. A mock LLM client is used to simulate responses during the summarization process, ensuring that the class summary is generated correctly. Finally, it asserts that the generated HTML file contains the expected class summary text.</p>
+<p>The function `test_handles_class_without_docstring` tests the handling of a Python class without a docstring by creating a temporary project directory, writing a Python file with an empty class definition, and then running the documentation generation process. It uses a mock LLM client to simulate responses for module, project, and class summaries. The function asserts that the generated HTML output contains the expected class summary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_handles_class_without_docstring</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -129,7 +143,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;class summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_project_summary_is_sanitized">test_project_summary_is_sanitized(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_project_summary_is_sanitized` is a unit test for the `main` function of the DocGen-LM tool. It creates a temporary project directory with a Python module, sets up a mock LLM client to simulate responses, and then runs the `main` function with specified output and project directories. The test asserts that the generated HTML documentation does not contain certain phrases (&quot;You can run this&quot; is absent) while ensuring another phrase (&quot;It prints.&quot; is present).</p>
+<p>This function `test_project_summary_is_sanitized` tests the sanitization of project summaries generated by a documentation tool. It creates a temporary project directory with a Python module, simulates an LLM client to provide summaries, and checks that the output HTML does not contain unwanted text while ensuring that the project summary is included in the calls to the LLM client&#x27;s `summarize` method.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_project_summary_is_sanitized</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -152,9 +166,10 @@
     html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;You can run this&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;It prints.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(call<span style="color: #666666">.</span>args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;project&quot;</span> <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list)
 </code></pre>
 <h3 id="test_readme_summary_used">test_readme_summary_used(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the generation of a README summary using the `docgenerator` tool. It creates a temporary project directory with a Python module and a README file, then invokes the main function with specified output and input directories. The test uses a mock LLM client to simulate responses for different types of summaries (module, readme, project, function). After running the main function, it checks if the README summary is included in the generated HTML documentation and verifies that the LLM client was called with the correct arguments for summarizing the README.</p>
+<p>The function `test_readme_summary_used` tests the documentation generation process, specifically focusing on summarizing a README file. It creates a temporary project directory with a Python module and a README file. The function then uses a mock LLM client to simulate the summarization of the README content. After running the main documentation generation function, it checks if the output HTML file contains the summary of the README and if the LLM client was called with the correct parameters.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_readme_summary_used</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -166,26 +181,16 @@
     <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient:
         instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
         instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
-        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> [
-            <span style="color: #BA2121">&quot;module summary&quot;</span>,
-            <span style="color: #BA2121">&quot;readme summary&quot;</span>,
-            <span style="color: #BA2121">&quot;project summary&quot;</span>,
-            <span style="color: #BA2121">&quot;function summary&quot;</span>,
-            <span style="color: #BA2121">&quot;improved function doc&quot;</span>,
-        ]
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>side_effect <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> text, pt: <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>pt<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> summary&quot;</span>
         ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
         <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
 
     html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;readme summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
-    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(
-        args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;readme&quot;</span> <span style="color: #008000; font-weight: bold">for</span> args, _ <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list
-    )
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(call<span style="color: #666666">.</span>args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;readme&quot;</span> <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list)
 </code></pre>
 <h3 id="test_clean_output_dir">test_clean_output_dir(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_clean_output_dir` is a unit test that verifies the behavior of the `clean_output_dir` function from the `docgenerator` module. It creates a temporary directory, simulates the presence of various files within it (some generated by DocGen-LM and others custom), and then calls `clean_output_dir` to clean the output directory.
-
-The test asserts that after calling `clean_output_dir`, only the custom HTML file remains, while the generated HTML file and CSS asset are removed. This ensures that the function correctly identifies and deletes files that were created by DocGen-LM, leaving behind only user-provided or other non-generated content.</p>
+<p>The function `test_clean_output_dir` tests the `clean_output_dir` function from the `docgenerator.py` module. It creates a temporary directory structure with files and subdirectories, simulates the output of a documentation generation process, and then calls `clean_output_dir` to clean up the generated files. The test asserts that only files explicitly marked as &quot;custom&quot; or &quot;asset&quot; remain after the cleanup, while the file &quot;old.html&quot;, which is considered generated by the tool, is deleted.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_clean_output_dir</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     out <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
     out<span style="color: #666666">.</span>mkdir()
@@ -203,6 +208,174 @@ The test asserts that after calling `clean_output_dir`, only the custom HTML fil
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> generated<span style="color: #666666">.</span>exists()
     <span style="color: #008000; font-weight: bold">assert</span> custom<span style="color: #666666">.</span>exists()
     <span style="color: #008000; font-weight: bold">assert</span> asset<span style="color: #666666">.</span>exists()
+</code></pre>
+<h3 id="test_summarize_chunked_splits_long_text">test_summarize_chunked_splits_long_text(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the `_summarize_chunked` method from the `docgenerator.py` module. It sets up a temporary cache, creates a tokenizer, and defines a long text string. The function then calls `_summarize_chunked` with mock values for the client and cache, specifying parameters such as key prefix, prompt type, tokenizer, max context tokens, and chunk token budget. It asserts that the `_summarize` method is called more than once, indicating that the input text was split into chunks for summarization.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_chunked_splits_long_text</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">docgenerator</span> <span style="color: #008000; font-weight: bold">import</span> _get_tokenizer, _summarize_chunked
+
+    tokenizer <span style="color: #666666">=</span> _get_tokenizer()
+    text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;word &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">50</span>
+    cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>))
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator._summarize&quot;</span>, return_value<span style="color: #666666">=</span><span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> mock_sum:
+        _summarize_chunked(
+            client<span style="color: #666666">=</span><span style="color: #008000">object</span>(),
+            cache<span style="color: #666666">=</span>cache,
+            key_prefix<span style="color: #666666">=</span><span style="color: #BA2121">&quot;k&quot;</span>,
+            text<span style="color: #666666">=</span>text,
+            prompt_type<span style="color: #666666">=</span><span style="color: #BA2121">&quot;module&quot;</span>,
+            tokenizer<span style="color: #666666">=</span>tokenizer,
+            max_context_tokens<span style="color: #666666">=10</span>,
+            chunk_token_budget<span style="color: #666666">=5</span>,
+        )
+        <span style="color: #008000; font-weight: bold">assert</span> mock_sum<span style="color: #666666">.</span>call_count <span style="color: #666666">&gt;</span> <span style="color: #666666">1</span>
+</code></pre>
+<h3 id="test_chunking_accounts_for_prompt_overhead">test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_chunking_accounts_for_prompt_overhead` tests the `_summarize_chunked` function from the `docgenerator.py` module. It sets up a temporary cache, defines a tokenizer, and calculates prompt overhead based on system and template prompts. The function then calls `_summarize_chunked` with a mock client, cache, key prefix, text, prompt type, tokenizer, maximum context tokens, and chunk token budget. It asserts that the `_summarize` function is called more than once, indicating that the text was chunked to account for prompt overhead.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunking_accounts_for_prompt_overhead</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">docgenerator</span> <span style="color: #008000; font-weight: bold">import</span> _get_tokenizer, _summarize_chunked
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">llm_client</span> <span style="color: #008000; font-weight: bold">import</span> SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    tokenizer <span style="color: #666666">=</span> _get_tokenizer()
+    text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;word &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">15</span>
+    cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>))
+    template <span style="color: #666666">=</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>]
+    overhead <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(SYSTEM_PROMPT)) <span style="color: #666666">+</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(template<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>)))
+    max_context_tokens <span style="color: #666666">=</span> overhead <span style="color: #666666">+</span> <span style="color: #666666">10</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator._summarize&quot;</span>, return_value<span style="color: #666666">=</span><span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> mock_sum:
+        _summarize_chunked(
+            client<span style="color: #666666">=</span><span style="color: #008000">object</span>(),
+            cache<span style="color: #666666">=</span>cache,
+            key_prefix<span style="color: #666666">=</span><span style="color: #BA2121">&quot;k&quot;</span>,
+            text<span style="color: #666666">=</span>text,
+            prompt_type<span style="color: #666666">=</span><span style="color: #BA2121">&quot;module&quot;</span>,
+            tokenizer<span style="color: #666666">=</span>tokenizer,
+            max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+            chunk_token_budget<span style="color: #666666">=100</span>,
+        )
+        <span style="color: #008000; font-weight: bold">assert</span> mock_sum<span style="color: #666666">.</span>call_count <span style="color: #666666">&gt;</span> <span style="color: #666666">1</span>
+</code></pre>
+<h3 id="test_structured_chunker_keeps_functions_atomic">test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the `test_structured_chunker_keeps_functions_atomic` method. It creates a Python file with two functions, `f1` and `f2`, each containing multiple lines of code. The function then parses this file using the `parse_python_file` function from the `parser_python.py` module.
+
+A tokenizer is obtained using `_get_tokenizer` from `docgenerator.py`, and a cache object is created using `ResponseCache` from `cache.py`. The function uses a mock for `_summarize` to return &quot;sum&quot; when called. It calculates the budget based on the length of the encoded source code and overhead, then calls `_summarize_module_chunked` with this budget.
+
+The test asserts that the number of chunks is equal to the number of functions (2) and that each chunk corresponds to one of the function sources in the parsed file.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_structured_chunker_keeps_functions_atomic</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">parser_python</span> <span style="color: #008000; font-weight: bold">import</span> parse_python_file
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">docgenerator</span> <span style="color: #008000; font-weight: bold">import</span> _get_tokenizer, _summarize_module_chunked
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">llm_client</span> <span style="color: #008000; font-weight: bold">import</span> SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    src <span style="color: #666666">=</span> (
+        <span style="color: #BA2121">&quot;def f1():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    x = 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;    x += 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">5</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;    return x</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;def f2():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    y = 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;    y += 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">5</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;    return y</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+    file <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;m.py&quot;</span>
+    file<span style="color: #666666">.</span>write_text(src)
+    parsed <span style="color: #666666">=</span> parse_python_file(<span style="color: #008000">str</span>(file))
+
+    tokenizer <span style="color: #666666">=</span> _get_tokenizer()
+    cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>))
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator._summarize&quot;</span>, return_value<span style="color: #666666">=</span><span style="color: #BA2121">&quot;sum&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> mock_sum:
+        flen <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(parsed[<span style="color: #BA2121">&quot;functions&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;source&quot;</span>]))
+        budget <span style="color: #666666">=</span> flen <span style="color: #666666">+</span> <span style="color: #666666">5</span>
+        overhead <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(SYSTEM_PROMPT)) <span style="color: #666666">+</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>)))
+        _summarize_module_chunked(
+            client<span style="color: #666666">=</span><span style="color: #008000">object</span>(),
+            cache<span style="color: #666666">=</span>cache,
+            key_prefix<span style="color: #666666">=</span><span style="color: #BA2121">&quot;k&quot;</span>,
+            module_text<span style="color: #666666">=</span>src,
+            module<span style="color: #666666">=</span>parsed,
+            tokenizer<span style="color: #666666">=</span>tokenizer,
+            max_context_tokens<span style="color: #666666">=</span>overhead <span style="color: #666666">+</span> budget,
+            chunk_token_budget<span style="color: #666666">=</span>budget,
+        )
+
+        chunks <span style="color: #666666">=</span> [c<span style="color: #666666">.</span>args[<span style="color: #666666">3</span>] <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> mock_sum<span style="color: #666666">.</span>call_args_list <span style="color: #008000; font-weight: bold">if</span> c<span style="color: #666666">.</span>args[<span style="color: #666666">4</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;module&quot;</span>]
+        <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(chunks) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+        func_sources <span style="color: #666666">=</span> {f[<span style="color: #BA2121">&quot;source&quot;</span>] <span style="color: #008000; font-weight: bold">for</span> f <span style="color: #AA22FF; font-weight: bold">in</span> parsed[<span style="color: #BA2121">&quot;functions&quot;</span>]}
+        <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(chunks) <span style="color: #666666">==</span> func_sources
+</code></pre>
+<h3 id="test_structured_chunker_splits_large_class_by_method">test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the `_summarize_module_chunked` function from the `docgenerator.py` module. It creates a temporary Python file with a class containing two methods, each with multiple lines of code. The function then parses this file and uses a mock to simulate summarization calls. It asserts that the number of chunks created matches the number of methods in the class and that the content of the chunks corresponds to the source code of the methods.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_structured_chunker_splits_large_class_by_method</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">parser_python</span> <span style="color: #008000; font-weight: bold">import</span> parse_python_file
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">docgenerator</span> <span style="color: #008000; font-weight: bold">import</span> _get_tokenizer, _summarize_module_chunked
+    <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">llm_client</span> <span style="color: #008000; font-weight: bold">import</span> SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    class_src <span style="color: #666666">=</span> (
+        <span style="color: #BA2121">&quot;class Foo:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    def a(self):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        x = 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        x += 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">5</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        return x</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    def b(self):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        y = 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        y += 1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">5</span>
+        <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;        return y</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+    file <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;m.py&quot;</span>
+    file<span style="color: #666666">.</span>write_text(class_src)
+    parsed <span style="color: #666666">=</span> parse_python_file(<span style="color: #008000">str</span>(file))
+
+    tokenizer <span style="color: #666666">=</span> _get_tokenizer()
+    cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>))
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator._summarize&quot;</span>, return_value<span style="color: #666666">=</span><span style="color: #BA2121">&quot;sum&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> mock_sum:
+        mlen <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(parsed[<span style="color: #BA2121">&quot;classes&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;methods&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;source&quot;</span>]))
+        budget <span style="color: #666666">=</span> mlen <span style="color: #666666">+</span> <span style="color: #666666">5</span>
+        overhead <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(SYSTEM_PROMPT)) <span style="color: #666666">+</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>)))
+        _summarize_module_chunked(
+            client<span style="color: #666666">=</span><span style="color: #008000">object</span>(),
+            cache<span style="color: #666666">=</span>cache,
+            key_prefix<span style="color: #666666">=</span><span style="color: #BA2121">&quot;k&quot;</span>,
+            module_text<span style="color: #666666">=</span>class_src,
+            module<span style="color: #666666">=</span>parsed,
+            tokenizer<span style="color: #666666">=</span>tokenizer,
+            max_context_tokens<span style="color: #666666">=</span>overhead <span style="color: #666666">+</span> budget,
+            chunk_token_budget<span style="color: #666666">=</span>budget,
+        )
+
+        chunks <span style="color: #666666">=</span> [c<span style="color: #666666">.</span>args[<span style="color: #666666">3</span>] <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> mock_sum<span style="color: #666666">.</span>call_args_list <span style="color: #008000; font-weight: bold">if</span> c<span style="color: #666666">.</span>args[<span style="color: #666666">4</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;module&quot;</span>]
+        methods <span style="color: #666666">=</span> parsed[<span style="color: #BA2121">&quot;classes&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;methods&quot;</span>]
+        method_sources <span style="color: #666666">=</span> {m[<span style="color: #BA2121">&quot;source&quot;</span>] <span style="color: #008000; font-weight: bold">for</span> m <span style="color: #AA22FF; font-weight: bold">in</span> methods}
+        <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(chunks) <span style="color: #666666">==</span> <span style="color: #008000">len</span>(methods)
+        <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(chunks) <span style="color: #666666">==</span> method_sources
+</code></pre>
+<h3 id="test_subclass_methods_are_summarized">test_subclass_methods_are_summarized(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_subclass_methods_are_summarized` tests the summarization of methods within subclasses. It creates a temporary project directory with a Python file containing a class `A` that has a subclass `B`, which includes a method `m`. The function then uses mock objects to simulate an LLM client and its summary generation process. It asserts that the method `m` of the subclass `B` is included in the calls to the mock summary function, indicating that it was successfully summarized.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subclass_methods_are_summarized</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.py&quot;</span>)<span style="color: #666666">.</span>write_text(
+        <span style="color: #BA2121">&quot;class A:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    class B:</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">        def m(self):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">            pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>) <span style="color: #008000; font-weight: bold">as</span> MockClient, patch(
+        <span style="color: #BA2121">&quot;docgenerator._summarize&quot;</span>,
+        return_value<span style="color: #666666">=</span><span style="color: #BA2121">&quot;summary&quot;</span>,
+    ) <span style="color: #008000; font-weight: bold">as</span> mock_sum:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(<span style="color: #BA2121">&quot;B:m&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> call<span style="color: #666666">.</span>args[<span style="color: #666666">2</span>] <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> mock_sum<span style="color: #666666">.</span>call_args_list)
 </code></pre>
     </div>
 </body>

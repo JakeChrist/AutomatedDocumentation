@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,22 +33,15 @@
     </div>
     <div class="content">
         <h1>test_html_writer</h1>
-        <p>The module defines two functions: `test_write_index` and `test_write_module_page`. These functions are used to test the functionality of writing HTML index and module pages, respectively. The tests use a temporary path (`tmp_path`) to create HTML files and then validate their content through assertions.</p>
+        <p>The module defines functions to write HTML documentation for projects and modules. It includes:
+
+- `write_index`: Generates an index page with links to module pages.
+- `write_module_page`: Generates a detailed HTML page for a single module, including classes, functions, and subfunctions/subclasses.
+
+Each function takes parameters such as file paths, module data, and links, and writes the corresponding HTML content. The tests validate that the generated HTML contains expected elements like headers, summaries, source code snippets, and navigation links.</p>
 <h2>Functions</h2>
 <h3 id="test_write_index">test_write_index(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_write_index` is designed to test the `write_index` function, which generates an HTML index file for a project&#x27;s documentation. The test uses a temporary path (`tmp_path`) to create and validate the output.
-
-The function takes several parameters:
-- `links`: A list of tuples containing module names and their corresponding HTML file paths.
-- `summaries`: A dictionary where keys are module names and values are their summaries.
-- Additional parameters for the project title and other metadata.
-
-The test performs the following steps:
-1. Calls `write_index` with the provided parameters.
-2. Reads the generated `index.html` file from the temporary path.
-3. Asserts that the HTML file contains specific tags and content, such as the generator comment, project summary, module links, summaries, and headings.
-
-The assertions ensure that the HTML output is correctly formatted and includes all necessary elements for a documentation index page.</p>
+<p>The function `test_write_index` tests the `write_index` function from the `html_writer.py` module. It creates a temporary directory, defines links and summaries for modules, calls `write_index`, and then checks if the generated HTML file contains the expected content. The test ensures that the index page is correctly formatted with project summary, module links, and summaries, while handling special characters in module names appropriately.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_index</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>, <span style="color: #BA2121">&quot;module1.html&quot;</span>), (<span style="color: #BA2121">&quot;module&amp;2&quot;</span>, <span style="color: #BA2121">&quot;module2.html&quot;</span>)]
     summaries <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>: <span style="color: #BA2121">&quot;First module.&quot;</span>, <span style="color: #BA2121">&quot;module&amp;2&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}
@@ -67,7 +61,7 @@ The assertions ensure that the HTML output is correctly formatted and includes a
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h1&gt;Project Documentation&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_write_module_page">test_write_module_page(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_write_module_page` is a unit test for the `write_module_page` function. It verifies that the generated HTML page for a module contains the expected content, including links, module summary, class details, method summaries, and function summaries. The test uses a temporary directory to create the output file and checks various aspects of the HTML content to ensure it matches the expected structure and data from the `module_data` dictionary.</p>
+<p>The function `test_write_module_page` tests the generation of an HTML page for a Python module using the `write_module_page` function. It creates a temporary directory, defines module data including classes and functions, and calls `write_module_page` to generate the HTML file. The test then reads the generated HTML file and asserts that it contains expected elements such as links, module summaries, class definitions, method signatures, and function declarations.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_module_page</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;OtherModule&quot;</span>, <span style="color: #BA2121">&quot;other.html&quot;</span>)]
     module_data <span style="color: #666666">=</span> {
@@ -112,6 +106,84 @@ The assertions ensure that the HTML output is correctly formatted and includes a
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h2&gt;Functions&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;def foo(): pass&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+</code></pre>
+<h3 id="test_subfunction_rendering">test_subfunction_rendering(tmp_path: Path) -&gt; None</h3>
+<p>This function tests the rendering of subfunctions in a module&#x27;s documentation. It creates a mock module data dictionary with an outer function containing an inner subfunction. The `write_module_page` function is called to generate HTML documentation for this module, which includes expanding sections for subfunctions. The test asserts that the generated HTML contains details tags for the subfunction and that both the outer and inner functions are source-highlighted in `&lt;pre&gt;&lt;code&gt;` blocks.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subfunction_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    links <span style="color: #666666">=</span> []
+    module_data <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;mod&quot;</span>,
+        <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;outer&quot;</span>,
+                <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def outer(x)&quot;</span>,
+                <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;def outer(x):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    def inner(y):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">        pass</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    return inner(x)&quot;</span>,
+                <span style="color: #BA2121">&quot;subfunctions&quot;</span>: [
+                    {
+                        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;inner&quot;</span>,
+                        <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def inner(y)&quot;</span>,
+                        <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;Inner docs&quot;</span>,
+                        <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;def inner(y):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass&quot;</span>,
+                        <span style="color: #BA2121">&quot;subfunctions&quot;</span>: [],
+                    }
+                ],
+            }
+        ],
+    }
+    write_module_page(<span style="color: #008000">str</span>(tmp_path), module_data, links)
+    html <span style="color: #666666">=</span> (tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Subfunction: def inner(y)&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #3D7B7B; font-style: italic"># outer and inner source should both be highlighted</span>
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
+</code></pre>
+<h3 id="test_subclass_rendering">test_subclass_rendering(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_subclass_rendering` is designed to test the rendering of subclass information in HTML documentation. It uses a temporary directory specified by `tmp_path` to create and write a module page for a Python module named &quot;mod&quot;. The module contains a class `A` with a subclass `B`. Class `B` has a method `m`.
+
+The function then reads the generated HTML file located at `tmp_path / &quot;mod.html&quot;` and asserts that certain elements are present in the HTML content:
+- It checks if the `&lt;details&gt;` tag is included, indicating expandable sections.
+- It verifies that the text &quot;Class: B&quot; is present, confirming that subclass information is rendered.
+- It ensures that the method signature `def m(self)` is included.
+- Finally, it asserts that there is exactly one occurrence of the `&lt;pre&gt;&lt;code&gt;` tags, which are used for code snippets in HTML.
+
+This test case is part of a larger suite to validate the functionality of the documentation generation process, specifically focusing on how subclasses and their methods are rendered in the output.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subclass_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    links <span style="color: #666666">=</span> []
+    module_data <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;mod&quot;</span>,
+        <span style="color: #BA2121">&quot;summary&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [],
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;A&quot;</span>,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+                <span style="color: #BA2121">&quot;methods&quot;</span>: [],
+                <span style="color: #BA2121">&quot;subclasses&quot;</span>: [
+                    {
+                        <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;B&quot;</span>,
+                        <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;B docs&quot;</span>,
+                        <span style="color: #BA2121">&quot;methods&quot;</span>: [
+                            {
+                                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;m&quot;</span>,
+                                <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def m(self)&quot;</span>,
+                                <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;def m(self):</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    pass&quot;</span>,
+                                <span style="color: #BA2121">&quot;subfunctions&quot;</span>: [],
+                            }
+                        ],
+                        <span style="color: #BA2121">&quot;subclasses&quot;</span>: [],
+                    }
+                ],
+            }
+        ],
+    }
+    write_module_page(<span style="color: #008000">str</span>(tmp_path), module_data, links)
+    html <span style="color: #666666">=</span> (tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Class: B&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;def m(self)&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
 </code></pre>
     </div>
 </body>

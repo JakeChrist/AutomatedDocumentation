@@ -21,6 +21,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -32,10 +33,10 @@
     </div>
     <div class="content">
         <h1>parser_python</h1>
-        <p>This module provides a parser for Python files using the `ast` module to extract structured information according to the Software Requirements Specification (SRS). It includes functions to format arguments and signatures of functions and methods, and a main function to parse a Python source file and return a dictionary containing the module docstring, classes, and functions. Each class and function is represented with its name, signature, docstring, and source code segment.</p>
+        <p>This Python module provides a parser for Python files used by DocGen-LM. It uses the `ast` module to extract structures according to the Software Requirements Specification (SRS). The module includes functions to format arguments, signatures, and parse functions and classes within Python source files. It also contains a function to parse an entire Python file and return structured information about its contents, including docstrings, methods, subfunctions, and subclasses.</p>
 <h2>Functions</h2>
 <h3 id="_format_arg">_format_arg(arg: ast.arg) -&gt; str</h3>
-<p>Formats an argument from the Abstract Syntax Tree (AST) by appending its type annotation, if available.</p>
+<p>The function `_format_arg` formats an argument (`arg`) from the Python Abstract Syntax Tree (AST) by appending its type annotation, if present. It returns a string representing the formatted argument.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arg</span>(arg: ast<span style="color: #666666">.</span>arg) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``arg`` formatted with its annotation if present.&quot;&quot;&quot;</span>
     text <span style="color: #666666">=</span> arg<span style="color: #666666">.</span>arg
@@ -44,7 +45,7 @@
     <span style="color: #008000; font-weight: bold">return</span> text
 </code></pre>
 <h3 id="_format_arguments">_format_arguments(args: ast.arguments) -&gt; str</h3>
-<p>This function `_format_arguments` takes an `ast.arguments` object as input and returns a string representation of the function arguments. It handles positional-only, regular, variable positional, keyword-only, and variable keyword arguments, including their default values if provided. The function uses helper functions like `_format_arg` to format individual argument names and iterates through the different types of arguments to construct the final string.</p>
+<p>The function `_format_arguments` takes an `ast.arguments` object as input and returns a string representation of its arguments. It handles positional-only, regular, variable positional, keyword-only, and variable keyword arguments, including their default values if provided. The function uses helper functions to format individual arguments and constructs the final string by joining these parts with commas.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arguments</span>(args: ast<span style="color: #666666">.</span>arguments) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string representation of ``args``.&quot;&quot;&quot;</span>
 
@@ -92,7 +93,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;, &quot;</span><span style="color: #666666">.</span>join(parts)
 </code></pre>
 <h3 id="_format_signature">_format_signature(func: ast.FunctionDef | ast.AsyncFunctionDef) -&gt; str</h3>
-<p>This function `_format_signature` takes an `ast.FunctionDef` or `ast.AsyncFunctionDef` object as input and returns a string representing the signature of the function. It formats the parameters using the `_format_arguments` helper function and appends the return type if specified in the function definition.</p>
+<p>The function `_format_signature` takes an `ast.FunctionDef` or `ast.AsyncFunctionDef` object as input and returns a string representing the signature of the function, including its name, parameters, and return type if specified. It uses the helper function `_format_arguments` to format the function&#x27;s arguments.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_signature</span>(func: ast<span style="color: #666666">.</span>FunctionDef <span style="color: #666666">|</span> ast<span style="color: #666666">.</span>AsyncFunctionDef) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string signature for ``func``.&quot;&quot;&quot;</span>
 
@@ -102,8 +103,49 @@
         result <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot; -&gt; </span><span style="color: #A45A77; font-weight: bold">{</span>ast<span style="color: #666666">.</span>unparse(func<span style="color: #666666">.</span>returns)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
     <span style="color: #008000; font-weight: bold">return</span> result
 </code></pre>
+<h3 id="parse_function">parse_function(node: ast.FunctionDef | ast.AsyncFunctionDef, source: str) -&gt; Dict[str, Any]</h3>
+<p>This function `parse_function` takes an AST node representing a function or asynchronous function and the source code as input. It returns a dictionary containing information about the function, including its name, signature, return type, docstring, source code segment, and any nested functions. The function iterates through the body of the given node to identify and parse any nested functions, recursively calling itself for each nested function found.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_function</span>(node: ast<span style="color: #666666">.</span>FunctionDef <span style="color: #666666">|</span> ast<span style="color: #666666">.</span>AsyncFunctionDef, source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a dictionary describing ``node`` and any nested functions.&quot;&quot;&quot;</span>
+
+    func_info: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
+        <span style="color: #BA2121">&quot;signature&quot;</span>: _format_signature(node),
+        <span style="color: #BA2121">&quot;returns&quot;</span>: ast<span style="color: #666666">.</span>unparse(node<span style="color: #666666">.</span>returns) <span style="color: #008000; font-weight: bold">if</span> node<span style="color: #666666">.</span>returns <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>,
+        <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
+        <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, node),
+        <span style="color: #BA2121">&quot;subfunctions&quot;</span>: [],
+    }
+
+    <span style="color: #008000; font-weight: bold">for</span> item <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>body:
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(item, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
+            func_info[<span style="color: #BA2121">&quot;subfunctions&quot;</span>]<span style="color: #666666">.</span>append(parse_function(item, source))
+
+    <span style="color: #008000; font-weight: bold">return</span> func_info
+</code></pre>
+<h3 id="parse_class">parse_class(node: ast.ClassDef, source: str) -&gt; Dict[str, Any]</h3>
+<p>The function `parse_class` takes an AST node representing a class definition and the source code as input. It returns a dictionary containing information about the class, including its name, docstring, methods, subclasses, and source code segment. The function iterates through the body of the class node, recursively parsing nested classes and extracting method definitions using `parse_function`.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_class</span>(node: ast<span style="color: #666666">.</span>ClassDef, source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a dictionary describing ``node`` and any nested classes.&quot;&quot;&quot;</span>
+
+    cls_info: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
+        <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
+        <span style="color: #BA2121">&quot;methods&quot;</span>: [],
+        <span style="color: #BA2121">&quot;subclasses&quot;</span>: [],
+        <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, node),
+    }
+
+    <span style="color: #008000; font-weight: bold">for</span> item <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>body:
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(item, ast<span style="color: #666666">.</span>ClassDef):
+            cls_info[<span style="color: #BA2121">&quot;subclasses&quot;</span>]<span style="color: #666666">.</span>append(parse_class(item, source))
+        <span style="color: #008000; font-weight: bold">elif</span> <span style="color: #008000">isinstance</span>(item, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
+            cls_info[<span style="color: #BA2121">&quot;methods&quot;</span>]<span style="color: #666666">.</span>append(parse_function(item, source))
+
+    <span style="color: #008000; font-weight: bold">return</span> cls_info
+</code></pre>
 <h3 id="parse_python_file">parse_python_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>This function `parse_python_file` takes a file path as input and returns a dictionary containing structured information about the Python source code. It reads the source code from the specified file, parses it using the `ast` module to extract the abstract syntax tree (AST), and then extracts relevant details such as the module docstring, classes, and functions. For each class and function found, it captures their names, signatures, docstrings, and source code segments. The parsed information is organized into a dictionary and returned.</p>
+<p>The `parse_python_file` function reads a Python source file and extracts structured information. It returns a dictionary containing the module docstring, classes, and functions defined in the file. The function uses the `ast` module to parse the source code and iterates through its body to identify class and function definitions. Each identified class and function is further parsed using helper functions (`parse_class` and `parse_function`).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_python_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a Python source file and return structured information.</span>
 
@@ -129,32 +171,9 @@
 
     <span style="color: #008000; font-weight: bold">for</span> node <span style="color: #AA22FF; font-weight: bold">in</span> module<span style="color: #666666">.</span>body:
         <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(node, ast<span style="color: #666666">.</span>ClassDef):
-            class_info <span style="color: #666666">=</span> {
-                <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
-                <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
-                <span style="color: #BA2121">&quot;methods&quot;</span>: [],
-            }
-            <span style="color: #008000; font-weight: bold">for</span> item <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>body:
-                <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(item, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
-                    class_info[<span style="color: #BA2121">&quot;methods&quot;</span>]<span style="color: #666666">.</span>append(
-                        {
-                            <span style="color: #BA2121">&quot;name&quot;</span>: item<span style="color: #666666">.</span>name,
-                            <span style="color: #BA2121">&quot;signature&quot;</span>: _format_signature(item),
-                            <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(item),
-                            <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, item),
-                        }
-                    )
-            parsed[<span style="color: #BA2121">&quot;classes&quot;</span>]<span style="color: #666666">.</span>append(class_info)
+            parsed[<span style="color: #BA2121">&quot;classes&quot;</span>]<span style="color: #666666">.</span>append(parse_class(node, source))
         <span style="color: #008000; font-weight: bold">elif</span> <span style="color: #008000">isinstance</span>(node, (ast<span style="color: #666666">.</span>FunctionDef, ast<span style="color: #666666">.</span>AsyncFunctionDef)):
-            parsed[<span style="color: #BA2121">&quot;functions&quot;</span>]<span style="color: #666666">.</span>append(
-                {
-                    <span style="color: #BA2121">&quot;name&quot;</span>: node<span style="color: #666666">.</span>name,
-                    <span style="color: #BA2121">&quot;signature&quot;</span>: _format_signature(node),
-                    <span style="color: #BA2121">&quot;returns&quot;</span>: ast<span style="color: #666666">.</span>unparse(node<span style="color: #666666">.</span>returns) <span style="color: #008000; font-weight: bold">if</span> node<span style="color: #666666">.</span>returns <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>,
-                    <span style="color: #BA2121">&quot;docstring&quot;</span>: ast<span style="color: #666666">.</span>get_docstring(node),
-                    <span style="color: #BA2121">&quot;source&quot;</span>: ast<span style="color: #666666">.</span>get_source_segment(source, node),
-                }
-            )
+            parsed[<span style="color: #BA2121">&quot;functions&quot;</span>]<span style="color: #666666">.</span>append(parse_function(node, source))
 
     <span style="color: #008000; font-weight: bold">return</span> parsed
 </code></pre>

@@ -20,6 +20,7 @@
 <li><a href="scanner.html">scanner</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
+<li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
@@ -31,52 +32,78 @@
     </div>
     <div class="content">
         <h1>Project Documentation</h1>
-        <p>DocGen-LM is a tool for generating static HTML documentation for Python and MATLAB projects. It analyzes source files and summarizes them using a local Large Language Model (LLM), with support for custom LLM servers via the `llm_client.py` interface. The CLI allows specifying output directories, ignoring certain paths, and selecting specific models or API URLs for the LLM.
-This codebase implements a system for generating documentation summaries from source code files using language models. It includes modules for parsing different programming languages (Python and MATLAB), summarizing code with an LLM client, caching responses, and reviewing generated documentation for quality. The project also contains unit tests to ensure functionality across various components.</p>
+        <p>DocGen-LM is a tool for generating static HTML documentation for Python and MATLAB projects by analyzing source files with a local LLM. It supports nested functions and subclasses, rendering them as expandable sections in the output. The tool uses LMStudio or another compatible local LLM server for processing.
+This project consists of several modules for generating documentation from code. The `cache.py` module provides a caching mechanism for responses. The `docgenerator.py` module contains functions to clean output directories, summarize text, and generate summaries for Python and MATLAB files using an LLM client. The `html_writer.py` module handles HTML rendering for the generated documentation. The `llm_client.py` class manages interactions with a language model for summarization tasks. The `parser_matlab.py` and `parser_python.py` modules parse MATLAB and Python files, respectively, extracting function and class definitions. The `reviewer.py` module reviews generated documentation for quality issues such as assistant phrasing, contradictions, and hallucinations. The `scanner.py` module scans directories to find code files. Test modules (`test_cache.py`, `test_docgenerator.py`, etc.) validate the functionality of each component through various test cases.</p>
 <hr/>
 <h2>Modules</h2>
 <ul style="list-style-type: none; padding-left: 0;">
-<li style="margin-bottom: 1em;"><a href="cache.html">cache</a><br/><small>A simple on-disk cache for LLM responses. Implements methods to get and set cached values using deterministic keys based on file paths and content. Persists the cache to disk in JSON format.</small></li>
-<li style="margin-bottom: 1em;"><a href="docgenerator.html">docgenerator</a><br/><small>This Python script generates HTML documentation for a project using a local language model (LLM). It scans a source tree for Python and MATLAB files, parses them, requests summaries from the LLM, and writes the documentation to an output directory. The script includes functionality to clean the output directory, build prompts for summarization, rewrite docstrings with context, and generate both module-level and class/function-level summaries.</small></li>
-<li style="margin-bottom: 1em;"><a href="html_writer.html">html_writer</a><br/><small>This module provides utilities for rendering documentation pages using simple template substitution. It includes functions to highlight code snippets and render HTML content based on project summaries and module data. The `write_index` function generates an index page with navigation links, while the `write_module_page` function creates detailed documentation pages for individual modules, including classes, methods, and functions. Both functions use a shared template and apply HTML escaping to ensure safe rendering of user-provided content.</small></li>
-<li style="margin-bottom: 1em;"><a href="llm_client.html">llm_client</a><br/><small>- Defines an interface to interact with a local language model (LLM) backend using LMStudio.
-- Includes prompts for different types of documentation and code summaries.
-- Implements a `sanitize_summary` function to clean up generated summaries by removing unwanted phrases.
+<li style="margin-bottom: 1em;"><a href="cache.html">cache</a><br/><small>A simple on-disk cache for LLM responses. Implements methods to initialize the cache from a file, generate deterministic keys based on file paths and content, retrieve cached values by key, store new key-value pairs and persist them to disk, and save the current state of the cache to a JSON file.</small></li>
+<li style="margin-bottom: 1em;"><a href="docgenerator.html">docgenerator</a><br/><small>The `main` function generates HTML documentation using a local Large Language Model (LLM) by parsing Python and MATLAB files in a specified source directory. It summarizes content, caches responses to avoid redundant requests, and outputs summaries as HTML pages for modules, classes, functions, and includes a project summary based on README.md and other Markdown files, all organized into an index page and individual module pages in the output directory.</small></li>
+<li style="margin-bottom: 1em;"><a href="html_writer.html">html_writer</a><br/><small>This module provides utilities for rendering documentation pages using simple template substitution. It includes functions to highlight code snippets in various programming languages and to render HTML content based on structured data representing project summaries, modules, classes, and functions. The module can generate `index.html` and individual module pages, each formatted with navigation links and syntax-highlighted code examples.</small></li>
+<li style="margin-bottom: 1em;"><a href="llm_client.html">llm_client</a><br/><small>- Defines an interface to communicate with a local Large Language Model (LLM) backend using the LMStudio HTTP API.
+- Includes prompts for generating summaries of modules, classes, functions, READMEs, and projects.
+- Implements a `sanitize_summary` function to remove unwanted commentary from generated summaries.
 - Provides a `LLMClient` class that:
 - Initializes with a base URL and model name.
-- Checks connectivity to the LLM server using the `ping` method.
-- Generates summaries for given text using specified prompt types through the `summarize` method.</small></li>
-<li style="margin-bottom: 1em;"><a href="parser_matlab.html">parser_matlab</a><br/><small>This module provides a parser for MATLAB `.m` files. It extracts the file&#x27;s header comments and any function declarations found within the file. Each function entry includes the function name and a list of arguments. The parsing uses simple line-based techniques as specified in the Software Requirements Specification (SRS).</small></li>
-<li style="margin-bottom: 1em;"><a href="parser_python.html">parser_python</a><br/><small>This module provides a parser for Python files using the `ast` module to extract structured information according to the Software Requirements Specification (SRS). It includes functions to format arguments and signatures of functions and methods, and a main function to parse a Python source file and return a dictionary containing the module docstring, classes, and functions. Each class and function is represented with its name, signature, docstring, and source code segment.</small></li>
-<li style="margin-bottom: 1em;"><a href="reviewer.html">reviewer</a><br/><small>This module provides a tool for reviewing HTML documentation generated by DocGen-LM. It includes functions to check for assistant-like phrases, contradictions, and hallucinations in the documentation. The `review_directory` function processes all `.html` files in a specified directory, applying checks and optionally fixing issues based on the `autofix` flag. The `main` function sets up command-line arguments to specify the directory to review and whether to automatically fix detected issues.</small></li>
-<li style="margin-bottom: 1em;"><a href="scanner.html">scanner</a><br/><small>The module defines a function `scan_directory` that recursively discovers Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an internal helper function `_is_subpath` to check if one path is a subpath of another. The `scan_directory` function also allows for ignoring specific paths or directories during the scan, as defined in the `ignore` list.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_cache.html">test_cache</a><br/><small>The module defines two functions for testing a response cache implementation. The `test_cache_round_trip` function tests setting and retrieving a value from the cache, ensuring that the value persists across instances of the cache. The `test_cache_get_missing` function verifies that attempting to retrieve a non-existent key returns `None`. Both functions use a temporary file path provided by `tmp_path` for storing the cache data.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_docgenerator.html">test_docgenerator</a><br/><small>This module contains unit tests for a code documentation generator. It uses the `unittest.mock` library to patch the `docgenerator.LLMClient` class and test various scenarios, such as skipping invalid Python files, handling different types of summaries (module, class, function), sanitizing project summaries, using README content for summaries, and cleaning up existing output directories before generating new documentation.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_html_writer.html">test_html_writer</a><br/><small>The module defines two functions: `test_write_index` and `test_write_module_page`. These functions are used to test the functionality of writing HTML index and module pages, respectively. The tests use a temporary path (`tmp_path`) to create HTML files and then validate their content through assertions.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_integration.html">test_integration</a><br/><small>The module defines two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML files from Python and MATLAB files in a project directory using a mock LLMClient. It verifies that the output directory contains index.html, hello.html, and util.html files, and that the hello.html file includes a summary.
+- Offers a `ping` method to check if the API is reachable.
+- Includes a `summarize` method to generate summaries for given text using specified prompts, handling retries on failure.</small></li>
+<li style="margin-bottom: 1em;"><a href="parser_matlab.html">parser_matlab</a><br/><small>This module defines a function `parse_matlab_file` that takes the path to a MATLAB `.m` file and returns a dictionary containing the file&#x27;s header comments and any function declarations found. Each function entry includes the function name and a list of arguments. The parsing uses simple line-based techniques as specified in the Software Requirements Specification (SRS).</small></li>
+<li style="margin-bottom: 1em;"><a href="parser_python.html">parser_python</a><br/><small>This Python module provides a parser for Python files used by DocGen-LM. It uses the `ast` module to extract structures according to the Software Requirements Specification (SRS). The module includes functions to format arguments, signatures, and parse functions and classes within Python source files. It also contains a function to parse an entire Python file and return structured information about its contents, including docstrings, methods, subfunctions, and subclasses.</small></li>
+<li style="margin-bottom: 1em;"><a href="reviewer.html">reviewer</a><br/><small>The module implements a post-generation documentation reviewer for HTML output generated by DocGen-LM. It includes functions to check for assistant-like phrases, contradictions, and hallucinations in the HTML content. The `review_directory` function processes all `.html` files in a specified directory, applying checks and optionally fixing issues based on the `autofix` flag. The main function sets up command-line arguments to specify the directory to review and whether to automatically fix detected issues.</small></li>
+<li style="margin-bottom: 1em;"><a href="scanner.html">scanner</a><br/><small>The module implements a function to recursively discover Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an optional list of paths to ignore during the search. The function uses `os.walk` for traversal, filters out ignored directories and files, and returns a sorted list of absolute file paths that match the criteria.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_cache.html">test_cache</a><br/><small>The module defines two functions for testing a response caching mechanism. The `test_cache_round_trip` function tests setting and retrieving a value from the cache, ensuring that the data persists across instances of the cache. The `test_cache_get_missing` function verifies that attempting to retrieve a non-existent key returns `None`. Both functions use a temporary file path provided by `tmp_path` for storing the cache data.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_docgenerator.html">test_docgenerator</a><br/><small>The module contains unit tests for a documentation generation tool. It uses the `unittest.mock` library to patch dependencies and the `pathlib` library for file operations. The tests cover various scenarios, including:
 
-The second function, `test_static_copied_from_any_cwd`, tests the copying of static files (e.g., style.css) from any current working directory to the output directory. It uses a mock LLMClient and changes the current working directory to the project directory before running the main function. The test asserts that the static file is copied to the output directory.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_llm_client.html">test_llm_client</a><br/><small>This module defines a test suite for an `LLMClient` class. It includes tests for the `ping`, `summarize`, and `sanitize_summary` methods of the client. The tests use mocking to simulate HTTP requests and responses, as well as the `pytest` framework for assertions.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_parser_matlab.html">test_parser_matlab</a><br/><small>This module defines two test functions to verify the functionality of a MATLAB file parser. The `test_parse_simple_matlab` function checks if the parser correctly extracts the header and a single function from a simple MATLAB file. The `test_parse_multiple_functions` function ensures that the parser can handle multiple functions within a single MATLAB file, including checking the names and arguments of each function.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_parser_python.html">test_parser_python</a><br/><small>This module contains tests for parsing Python files using a custom `parse_python_file` function. It includes two test functions:
+1. Skipping invalid Python files due to syntax errors.
+2. Generating summaries for classes and functions with valid Python code.
+3. Handling non-UTF8 encoded files.
+4. Summarizing classes without docstrings.
+5. Sanitizing project summaries.
+6. Using README content as a summary if available.
+7. Cleaning the output directory before generating new documentation.
+8. Splitting long texts into chunks for summarization.
+9. Ensuring that functions and methods are summarized atomically within their respective modules or classes.
+10. Summarizing subclass methods correctly.
 
-1. `test_parse_simple_module`: Tests parsing a simple Python module with a class and a function, verifying the extracted docstrings, signatures, and source code.
+The tests interact with an `LLMClient` mock to simulate responses from a language model, ensuring that the documentation generation logic works as expected under different conditions.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a><br/><small>This module defines a test function `test_subclass_docs_and_method_summary` that uses the `unittest.mock.patch` decorator to mock an `LLMClient` class from the `docgenerator` module. The function creates a temporary project directory with a Python file containing a nested class and method, then calls the `main` function from the `docgenerator` module with the path to this project directory and an output directory for documentation.
 
-2. `test_parse_complex_signature`: Tests parsing a function with complex signature parameters, ensuring the correct handling of positional-only arguments (`/`), keyword-only arguments (`*`), default values, and variable-length keyword arguments (`**kw`).</small></li>
+The test asserts that the return value of the `main` function is 0 (indicating success), and checks that the generated HTML documentation contains summaries for both the class &quot;B&quot; and its method &quot;m&quot;.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_html_writer.html">test_html_writer</a><br/><small>The module defines functions to write HTML documentation for projects and modules. It includes:
+
+- `write_index`: Generates an index page with links to module pages.
+- `write_module_page`: Generates a detailed HTML page for a single module, including classes, functions, and subfunctions/subclasses.
+
+Each function takes parameters such as file paths, module data, and links, and writes the corresponding HTML content. The tests validate that the generated HTML contains expected elements like headers, summaries, source code snippets, and navigation links.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_integration.html">test_integration</a><br/><small>This module contains two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML files from Python and MATLAB files in a project directory using a mock LLMClient. It verifies that the output directory contains the expected HTML files and that the generated HTML includes a summary.
+
+The second function, `test_static_copied_from_any_cwd`, tests the copying of static files (e.g., CSS) to the output directory regardless of the current working directory. It uses a mock LLMClient and asserts that the static file is present in the output directory after running the main function with a specified project directory and output directory.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_llm_client.html">test_llm_client</a><br/><small>This module defines a set of tests for an `LLMClient` class, which interacts with a language model API. The tests cover the following functionalities:
+
+1. **Ping Method**: Verifies that the `ping` method successfully checks connectivity to the API by making a GET request and handling potential exceptions.
+
+2. **Summarize Method**:
+- Tests retry logic for the `summarize` method when it encounters request exceptions.
+- Validates that the method returns the correct summary text after retries.
+- Checks if the method raises a `RuntimeError` with a specific message when encountering an HTTP error or JSON parsing issues.
+
+3. **Sanitize Summary Function**: Ensures that the `sanitize_summary` function filters out certain phrases from the input text before returning it as the summary.
+
+4. **Prompt Templates**: Verifies that the `summarize` method uses different prompt templates based on the type of content (e.g., class, function, readme) when making POST requests to the API.
+
+The tests utilize mocking and patching to simulate API responses and behavior during testing.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_parser_matlab.html">test_parser_matlab</a><br/><small>The module defines two test functions to verify the functionality of a `parse_matlab_file` function. The tests create temporary MATLAB files with different contents, parse them using the `parse_matlab_file` function, and then check if the parsed results match expected values for headers and function details.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_parser_python.html">test_parser_python</a><br/><small>This module contains tests for a Python parser function named `parse_python_file`. The tests create temporary Python files with different structures, such as simple modules, complex signatures, and nested classes/functions. They then parse these files using the `parse_python_file` function and assert that the parsed results match the expected structure and content of the source code.</small></li>
 <li style="margin-bottom: 1em;"><a href="test_reviewer.html">test_reviewer</a><br/><small>This module defines several functions and tests for a code review tool. It includes:
 
-1. `_make_module`: Creates a temporary module page with specified summary and methods.
-2. `test_assistant_phrasing_detected`: Tests if the assistant phrasing is detected and reported.
-3. `test_contradiction_detected`: Tests if contradictions in method definitions are detected and reported.
-4. `test_hallucination_detected`: Tests if hallucinations (incorrect claims about code features) are detected and reported.
-5. `test_autofix_removes_phrasing`: Tests if autofix removes specified phrases from the generated HTML.</small></li>
-<li style="margin-bottom: 1em;"><a href="test_scanner.html">test_scanner</a><br/><small>The module defines a function `scan_directory` from the `scanner` module and tests it with `pytest`. It includes three test functions:
+1. `_make_module`: A helper function that creates a temporary module with specified summary and methods, then writes an HTML page for it.
+2. `test_assistant_phrasing_detected`: Tests if the reviewer detects phrasing indicative of assistant-generated content.
+3. `test_contradiction_detected`: Tests if the reviewer detects contradictions in the module&#x27;s documentation.
+4. `test_hallucination_detected`: Tests if the reviewer detects statements that are not supported by the code.
+5. `test_autofix_removes_phrasing`: Tests if the autofix option removes phrasing from the HTML output.
 
-1. `test_scan_directory_ignore_folder`: Creates files in a temporary directory, including an &quot;ignore_me&quot; folder. Calls `scan_directory` to get a list of file paths, excluding files in the &quot;ignore_me&quot; folder. Asserts that only expected files are included.
-
-2. `test_scan_directory_mixed_file_types`: Creates files with various extensions and nested directories. Calls `scan_directory` without ignoring any folders. Asserts that all non-.git files are included in the result.
-
-3. `test_scan_directory_skips_git_folder`: Creates files, including ones inside a .git folder. Calls `scan_directory` without ignoring any folders. Asserts that the .git folder and its contents are excluded from the result.</small></li>
+The tests use a temporary directory to create test modules and capture the output of the reviewer function to verify its behavior.</small></li>
+<li style="margin-bottom: 1em;"><a href="test_scanner.html">test_scanner</a><br/><small>The module defines a test suite for the `scan_directory` function from the `scanner` module. It uses the `pytest` framework to create temporary directories and files, then tests the `scan_directory` function with various configurations of files and ignore patterns. The tests check that the function correctly identifies Python files, ignores specified folders, and avoids scanning Git-related directories.</small></li>
 </ul>
     </div>
 </body>
