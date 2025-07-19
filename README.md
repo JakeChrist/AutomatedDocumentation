@@ -1,6 +1,6 @@
 # DocGen-LM
 
-DocGen-LM generates static HTML documentation for Python and MATLAB projects by analyzing source files and summarizing them with a local LLM.
+DocGen-LM generates static HTML documentation for Python and MATLAB projects by analyzing source files and summarizing them with a local LLM. It now captures and renders **nested functions** and **subclasses**, so complex structures appear in the output as expandable sections.
 
 ## Prerequisites
 
@@ -65,4 +65,4 @@ pytest
 
 ## Documentation
 
-For the complete specification see [Docs/DocGen-LM_SRS.md](Docs/DocGen-LM_SRS.md).
+Generated HTML documentation can be found in the **Docs/** directory.
