@@ -88,6 +88,57 @@ def chunk_text(text: str, tokenizer, chunk_size_tokens: int):
     return chunks
 
 
+def _chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int):
+    """Return a list of text chunks for ``module`` using its parsed structure."""
+
+    blocks = []
+    module_doc = module.get("module_docstring")
+    if module_doc:
+        blocks.append(module_doc)
+
+    for cls in module.get("classes", []):
+        src = cls.get("source", "")
+        if len(tokenizer.encode(src)) <= chunk_size_tokens:
+            blocks.append(src)
+        else:
+            for method in cls.get("methods", []):
+                m_src = method.get("source", "")
+                blocks.append(m_src)
+
+    for func in module.get("functions", []):
+        blocks.append(func.get("source", func.get("signature", "")))
+
+    chunks = []
+    current: list[str] = []
+    current_tokens = 0
+    sep_tokens = len(tokenizer.encode("\n\n"))
+
+    for block in blocks:
+        block_tokens = len(tokenizer.encode(block))
+        if block_tokens > chunk_size_tokens:
+            if current:
+                chunks.append("\n\n".join(current))
+                current = []
+                current_tokens = 0
+            chunks.extend(chunk_text(block, tokenizer, chunk_size_tokens))
+            continue
+
+        additional = block_tokens if not current else block_tokens + sep_tokens
+        if current_tokens + additional <= chunk_size_tokens:
+            current.append(block)
+            current_tokens += additional
+        else:
+            if current:
+                chunks.append("\n\n".join(current))
+            current = [block]
+            current_tokens = block_tokens
+
+    if current:
+        chunks.append("\n\n".join(current))
+
+    return chunks
+
+
 def _summarize_chunked(
     client: LLMClient,
     cache: ResponseCache,
@@ -116,6 +167,45 @@ def _summarize_chunked(
     for idx, part in enumerate(parts):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
         partials.append(_summarize(client, cache, key, part, prompt_type))
+
+    merge_text = "\n".join(f"- {p}" for p in partials)
+    merge_prompt = (
+        "Merge the following chunk-level summaries into a single technical summary (2–3 sentences).\n\n"
+        + merge_text
+    )
+    merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
+    final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    return sanitize_summary(final_summary)
+
+
+def _summarize_module_chunked(
+    client: LLMClient,
+    cache: ResponseCache,
+    key_prefix: str,
+    module_text: str,
+    module: dict,
+    tokenizer,
+    max_context_tokens: int,
+    chunk_token_budget: int,
+) -> str:
+    """Summarize a module using structure-aware chunking."""
+
+    template = PROMPT_TEMPLATES["module"]
+    overhead_tokens = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
+        tokenizer.encode(template.format(text=""))
+    )
+    available_tokens = max(1, max_context_tokens - overhead_tokens)
+
+    if len(tokenizer.encode(module_text)) <= available_tokens:
+        key = ResponseCache.make_key(key_prefix, module_text)
+        return _summarize(client, cache, key, module_text, "module")
+
+    chunk_size_tokens = min(chunk_token_budget, available_tokens)
+    parts = _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
+    partials = []
+    for idx, part in enumerate(parts):
+        key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
+        partials.append(_summarize(client, cache, key, part, "module"))
 
     merge_text = "\n".join(f"- {p}" for p in partials)
     merge_prompt = (
@@ -294,12 +384,12 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         key = ResponseCache.make_key(path, text)
-        summary = _summarize_chunked(
+        summary = _summarize_module_chunked(
             client,
             cache,
             key,
             text,
-            "module",
+            parsed,
             tokenizer,
             max_context_tokens,
             chunk_token_budget,
