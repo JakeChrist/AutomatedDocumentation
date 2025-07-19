@@ -1,3 +1,4 @@
 requests
 pygments
 beautifulsoup4
+tiktoken

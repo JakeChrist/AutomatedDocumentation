@@ -15,7 +15,8 @@ Clone the repository and install the required packages:
 pip install -r requirements.txt
 ```
 
-The tool depends on `requests` and `pygments`.
+The tool depends on `requests`, `pygments`, and `beautifulsoup4`. Install
+`tiktoken` for accurate token counting as listed in `requirements.txt`.
 
 ## 7. 🧪 CLI Usage
 

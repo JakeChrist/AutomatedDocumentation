@@ -166,3 +166,25 @@ def test_clean_output_dir(tmp_path: Path) -> None:
     assert not generated.exists()
     assert custom.exists()
     assert asset.exists()
+
+
+def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
+    from cache import ResponseCache
+    from docgenerator import _get_tokenizer, _summarize_chunked
+
+    tokenizer = _get_tokenizer()
+    text = "word " * 50
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+
+    with patch("docgenerator._summarize", return_value="summary") as mock_sum:
+        _summarize_chunked(
+            client=object(),
+            cache=cache,
+            key_prefix="k",
+            text=text,
+            prompt_type="module",
+            tokenizer=tokenizer,
+            max_context_tokens=10,
+            chunk_token_budget=5,
+        )
+        assert mock_sum.call_count > 1
