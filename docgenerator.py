@@ -62,6 +62,11 @@ def _get_tokenizer():
         except Exception:  # pragma: no cover - fallback if model unknown
             return tiktoken.encoding_for_model("gpt-3.5-turbo")
 
+    print(
+        "[WARNING] tiktoken is not installed; token counts will be approximate.",
+        file=sys.stderr,
+    )
+
     class _Simple:
         def encode(self, text: str):
             return text.split()
