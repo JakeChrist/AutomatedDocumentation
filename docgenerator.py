@@ -370,7 +370,16 @@ def main(argv: list[str] | None = None) -> int:
     readme_summary = ""
     if md_context:
         readme_key = ResponseCache.make_key("README", md_context)
-        readme_summary = _summarize(client, cache, readme_key, md_context, "readme")
+        readme_summary = _summarize_chunked(
+            client,
+            cache,
+            readme_key,
+            md_context,
+            "readme",
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+        )
         readme_summary = sanitize_summary(readme_summary)
 
     PROJECT_PROMPT = f"""
