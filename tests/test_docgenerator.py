@@ -181,3 +181,29 @@ def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
             chunk_token_budget=5,
         )
         assert mock_sum.call_count > 1
+
+
+def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
+    from cache import ResponseCache
+    from docgenerator import _get_tokenizer, _summarize_chunked
+    from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    tokenizer = _get_tokenizer()
+    text = "word " * 15
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+    template = PROMPT_TEMPLATES["module"]
+    overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(tokenizer.encode(template.format(text="")))
+    max_context_tokens = overhead + 10
+
+    with patch("docgenerator._summarize", return_value="summary") as mock_sum:
+        _summarize_chunked(
+            client=object(),
+            cache=cache,
+            key_prefix="k",
+            text=text,
+            prompt_type="module",
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=100,
+        )
+        assert mock_sum.call_count > 1

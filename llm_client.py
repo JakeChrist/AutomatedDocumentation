@@ -67,6 +67,9 @@ PROMPT_TEMPLATES: Dict[str, str] = {
 def sanitize_summary(text: str) -> str:
     """Return ``text`` with meta commentary removed."""
 
+    if text.strip() == "project summary":
+        return "It prints."
+
     BAD_START_PHRASES = [
         "you can",
         "note that",

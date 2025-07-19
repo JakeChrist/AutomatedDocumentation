@@ -21,7 +21,7 @@ from pathlib import Path
 
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
-from llm_client import LLMClient, sanitize_summary
+from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
 
 try:  # optional dependency used for token counting
     import tiktoken
@@ -100,11 +100,18 @@ def _summarize_chunked(
 ) -> str:
     """Summarize ``text`` by chunking if necessary."""
 
-    if len(tokenizer.encode(text)) <= max_context_tokens:
+    template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
+    overhead_tokens = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
+        tokenizer.encode(template.format(text=""))
+    )
+    available_tokens = max(1, max_context_tokens - overhead_tokens)
+
+    if len(tokenizer.encode(text)) <= available_tokens:
         key = ResponseCache.make_key(key_prefix, text)
         return _summarize(client, cache, key, text, prompt_type)
 
-    parts = chunk_text(text, tokenizer, chunk_token_budget)
+    chunk_size_tokens = min(chunk_token_budget, available_tokens)
+    parts = chunk_text(text, tokenizer, chunk_size_tokens)
     partials = []
     for idx, part in enumerate(parts):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
@@ -193,6 +200,9 @@ def _rewrite_docstring(
             f"Warning: no source or docstring for {file_path}:{item.get('name')}",
             file=sys.stderr,
         )
+        return
+
+    if not docstring:
         return
 
     if class_name or class_summary or project_summary:
