@@ -171,7 +171,11 @@ def _summarize_chunked(
 
     merge_text = "\n".join(f"- {p}" for p in partials)
     merge_prompt = (
-        "Merge the following chunk-level summaries into a single technical summary (2–3 sentences).\n\n"
+        "You are a documentation generator.\n\n"
+        "Combine the following summaries into a single technical paragraph.\n"
+        "Do not critique, evaluate, or offer suggestions.\n"
+        "Do not speculate or use uncertain language.\n"
+        "Only summarize what the code explicitly defines.\n\n"
         + merge_text
     )
     merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
@@ -210,7 +214,11 @@ def _summarize_module_chunked(
 
     merge_text = "\n".join(f"- {p}" for p in partials)
     merge_prompt = (
-        "Merge the following chunk-level summaries into a single technical summary (2–3 sentences).\n\n"
+        "You are a documentation generator.\n\n"
+        "Combine the following summaries into a single technical paragraph.\n"
+        "Do not critique, evaluate, or offer suggestions.\n"
+        "Do not speculate or use uncertain language.\n"
+        "Only summarize what the code explicitly defines.\n\n"
         + merge_text
     )
     merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
@@ -281,6 +289,9 @@ def _rewrite_docstring(
     class_name: str | None = None,
     class_summary: str | None = None,
     project_summary: str | None = None,
+    tokenizer=None,
+    max_context_tokens: int = 4096,
+    chunk_token_budget: int = 3072,
 ) -> None:
     """Rewrite ``item`` docstring using optional context."""
 
@@ -312,7 +323,16 @@ def _rewrite_docstring(
         f"REWRITE:{file_path}:{item.get('name')}",
         key_content,
     )
-    result = _summarize(client, cache, key, prompt, "docstring")
+    result = _summarize_chunked(
+        client,
+        cache,
+        key,
+        prompt,
+        "docstring",
+        tokenizer,
+        max_context_tokens,
+        chunk_token_budget,
+    )
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
 
@@ -321,6 +341,9 @@ def _summarize_methods_recursive(
     path: str,
     client: LLMClient,
     cache: ResponseCache,
+    tokenizer,
+    max_context_tokens: int,
+    chunk_token_budget: int,
 ) -> None:
     """Summarize methods of ``class_data`` and any subclasses."""
 
@@ -329,12 +352,29 @@ def _summarize_methods_recursive(
         key = ResponseCache.make_key(
             f"{path}:{class_data.get('name')}:{method.get('name')}", src
         )
-        summary = _summarize(client, cache, key, src, "function")
+        summary = _summarize_chunked(
+            client,
+            cache,
+            key,
+            src,
+            "function",
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+        )
         method["summary"] = summary
         method["docstring"] = summary
 
     for sub in class_data.get("subclasses", []):
-        _summarize_methods_recursive(sub, path, client, cache)
+        _summarize_methods_recursive(
+            sub,
+            path,
+            client,
+            cache,
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+        )
 
 
 def _summarize_class_recursive(
@@ -349,7 +389,15 @@ def _summarize_class_recursive(
 ) -> None:
     """Summarize ``class_data`` and rewrite its docstring and methods."""
 
-    _summarize_methods_recursive(class_data, path, client, cache)
+    _summarize_methods_recursive(
+        class_data,
+        path,
+        client,
+        cache,
+        tokenizer,
+        max_context_tokens,
+        chunk_token_budget,
+    )
 
     method_lines = []
     for method in class_data.get("methods", []):
@@ -380,7 +428,15 @@ def _summarize_class_recursive(
     class_data["docstring"] = cls_summary
     if original_doc:
         class_data["docstring"] = original_doc
-        _rewrite_docstring(client, cache, path, class_data)
+        _rewrite_docstring(
+            client,
+            cache,
+            path,
+            class_data,
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
+        )
 
     for method in class_data.get("methods", []):
         _rewrite_docstring(
@@ -391,6 +447,9 @@ def _summarize_class_recursive(
             class_name=class_data.get("name"),
             class_summary=cls_summary,
             project_summary=project_summary,
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
         )
 
     for sub in class_data.get("subclasses", []):
@@ -497,7 +556,15 @@ def main(argv: list[str] | None = None) -> int:
 
         # summarize methods now so class summaries can reference them later
         for cls in module.get("classes", []):
-            _summarize_methods_recursive(cls, path, client, cache)
+            _summarize_methods_recursive(
+                cls,
+                path,
+                client,
+                cache,
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
+            )
 
         # and for standalone functions (summarized later with project context)
         for func in module.get("functions", []):
@@ -600,7 +667,16 @@ def main(argv: list[str] | None = None) -> int:
             src = func.get("source") or func.get("signature") or func.get("name", "")
             prompt = _build_function_prompt(src, project_summary=project_summary)
             func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", prompt)
-            func_summary = _summarize(client, cache, func_key, prompt, "docstring")
+            func_summary = _summarize_chunked(
+                client,
+                cache,
+                func_key,
+                prompt,
+                "docstring",
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
+            )
             func["summary"] = func_summary
             _rewrite_docstring(
                 client,
@@ -608,6 +684,9 @@ def main(argv: list[str] | None = None) -> int:
                 path,
                 func,
                 project_summary=project_summary,
+                tokenizer=tokenizer,
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
             )
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}
