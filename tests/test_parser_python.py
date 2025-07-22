@@ -105,3 +105,47 @@ def test_parse_nested_structures(tmp_path: Path) -> None:
     assert len(sub.get("methods", [])) == 1
     assert sub["methods"][0]["name"] == "method"
 
+
+def test_deeply_nested_classes(tmp_path: Path) -> None:
+    src = textwrap.dedent(
+        '''
+        class A:
+            class B:
+                class C:
+                    def inner(self):
+                        pass
+        '''
+    )
+    file = tmp_path / "deep.py"
+    file.write_text(src)
+
+    result = parse_python_file(str(file))
+
+    a = result["classes"][0]
+    b = a["subclasses"][0]
+    c = b["subclasses"][0]
+    assert c["name"] == "C"
+    assert c["methods"][0]["name"] == "inner"
+
+
+def test_class_inside_method(tmp_path: Path) -> None:
+    src = textwrap.dedent(
+        '''
+        class A:
+            def outer(self):
+                class B:
+                    def m(self):
+                        pass
+        '''
+    )
+    file = tmp_path / "inner.py"
+    file.write_text(src)
+
+    result = parse_python_file(str(file))
+
+    a = result["classes"][0]
+    assert len(a["subclasses"]) == 1
+    b = a["subclasses"][0]
+    assert b["name"] == "B"
+    assert b["methods"][0]["name"] == "m"
+

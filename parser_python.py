@@ -75,8 +75,26 @@ def _format_signature(func: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     return result
 
 
+def _parse_classes(nodes: List[ast.AST], source: str) -> List[Dict[str, Any]]:
+    """Recursively parse all ``ClassDef`` nodes within ``nodes``."""
+
+    classes: List[Dict[str, Any]] = []
+    for item in nodes:
+        if isinstance(item, ast.ClassDef):
+            classes.append(parse_class(item, source))
+        elif isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            classes.extend(_parse_classes(item.body, source))
+    return classes
+
+
+def parse_classes(node: ast.AST, source: str) -> List[Dict[str, Any]]:
+    """Public wrapper for ``_parse_classes`` using ``node.body``."""
+
+    return _parse_classes(getattr(node, "body", []), source)
+
+
 def parse_function(node: ast.FunctionDef | ast.AsyncFunctionDef, source: str) -> Dict[str, Any]:
-    """Return a dictionary describing ``node`` and any nested functions."""
+    """Return a dictionary describing ``node`` and any nested definitions."""
 
     func_info: Dict[str, Any] = {
         "name": node.name,
@@ -85,11 +103,14 @@ def parse_function(node: ast.FunctionDef | ast.AsyncFunctionDef, source: str) ->
         "docstring": ast.get_docstring(node),
         "source": ast.get_source_segment(source, node),
         "subfunctions": [],
+        "subclasses": [],
     }
 
     for item in node.body:
         if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
             func_info["subfunctions"].append(parse_function(item, source))
+
+    func_info["subclasses"] = _parse_classes(node.body, source)
 
     return func_info
 
@@ -106,10 +127,10 @@ def parse_class(node: ast.ClassDef, source: str) -> Dict[str, Any]:
     }
 
     for item in node.body:
-        if isinstance(item, ast.ClassDef):
-            cls_info["subclasses"].append(parse_class(item, source))
-        elif isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
             cls_info["methods"].append(parse_function(item, source))
+
+    cls_info["subclasses"] = _parse_classes(node.body, source)
 
     return cls_info
 
