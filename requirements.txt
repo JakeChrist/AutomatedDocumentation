@@ -2,3 +2,4 @@ requests
 pygments
 beautifulsoup4
 tiktoken
+tqdm

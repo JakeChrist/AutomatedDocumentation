@@ -28,6 +28,10 @@ try:  # optional dependency used for token counting
     import tiktoken
 except Exception:  # pragma: no cover - optional import
     tiktoken = None
+try:
+    from tqdm import tqdm
+except ImportError:  # pragma: no cover - optional import
+    tqdm = lambda x, **kwargs: x
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from scanner import scan_directory
@@ -347,7 +351,7 @@ def _summarize_methods_recursive(
 ) -> None:
     """Summarize methods of ``class_data`` and any subclasses."""
 
-    for method in class_data.get("methods", []):
+    for method in tqdm(class_data.get("methods", []), desc="methods", leave=False):
         src = method.get("source") or method.get("signature") or method.get("name", "")
         key = ResponseCache.make_key(
             f"{path}:{class_data.get('name')}:{method.get('name')}", src
@@ -515,7 +519,7 @@ def main(argv: list[str] | None = None) -> int:
 
     files = scan_directory(args.source, args.ignore)
     modules = []
-    for path in files:
+    for path in tqdm(files, desc="Processing modules"):
         try:
             text = Path(path).read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:  # skip files with invalid encoding
@@ -555,7 +559,7 @@ def main(argv: list[str] | None = None) -> int:
         module.update(parsed)
 
         # summarize methods now so class summaries can reference them later
-        for cls in module.get("classes", []):
+        for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
             _summarize_methods_recursive(
                 cls,
                 path,
@@ -567,7 +571,7 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         # and for standalone functions (summarized later with project context)
-        for func in module.get("functions", []):
+        for func in tqdm(module.get("functions", []), desc="methods", leave=False):
             func["summary"] = ""
 
         modules.append(module)
@@ -652,7 +656,7 @@ def main(argv: list[str] | None = None) -> int:
     # and rewrite method/function docstrings with context.
     for module in modules:
         path = module.get("path", "")
-        for cls in module.get("classes", []):
+        for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
             _summarize_class_recursive(
                 cls,
                 path,
@@ -663,7 +667,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_context_tokens,
                 chunk_token_budget,
             )
-        for func in module.get("functions", []):
+        for func in tqdm(module.get("functions", []), desc="methods", leave=False):
             src = func.get("source") or func.get("signature") or func.get("name", "")
             prompt = _build_function_prompt(src, project_summary=project_summary)
             func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", prompt)
