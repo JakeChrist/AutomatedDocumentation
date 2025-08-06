@@ -33,15 +33,10 @@
     </div>
     <div class="content">
         <h1>test_html_writer</h1>
-        <p>The module defines functions to write HTML documentation for projects and modules. It includes:
-
-- `write_index`: Generates an index page with links to module pages.
-- `write_module_page`: Generates a detailed HTML page for a single module, including classes, functions, and subfunctions/subclasses.
-
-Each function takes parameters such as file paths, module data, and links, and writes the corresponding HTML content. The tests validate that the generated HTML contains expected elements like headers, summaries, source code snippets, and navigation links.</p>
+        <p>This module contains tests for functions `write_index` and `write_module_page` from the `html_writer.py` file. The tests use `tmp_path` to create temporary files and verify that the output HTML is correctly generated based on the input data. The tests check for specific HTML elements, attributes, and content to ensure that the documentation is rendered as expected.</p>
 <h2>Functions</h2>
 <h3 id="test_write_index">test_write_index(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_write_index` tests the `write_index` function from the `html_writer.py` module. It creates a temporary directory, defines links and summaries for modules, calls `write_index`, and then checks if the generated HTML file contains the expected content. The test ensures that the index page is correctly formatted with project summary, module links, and summaries, while handling special characters in module names appropriately.</p>
+<p>The `test_write_index` function tests the `write_index` function from the `html_writer.py` module. It creates a temporary directory, defines links and summaries for modules, and calls `write_index` to generate an HTML index file. The test checks that the generated HTML contains expected elements such as the generation comment, project summary, module links, and summaries. It ensures that special characters in module names are correctly escaped and that only one summary is rendered.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_index</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>, <span style="color: #BA2121">&quot;module1.html&quot;</span>), (<span style="color: #BA2121">&quot;module&amp;2&quot;</span>, <span style="color: #BA2121">&quot;module2.html&quot;</span>)]
     summaries <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>: <span style="color: #BA2121">&quot;First module.&quot;</span>, <span style="color: #BA2121">&quot;module&amp;2&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}
@@ -61,7 +56,7 @@ Each function takes parameters such as file paths, module data, and links, and w
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h1&gt;Project Documentation&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_write_module_page">test_write_module_page(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_write_module_page` tests the generation of an HTML page for a Python module using the `write_module_page` function. It creates a temporary directory, defines module data including classes and functions, and calls `write_module_page` to generate the HTML file. The test then reads the generated HTML file and asserts that it contains expected elements such as links, module summaries, class definitions, method signatures, and function declarations.</p>
+<p>The `test_write_module_page` function tests the `write_module_page` function from the `html_writer.py` module. It creates a temporary directory, simulates module data including classes and functions, and writes an HTML module page using this data. The test checks that the generated HTML contains expected elements such as project overview link, module summary, class details, method signatures, and function definitions. It also verifies that code snippets are correctly highlighted in `&lt;pre&gt;&lt;code&gt;` tags.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_module_page</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;OtherModule&quot;</span>, <span style="color: #BA2121">&quot;other.html&quot;</span>)]
     module_data <span style="color: #666666">=</span> {
@@ -108,7 +103,7 @@ Each function takes parameters such as file paths, module data, and links, and w
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
 </code></pre>
 <h3 id="test_subfunction_rendering">test_subfunction_rendering(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the rendering of subfunctions in a module&#x27;s documentation. It creates a mock module data dictionary with an outer function containing an inner subfunction. The `write_module_page` function is called to generate HTML documentation for this module, which includes expanding sections for subfunctions. The test asserts that the generated HTML contains details tags for the subfunction and that both the outer and inner functions are source-highlighted in `&lt;pre&gt;&lt;code&gt;` blocks.</p>
+<p>The function `test_subfunction_rendering` tests the rendering of subfunctions in HTML documentation. It creates a mock module data structure with an outer function containing a nested inner function. The function then writes this module page to a temporary directory using the `write_module_page` function and reads the generated HTML file. It asserts that the HTML contains details tags, references to the inner subfunction, and that both the outer and inner functions&#x27; source code are highlighted in `&lt;pre&gt;&lt;code&gt;` blocks.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subfunction_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> []
     module_data <span style="color: #666666">=</span> {
@@ -140,15 +135,7 @@ Each function takes parameters such as file paths, module data, and links, and w
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
 </code></pre>
 <h3 id="test_subclass_rendering">test_subclass_rendering(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_subclass_rendering` is designed to test the rendering of subclass information in HTML documentation. It uses a temporary directory specified by `tmp_path` to create and write a module page for a Python module named &quot;mod&quot;. The module contains a class `A` with a subclass `B`. Class `B` has a method `m`.
-
-The function then reads the generated HTML file located at `tmp_path / &quot;mod.html&quot;` and asserts that certain elements are present in the HTML content:
-- It checks if the `&lt;details&gt;` tag is included, indicating expandable sections.
-- It verifies that the text &quot;Class: B&quot; is present, confirming that subclass information is rendered.
-- It ensures that the method signature `def m(self)` is included.
-- Finally, it asserts that there is exactly one occurrence of the `&lt;pre&gt;&lt;code&gt;` tags, which are used for code snippets in HTML.
-
-This test case is part of a larger suite to validate the functionality of the documentation generation process, specifically focusing on how subclasses and their methods are rendered in the output.</p>
+<p>The function `test_subclass_rendering` tests the rendering of subclass information in HTML documentation. It creates a mock module data structure with a class `A` that has a subclass `B`. The function writes this module data to an HTML file using the `write_module_page` function and then reads the generated HTML content. It asserts that the HTML contains details tags, mentions &quot;Class: B&quot;, includes the method signature &quot;def m(self)&quot;, and highlights one code snippet.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subclass_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> []
     module_data <span style="color: #666666">=</span> {

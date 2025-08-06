@@ -33,10 +33,10 @@
     </div>
     <div class="content">
         <h1>scanner</h1>
-        <p>The module implements a function to recursively discover Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an optional list of paths to ignore during the search. The function uses `os.walk` for traversal, filters out ignored directories and files, and returns a sorted list of absolute file paths that match the criteria.</p>
+        <p>The module implements a function to recursively discover Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an ignore mechanism based on relative paths provided by the user. The function filters out directories named `.git` and any paths listed in the ignore list, ensuring that only relevant source files are returned as absolute paths.</p>
 <h2>Functions</h2>
 <h3 id="_is_subpath">_is_subpath(path: Path, parent: Path) -&gt; bool</h3>
-<p>This function checks whether one file path (`path`) is a subpath of another (`parent`). It returns `True` if `path` is either equal to or inside `parent`, and `False` otherwise. The check is performed using the `relative_to` method, which raises a `ValueError` if `path` is not related to `parent`.</p>
+<p>This function checks whether a given `path` is a subpath of another `parent` path. It returns `True` if the `path` is equal to or inside the `parent`, and `False` otherwise. The check is performed using the `relative_to` method, which raises a `ValueError` if the `path` is not related to the `parent`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_is_subpath</span>(path: Path, parent: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return True if *path* is equal to or inside *parent*.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">try</span>:
@@ -46,7 +46,7 @@
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">False</span>
 </code></pre>
 <h3 id="scan_directory">scan_directory(base_path: str, ignore: List[str]) -&gt; List[str]</h3>
-<p>The `scan_directory` function recursively discovers Python (``.py``) and MATLAB (``.m``) files under a specified base directory while ignoring certain paths. It returns a list of absolute paths to the discovered source files, excluding those within ignored directories or matching any patterns in the ignore list. The function uses `os.walk` to traverse the directory tree, filters out non-code files, and applies path resolution and pruning based on the provided ignore criteria.</p>
+<p>The `scan_directory` function recursively discovers Python (``.py``) and MATLAB (``.m``) files under a specified base directory while ignoring certain subpaths. It returns a list of absolute paths to the discovered source files. The function uses `os.walk` to traverse the directory tree, filters out ignored directories and internal `.git` folders, and checks if each file has a valid extension before adding its absolute path to the results list.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_directory</span>(base_path: <span style="color: #008000">str</span>, ignore: List[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively discover ``.py`` and ``.m`` files under *base_path*.</span>
 

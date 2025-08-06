@@ -33,24 +33,27 @@
     </div>
     <div class="content">
         <h1>llm_client</h1>
-        <p>- Defines an interface to communicate with a local Large Language Model (LLM) backend using the LMStudio HTTP API.
-- Includes prompts for generating summaries of modules, classes, functions, READMEs, and projects.
-- Implements a `sanitize_summary` function to remove unwanted commentary from generated summaries.
-- Provides a `LLMClient` class that:
-- Initializes with a base URL and model name.
-- Offers a `ping` method to check if the API is reachable.
-- Includes a `summarize` method to generate summaries for given text using specified prompts, handling retries on failure.</p>
+        <p>This module provides an interface to a local language model (LLM) backend using the LMStudio HTTP API. It includes:
+
+- A `SYSTEM_PROMPT` for the documentation engine.
+- `_COMMON_RULES` defining guidelines for generating summaries.
+- A `README_PROMPT` for enriching project documentation.
+- `PROMPT_TEMPLATES` for different types of code elements (module, class, function, README, project).
+- A `sanitize_summary` function to clean up generated summaries.
+- An `LLMClient` class with methods:
+- `ping`: Checks if the LMStudio API is reachable.
+- `summarize`: Generates a summary for given text using a specified prompt type.</p>
 <h2 id="LLMClient">Class: LLMClient</h2>
-<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API. It includes methods for checking API reachability with the `ping` method and generating summaries of text using specified prompt types with the `summarize` method. The `summarize` method handles retries and error handling for robust request execution.</p>
+<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API. It includes methods for checking connectivity with the API (`ping`) and generating summaries of text using specified prompt types (`summarize`). The `summarize` method uses a template to format the input text, sends a POST request to the API endpoint, and handles potential errors by retrying up to three times before raising a runtime error.</p>
 <h3 id="__init__">Method: __init__(self, base_url: str=&#x27;http://localhost:1234&#x27;, model: str=&#x27;local&#x27;) -&gt; None</h3>
-<p>Initializes an object with a base URL and a model. The base URL is stored after removing any trailing slashes, and the endpoint for chat completions is constructed using this base URL. The model type is also stored.</p>
+<p>Initializes an object with a base URL and a model. The base URL is stored after removing any trailing slashes, and the endpoint for chat completions is constructed using this base URL. The model type is also set during initialization.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, base_url: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;http://localhost:1234&quot;</span>, model: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;local&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #008000">self</span><span style="color: #666666">.</span>base_url <span style="color: #666666">=</span> base_url<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;/&quot;</span>)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">/v1/chat/completions&quot;</span>
         <span style="color: #008000">self</span><span style="color: #666666">.</span>model <span style="color: #666666">=</span> model
 </code></pre>
 <h3 id="ping">Method: ping(self, timeout: float=2.0) -&gt; bool</h3>
-<p>The function `ping` checks if an API is reachable by sending a GET request to the specified base URL. It accepts an optional timeout parameter with a default value of 2.0 seconds. If the server responds successfully, it returns `True`. If there is any issue during the connection or response handling, it raises a `ConnectionError` with a message indicating that the server cannot be reached at the given base URL.</p>
+<p>Function `ping` checks if the API is reachable. It sends a GET request to the base URL with an optional timeout parameter. If the server responds successfully, it returns `True`. If there&#x27;s a connection error or any other exception during the request, it raises a `ConnectionError` indicating that the server cannot be contacted.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ping</span>(<span style="color: #008000">self</span>, timeout: <span style="color: #008000">float</span> <span style="color: #666666">=</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``True`` if the API is reachable.</span>
 
@@ -68,7 +71,7 @@
             <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">ConnectionError</span>(<span style="color: #BA2121">f&quot;Unable to reach LMStudio at </span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>) <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">exc</span>
 </code></pre>
 <h3 id="summarize">Method: summarize(self, text: str, prompt_type: str) -&gt; str</h3>
-<p>The function `summarize` takes a string `text` and a string `prompt_type` as input. It uses the specified `prompt_type` to format a prompt, then sends this prompt to an endpoint using a payload that includes a model, temperature, and messages. The function attempts to receive a response up to three times, handling HTTP errors and request exceptions by retrying with a one-second delay each time. If successful, it sanitizes and returns the summary content; otherwise, it raises a `RuntimeError` with an error message.</p>
+<p>The function `summarize` takes a string `text` and a string `prompt_type`. It uses the specified `prompt_type` to generate a prompt from a template, constructs a payload with the model settings and the generated prompt, and sends this payload to an endpoint using HTTP POST. The response is parsed for content, which is then sanitized and returned as a summary. If the request fails due to HTTP errors or other exceptions, it retries up to three times before raising a `RuntimeError` with the last error message.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a summary for ``text`` using ``prompt_type`` template.&quot;&quot;&quot;</span>
 
@@ -111,7 +114,7 @@
 </code></pre>
 <h2>Functions</h2>
 <h3 id="sanitize_summary">sanitize_summary(text: str) -&gt; str</h3>
-<p>The function `sanitize_summary` takes a string `text` as input and returns a sanitized version of the text by removing meta-commentary phrases, specific start phrases, and certain keywords related to summaries or outputs. It uses a list of bad start phrases and filters out lines that contain these phrases or specific keywords indicating unwanted content. The function then joins the filtered lines back into a single string and returns it.</p>
+<p>The `sanitize_summary` function processes a given text by removing lines that start with specific phrases considered meta-commentary or redundant. It also filters out lines containing certain keywords related to summaries, outputs, and responses. The function returns the sanitized text after stripping leading and trailing whitespace.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sanitize_summary</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with meta commentary removed.&quot;&quot;&quot;</span>
 

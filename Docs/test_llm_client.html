@@ -33,23 +33,10 @@
     </div>
     <div class="content">
         <h1>test_llm_client</h1>
-        <p>This module defines a set of tests for an `LLMClient` class, which interacts with a language model API. The tests cover the following functionalities:
-
-1. **Ping Method**: Verifies that the `ping` method successfully checks connectivity to the API by making a GET request and handling potential exceptions.
-
-2. **Summarize Method**:
-- Tests retry logic for the `summarize` method when it encounters request exceptions.
-- Validates that the method returns the correct summary text after retries.
-- Checks if the method raises a `RuntimeError` with a specific message when encountering an HTTP error or JSON parsing issues.
-
-3. **Sanitize Summary Function**: Ensures that the `sanitize_summary` function filters out certain phrases from the input text before returning it as the summary.
-
-4. **Prompt Templates**: Verifies that the `summarize` method uses different prompt templates based on the type of content (e.g., class, function, readme) when making POST requests to the API.
-
-The tests utilize mocking and patching to simulate API responses and behavior during testing.</p>
+        <p>The module defines a test suite for an `LLMClient` class, which interacts with a language model. It includes tests for the client&#x27;s ability to ping the server, summarize text based on different types (class, function, readme), and handle exceptions during requests. The tests use mocking to simulate HTTP responses and assert the behavior of the client methods under various conditions.</p>
 <h2>Functions</h2>
 <h3 id="test_ping_success">test_ping_success() -&gt; None</h3>
-<p>The function `test_ping_success` tests the `ping` method of an `LLMClient` class. It creates a mock response that simulates a successful HTTP GET request and asserts that the `ping` method returns `True`. The test also verifies that the `get` method from the `requests` module is called once with the specified URL and timeout, and that the `raise_for_status` method of the mock response is called to ensure there are no HTTP errors.</p>
+<p>The function `test_ping_success` tests the `ping` method of the `LLMClient` class. It creates an instance of `LLMClient` with a fake URL, sets up a mock response that does not raise any exceptions when calling `raise_for_status`, and uses the `patch` decorator from the `unittest.mock` module to mock the `requests.get` function. The test asserts that the `ping` method returns `True`, indicating a successful ping, and verifies that the `get` function was called once with the specified URL and timeout, as well as that `raise_for_status` was called on the mock response object.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_ping_success</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     mock_response <span style="color: #666666">=</span> Mock()
@@ -60,7 +47,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
         mock_response<span style="color: #666666">.</span>raise_for_status<span style="color: #666666">.</span>assert_called_once()
 </code></pre>
 <h3 id="test_ping_failure">test_ping_failure() -&gt; None</h3>
-<p>This function tests the `ping` method of an `LLMClient` class when a connection failure occurs. It uses the `patch` function from the `unittest.mock` module to mock the `requests.get` method, causing it to raise a `RequestException`. The test asserts that calling `client.ping()` raises a `ConnectionError`.</p>
+<p>This function tests the `ping` method of the `LLMClient` class when a connection failure occurs. It creates an instance of `LLMClient` with a fake server URL and uses the `patch` decorator from the `unittest.mock` module to simulate a request exception during the ping operation. The test asserts that a `ConnectionError` is raised as expected when attempting to connect to the fake server.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_ping_failure</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;requests.get&quot;</span>, side_effect<span style="color: #666666">=</span>requests<span style="color: #666666">.</span>exceptions<span style="color: #666666">.</span>RequestException(<span style="color: #BA2121">&quot;fail&quot;</span>)):
@@ -68,7 +55,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
             client<span style="color: #666666">.</span>ping()
 </code></pre>
 <h3 id="test_summarize_retries_and_returns_summary">test_summarize_retries_and_returns_summary() -&gt; None</h3>
-<p>The function `test_summarize_retries_and_returns_summary` tests the `summarize` method of an `LLMClient` class. It mocks a request that initially fails with an exception and then succeeds, returning a JSON response containing a summary message. The test verifies that the client retries the request once after a 1-second delay, correctly handles the successful response, and constructs the prompt using a template for the specified module type.</p>
+<p>This function tests the `summarize` method of the `LLMClient` class. It sets up a mock response that simulates a request failure followed by a successful response from a language model. The test asserts that the method retries on failure, calls the sleep function once with a delay of 1 second, and correctly formats the prompt using a template for module summaries.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_retries_and_returns_summary</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     mock_response <span style="color: #666666">=</span> Mock()
@@ -88,7 +75,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
         <span style="color: #008000; font-weight: bold">assert</span> sent_prompt <span style="color: #666666">==</span> PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>]<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;text&quot;</span>)
 </code></pre>
 <h3 id="test_summarize_raises_runtime_error_with_message">test_summarize_raises_runtime_error_with_message() -&gt; None</h3>
-<p>The function `test_summarize_raises_runtime_error_with_message` tests the behavior of the `summarize` method in the `LLMClient` class when an HTTP error occurs. It uses a mock response to simulate an HTTP error and a JSON parsing error, then asserts that a `RuntimeError` is raised with the message &quot;server exploded&quot;.</p>
+<p>The function `test_summarize_raises_runtime_error_with_message` tests the `summarize` method of the `LLMClient` class. It sets up a mock response that raises an HTTP error and a JSON decoding error, with the text &quot;server exploded&quot;. The function then patches the `requests.post` call to return this mock response and uses `pytest.raises` to assert that calling `client.summarize(&quot;text&quot;, &quot;module&quot;)` raises a `RuntimeError` with the message &quot;server exploded&quot;.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_raises_runtime_error_with_message</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     mock_response <span style="color: #666666">=</span> Mock()
@@ -100,7 +87,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
             client<span style="color: #666666">.</span>summarize(<span style="color: #BA2121">&quot;text&quot;</span>, <span style="color: #BA2121">&quot;module&quot;</span>)
 </code></pre>
 <h3 id="test_sanitize_summary_filters_phrases">test_sanitize_summary_filters_phrases() -&gt; None</h3>
-<p>The function `test_sanitize_summary_filters_phrases` tests the `sanitize_summary` function to ensure it filters out unwanted phrases from a given text. It asserts that after sanitization, the text only contains relevant information without disclaimers or introductory phrases.</p>
+<p>The function `test_sanitize_summary_filters_phrases` tests the `sanitize_summary` function to ensure it filters out unwanted phrases from the input text. It asserts that after sanitization, the remaining text contains only relevant information without disclaimers or introductory phrases.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_sanitize_summary_filters_phrases</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     text <span style="color: #666666">=</span> (
         <span style="color: #BA2121">&quot;You can run this.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
@@ -113,7 +100,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
     <span style="color: #008000; font-weight: bold">assert</span> sanitize_summary(text) <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;Defines a class.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">It prints output.&quot;</span>
 </code></pre>
 <h3 id="test_prompt_varies_by_type">test_prompt_varies_by_type() -&gt; None</h3>
-<p>This function tests the `summarize` method of an `LLMClient` class. It uses a mock response to simulate an HTTP request made by the client when summarizing text based on its type (either &quot;class&quot; or &quot;function&quot;). The function asserts that the prompts sent for class and function summaries are different, as they use distinct prompt templates from a predefined dictionary (`PROMPT_TEMPLATES`).</p>
+<p>This function tests the `summarize` method of the `LLMClient` class to ensure that it generates different prompts based on the type of code being summarized. It uses a mock response from an HTTP POST request and patches the `requests.post` method to return this mock response. The function then calls the `summarize` method twice, once with &quot;class&quot; as the type and once with &quot;function&quot;. It asserts that the prompts generated for classes and functions are different and match the expected prompt templates.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_prompt_varies_by_type</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     mock_response <span style="color: #666666">=</span> Mock()
@@ -133,7 +120,7 @@ The tests utilize mocking and patching to simulate API responses and behavior du
     <span style="color: #008000; font-weight: bold">assert</span> class_prompt <span style="color: #666666">!=</span> func_prompt
 </code></pre>
 <h3 id="test_readme_prompt_template_used">test_readme_prompt_template_used() -&gt; None</h3>
-<p>This function tests whether the README prompt template is used correctly when summarizing text. It creates an instance of `LLMClient`, sets up a mock response with a predefined JSON structure, and patches the `requests.post` method to return this mock response. The function then calls `client.summarize` with &quot;foo&quot; as the input text and &quot;readme&quot; as the context. After the call, it asserts that the second message content in the POST request matches the expected README prompt template formatted with the input text &quot;foo&quot;.</p>
+<p>The function `test_readme_prompt_template_used` tests the `summarize` method of the `LLMClient` class. It creates a mock response from an HTTP POST request, which simulates the language model&#x27;s response to a summary prompt. The test checks if the constructed prompt matches the expected format for README documentation using the `PROMPT_TEMPLATES[&quot;readme&quot;]`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_readme_prompt_template_used</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     client <span style="color: #666666">=</span> LLMClient(<span style="color: #BA2121">&quot;http://fake&quot;</span>)
     mock_response <span style="color: #666666">=</span> Mock()
