@@ -21,7 +21,7 @@ real `requests` library to communicate with LMStudio. Install
 For the `explaincode` summary utility, additional packages
 `markdown`, `python-docx`, and `reportlab` are required.
 
-## 7. 🧪 CLI Usage
+## CLI Usage
 
 ```bash
 python docgenerator.py ./my_project --output ./docs
