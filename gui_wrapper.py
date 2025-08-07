@@ -1,11 +1,10 @@
 import sys
 import subprocess
-from PyQt5 import QtWidgets, QtCore
+from pathlib import Path
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class PathLineEdit(QtWidgets.QLineEdit):
-    """QLineEdit that accepts drag-and-drop of files/folders."""
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -21,12 +20,10 @@ class PathLineEdit(QtWidgets.QLineEdit):
 
 
 class CollapsibleBox(QtWidgets.QWidget):
-    """Simple collapsible container."""
-
     def __init__(self, title="", parent=None):
         super().__init__(parent)
         self.toggle_button = QtWidgets.QToolButton(text=title, checkable=True)
-        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        self.toggle_button.setStyleSheet("QToolButton { border: none; color: #ddd; font-weight: bold; }")
         self.toggle_button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.toggle_button.setArrowType(QtCore.Qt.RightArrow)
         self.toggle_button.clicked.connect(self.on_toggled)
@@ -50,8 +47,6 @@ class CollapsibleBox(QtWidgets.QWidget):
 
 
 class CommandRunner(QtCore.QThread):
-    """Runs one or more commands in a worker thread."""
-
     output = QtCore.pyqtSignal(str)
     finished = QtCore.pyqtSignal(int)
 
@@ -82,7 +77,22 @@ class CommandRunner(QtCore.QThread):
 class MainWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Documentation GUI")
+        self.setWindowTitle("DocGen-LM Documentation Tool")
+        self.setStyleSheet(self.dark_style())
+
+        # Header with logo and title
+        logo = QtWidgets.QLabel()
+        logo_path = Path("Assets/docgen-lm-logo.png")
+        if logo_path.exists():
+            pixmap = QtGui.QPixmap(str(logo_path)).scaledToHeight(48, QtCore.Qt.SmoothTransformation)
+            logo.setPixmap(pixmap)
+        title = QtWidgets.QLabel("DocGen-LM Documentation Tool")
+        title.setStyleSheet("font-size: 18pt; font-weight: bold; color: #fff;")
+
+        header_layout = QtWidgets.QHBoxLayout()
+        header_layout.addWidget(logo)
+        header_layout.addWidget(title)
+        header_layout.addStretch()
 
         # Project directory selector
         self.project_edit = PathLineEdit()
@@ -148,6 +158,7 @@ class MainWindow(QtWidgets.QWidget):
         # Log area
         self.log = QtWidgets.QPlainTextEdit()
         self.log.setReadOnly(True)
+        self.log.setStyleSheet("background-color: #2d2d2d; color: #ccc;")
 
         # Buttons
         self.docgen_btn = QtWidgets.QPushButton("Run DocGen")
@@ -164,6 +175,7 @@ class MainWindow(QtWidgets.QWidget):
 
         # Main layout
         main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.addLayout(header_layout)
         main_layout.addLayout(project_layout)
         main_layout.addLayout(output_layout)
         main_layout.addWidget(docgen_box)
@@ -171,7 +183,32 @@ class MainWindow(QtWidgets.QWidget):
         main_layout.addWidget(self.log)
         main_layout.addLayout(button_layout)
 
-    # Utility methods
+    def dark_style(self):
+        return """
+        QWidget {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 10.5pt;
+        }
+        QLineEdit, QPlainTextEdit, QComboBox {
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            padding: 4px;
+        }
+        QPushButton {
+            background-color: #3a3a3a;
+            border: 1px solid #555;
+            padding: 6px 12px;
+        }
+        QPushButton:hover {
+            background-color: #444;
+        }
+        QLabel {
+            font-weight: normal;
+        }
+        """
+
     def select_dir(self, line_edit):
         directory = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Directory")
         if directory:
@@ -209,8 +246,8 @@ class MainWindow(QtWidgets.QWidget):
 
     def build_docgen_cmd(self):
         cmd = [
-            "docgen",
-            "--path",
+            "python",
+            "docgenerator.py",
             self.project_edit.text(),
             "--output",
             self.output_edit.text(),
@@ -228,7 +265,8 @@ class MainWindow(QtWidgets.QWidget):
 
     def build_explain_cmd(self):
         cmd = [
-            "explaincode",
+            "python",
+            "explaincode.py",
             "--path",
             self.project_edit.text(),
             "--output",
@@ -256,6 +294,6 @@ class MainWindow(QtWidgets.QWidget):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
-    window.resize(700, 500)
+    window.resize(800, 600)
     window.show()
     sys.exit(app.exec_())
