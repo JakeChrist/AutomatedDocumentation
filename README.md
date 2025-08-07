@@ -18,6 +18,8 @@ pip install -r requirements.txt
 The tool depends on `requests`, `pygments`, and `beautifulsoup4`. It uses the
 real `requests` library to communicate with LMStudio. Install
 `tiktoken` for accurate token counting as listed in `requirements.txt`.
+For the `explaincode` summary utility, additional packages
+`markdown`, `python-docx`, and `reportlab` are required.
 
 ## 7. 🧪 CLI Usage
 
@@ -62,6 +64,16 @@ Install the test requirements (already included in requirements.txt) and run:
 ```bash
 pytest
 ```
+
+## Project Summary Utility
+
+Generate a lightweight overview of an existing project and its documentation:
+
+```bash
+python explaincode.py --path ./my_project
+```
+
+Use `--output-format pdf` to produce a PDF report (requires `reportlab`).
 
 ## Documentation
 

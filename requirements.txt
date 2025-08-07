@@ -3,3 +3,6 @@ pygments
 beautifulsoup4
 tiktoken
 tqdm
+markdown
+python-docx
+reportlab
