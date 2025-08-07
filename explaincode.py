@@ -11,6 +11,7 @@ import sys
 from bs4 import BeautifulSoup
 
 from llm_client import LLMClient
+from docgenerator import _get_tokenizer, chunk_text
 
 try:  # optional dependency
     import markdown  # type: ignore
@@ -127,6 +128,89 @@ def extract_text(path: Path) -> str:
 
 
 
+TOKENIZER = _get_tokenizer()
+CHUNK_SYSTEM_PROMPT = (
+    "You are generating part of a user manual. Based on the context provided, "
+    "write a section of the guide covering purpose, usage, inputs, outputs, and behavior."
+)
+MERGE_SYSTEM_PROMPT = (
+    "You are compiling a user manual. Combine the provided sections into a cohesive guide."
+)
+
+
+def _count_tokens(text: str) -> int:
+    """Return the approximate token count for ``text``."""
+
+    return len(TOKENIZER.encode(text))
+
+
+def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> list[str]:
+    """Split ``text`` into chunks respecting ``max_tokens`` and ``max_chars``.
+
+    Splitting occurs on paragraph boundaries (double newlines). If a single
+    paragraph exceeds the limits, it is further split using ``chunk_text``.
+    """
+
+    paragraphs = re.split(r"\n{2,}", text.strip())
+    chunks: list[str] = []
+    current: list[str] = []
+    token_count = 0
+    char_count = 0
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+        ptokens = _count_tokens(para)
+        pchars = len(para)
+        if ptokens > max_tokens or pchars > max_chars:
+            if current:
+                chunks.append("\n\n".join(current).strip())
+                current = []
+                token_count = 0
+                char_count = 0
+            for piece in chunk_text(para, TOKENIZER, max_tokens):
+                chunks.append(piece.strip())
+            continue
+        if (
+            token_count + ptokens > max_tokens
+            or char_count + pchars > max_chars
+        ):
+            if current:
+                chunks.append("\n\n".join(current).strip())
+            current = [para]
+            token_count = ptokens
+            char_count = pchars
+        else:
+            current.append(para)
+            token_count += ptokens
+            char_count += pchars
+    if current:
+        chunks.append("\n\n".join(current).strip())
+    return chunks
+
+
+def _summarize_manual(client: LLMClient, text: str) -> str:
+    """Return a manual summary for ``text`` using chunking when needed."""
+
+    if not text:
+        return ""
+    if _count_tokens(text) <= 2000 and len(text) <= 6000:
+        return client.summarize(text, "user_manual")
+
+    parts = _split_text(text)
+    partials = [
+        client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
+        for part in parts
+    ]
+    merge_input = "\n\n".join(partials)
+    try:
+        return client.summarize(
+            merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+        )
+    except Exception:
+        return merge_input
+
+
 
 def render_html(sections: Dict[str, str], title: str) -> str:
     """Return HTML for ``sections`` with ``title``.
@@ -239,7 +323,7 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response = client.summarize(combined, "user_manual") if combined else ""
+        response = _summarize_manual(client, combined) if combined else ""
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
