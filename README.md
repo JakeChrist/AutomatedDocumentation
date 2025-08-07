@@ -109,6 +109,23 @@ Control how text is split with `--chunking`:
 | `manual`| Always chunk content regardless of size.                                |
 | `none`  | Disable chunking and warn if limits are exceeded.                       |
 
+Auto mode uses built-in limits of **2,000 tokens** or **6,000 characters**. When
+either threshold is exceeded, the text is split, each chunk is summarized, and
+the partial summaries are merged into a single paragraph.
+
+Example usage:
+
+```bash
+python explaincode.py --chunking auto --path ./my_project
+python explaincode.py --chunking manual --path ./my_project
+python explaincode.py --chunking none --path ./my_project
+```
+
+When chunking is enabled, debug logs report the token and character count of
+each chunk and the length of every response. Warnings are printed if chunking,
+summarization, or the final merge step fails. If all chunks fail, the tool falls
+back to `infer_sections`; if merging fails, partial summaries are concatenated.
+
 The utility scans the entire project tree for documentation and sample files.
 The generated manual is saved to the directory given by `--output` (defaulting
 to the project path). Use `--insert-into-index` to append a link to the manual
