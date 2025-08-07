@@ -203,7 +203,13 @@ def _summarize_manual(
     within_limits = _count_tokens(text) <= 2000 and len(text) <= 6000
 
     if chunking == "manual" or (chunking == "auto" and not within_limits):
-        parts = _split_text(text)
+        try:
+            parts = _split_text(text)
+        except Exception as exc:  # pragma: no cover - defensive
+            print(f"[WARN] Chunking failed: {exc}", file=sys.stderr)
+            sections = infer_sections(text)
+            return "\n".join(f"{k}: {v}" for k, v in sections.items())
+
         total = len(parts)
         partials: list[str] = []
         for idx, part in enumerate(parts, 1):
@@ -215,7 +221,14 @@ def _summarize_manual(
                 _count_tokens(part),
                 len(part),
             )
-            resp = client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
+            try:
+                resp = client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
+            except Exception as exc:  # pragma: no cover - network failure
+                print(
+                    f"[WARN] Summarization failed for chunk {idx}/{total}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
             logging.debug(
                 "LLM response %s/%s length: %s characters",
                 idx,
@@ -223,6 +236,11 @@ def _summarize_manual(
                 len(resp),
             )
             partials.append(resp)
+
+        if not partials:
+            sections = infer_sections(text)
+            return "\n".join(f"{k}: {v}" for k, v in sections.items())
+
         merge_input = "\n\n".join(partials)
         try:
             final_resp = client.summarize(
@@ -230,7 +248,8 @@ def _summarize_manual(
             )
             logging.debug("Merged LLM response length: %s characters", len(final_resp))
             return final_resp
-        except Exception:
+        except Exception as exc:  # pragma: no cover - network failure
+            print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
             return merge_input
 
     if chunking == "none" and not within_limits:

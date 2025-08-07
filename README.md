@@ -113,3 +113,12 @@ The utility scans the entire project tree for documentation and sample files.
 The generated manual is saved to the directory given by `--output` (defaulting
 to the project path). Use `--insert-into-index` to append a link to the manual
 into an existing `index.html` within that directory.
+
+## Error Handling
+
+Both `docgenerator.py` and `explaincode.py` attempt to chunk large inputs and
+merge the resulting summaries. If either step fails, a warning is printed and
+the tools fall back to concatenating whatever partial responses were gathered.
+When no partial responses are available, `explaincode.py` produces a minimal
+summary using `infer_sections`. These errors do not affect exit codes, allowing
+automation scripts to continue running.

@@ -170,11 +170,25 @@ def _summarize_chunked(
         return _summarize(client, cache, key, text, prompt_type)
 
     chunk_size_tokens = min(chunk_token_budget, available_tokens)
-    parts = chunk_text(text, tokenizer, chunk_size_tokens)
+    try:
+        parts = chunk_text(text, tokenizer, chunk_size_tokens)
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[WARN] Chunking failed: {exc}", file=sys.stderr)
+        key = ResponseCache.make_key(key_prefix, text)
+        try:
+            return _summarize(client, cache, key, text, prompt_type)
+        except Exception:
+            return sanitize_summary("")
+
     partials = []
     for idx, part in enumerate(parts):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
-        partials.append(_summarize(client, cache, key, part, prompt_type))
+        try:
+            partials.append(_summarize(client, cache, key, part, prompt_type))
+        except Exception as exc:  # pragma: no cover - network failure
+            print(f"[WARN] Summarization failed for chunk {idx}: {exc}", file=sys.stderr)
+    if not partials:
+        return sanitize_summary("")
 
     merge_text = "\n".join(f"- {p}" for p in partials)
     merge_prompt = (
@@ -186,7 +200,11 @@ def _summarize_chunked(
         + merge_text
     )
     merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
-    final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    try:
+        final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    except Exception as exc:  # pragma: no cover - network failure
+        print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
+        return sanitize_summary("\n".join(partials))
     return sanitize_summary(final_summary)
 
 
@@ -213,11 +231,25 @@ def _summarize_module_chunked(
         return _summarize(client, cache, key, module_text, "module")
 
     chunk_size_tokens = min(chunk_token_budget, available_tokens)
-    parts = _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
+    try:
+        parts = _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[WARN] Structure-based chunking failed: {exc}", file=sys.stderr)
+        key = ResponseCache.make_key(key_prefix, module_text)
+        try:
+            return _summarize(client, cache, key, module_text, "module")
+        except Exception:
+            return sanitize_summary("")
+
     partials = []
     for idx, part in enumerate(parts):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
-        partials.append(_summarize(client, cache, key, part, "module"))
+        try:
+            partials.append(_summarize(client, cache, key, part, "module"))
+        except Exception as exc:  # pragma: no cover - network failure
+            print(f"[WARN] Summarization failed for chunk {idx}: {exc}", file=sys.stderr)
+    if not partials:
+        return sanitize_summary("")
 
     merge_text = "\n".join(f"- {p}" for p in partials)
     merge_prompt = (
@@ -229,7 +261,11 @@ def _summarize_module_chunked(
         + merge_text
     )
     merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
-    final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    try:
+        final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+    except Exception as exc:  # pragma: no cover - network failure
+        print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
+        return sanitize_summary("\n".join(partials))
     return sanitize_summary(final_summary)
 
 
