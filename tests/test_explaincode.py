@@ -1,8 +1,10 @@
-import importlib
 from pathlib import Path
+import importlib
+import textwrap
 
 import pytest
 
+import explaincode
 from explaincode import main
 
 
@@ -14,21 +16,41 @@ def _create_fixture(tmp_path: Path) -> None:
     (tmp_path / "sample.json").write_text("{\"input\": \"data\"}", encoding="utf-8")
 
 
-def test_html_summary_creation(tmp_path: Path) -> None:
+def _mock_llm_client() -> object:
+    class Dummy:
+        def summarize(self, text: str, prompt_type: str) -> str:  # pragma: no cover - simple stub
+            return textwrap.dedent(
+                """
+                Overview: Demo project
+                Purpose & Problem Solving: Solves a problem
+                How to Run: Execute it
+                Inputs: Input data
+                Outputs: Output data
+                System Requirements: None
+                Examples: Example usage
+                """
+            ).strip()
+
+    return Dummy()
+
+
+def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path)])
-    assert (tmp_path / "summary.html").exists()
+    assert (tmp_path / "user_manual.html").exists()
 
 
-def test_pdf_summary_creation(tmp_path: Path) -> None:
+def test_pdf_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     if importlib.util.find_spec("reportlab") is None:
         pytest.skip("reportlab not installed")
     _create_fixture(tmp_path)
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--output-format", "pdf"])
-    assert (tmp_path / "summary.pdf").exists()
+    assert (tmp_path / "user_manual.pdf").exists()
 
 
-def test_graceful_missing_docx(monkeypatch, tmp_path: Path) -> None:
+def test_graceful_missing_docx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _create_fixture(tmp_path)
     try:
         from docx import Document
@@ -38,14 +60,15 @@ def test_graceful_missing_docx(monkeypatch, tmp_path: Path) -> None:
         doc = Document()
         doc.add_paragraph("hi")
         doc.save(tmp_path / "guide.docx")
-    import explaincode
     monkeypatch.setattr(explaincode, "Document", None)
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path)])
-    assert (tmp_path / "summary.html").exists()
+    assert (tmp_path / "user_manual.html").exists()
 
 
-def test_custom_output_directory(tmp_path: Path) -> None:
+def test_custom_output_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
     out_dir = tmp_path / "dist"
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--output", str(out_dir)])
-    assert (out_dir / "summary.html").exists()
+    assert (out_dir / "user_manual.html").exists()
