@@ -44,25 +44,25 @@ REQUIRED_SECTIONS = [
 
 def collect_files(base: Path, extra_patterns: Iterable[str] | None = None) -> Iterable[Path]:
     """Return files from *base* relevant for summarisation."""
-    files = []
-    docs_dir = base / "Docs"
-    if docs_dir.is_dir():
-        files.extend(docs_dir.glob("*.html"))
+    patterns = [
+        "README.md",
+        "*.txt",
+        "*.html",
+        "*.docx",
+        "*.csv",
+        "*.json",
+    ]
 
-    root_patterns = ["README.md", "*.txt", "*.html", "*.docx"]
-    for pattern in root_patterns:
-        files.extend(base.glob(pattern))
-
-    sample_patterns = ["*.csv", "*.json", "*.txt"]
-    for pattern in sample_patterns:
-        files.extend(base.glob(pattern))
+    files: list[Path] = []
+    for pattern in patterns:
+        files.extend(base.rglob(pattern))
 
     if extra_patterns:
         for pattern in extra_patterns:
-            files.extend(base.glob(pattern))
+            files.extend(base.rglob(pattern))
 
-    seen = set()
-    unique = []
+    seen: set[Path] = set()
+    unique: list[Path] = []
     for f in files:
         if f.is_file() and f not in seen:
             unique.append(f)
