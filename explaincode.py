@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 from pathlib import Path
 from typing import Dict, Iterable
@@ -189,7 +190,12 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
     return chunks
 
 
-def _summarize_manual(client: LLMClient, text: str, chunking: str = "auto") -> str:
+def _summarize_manual(
+    client: LLMClient,
+    text: str,
+    chunking: str = "auto",
+    source: str = "combined",
+) -> str:
     """Return a manual summary for ``text`` using ``chunking`` strategy."""
 
     if not text:
@@ -198,15 +204,32 @@ def _summarize_manual(client: LLMClient, text: str, chunking: str = "auto") -> s
 
     if chunking == "manual" or (chunking == "auto" and not within_limits):
         parts = _split_text(text)
-        partials = [
-            client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
-            for part in parts
-        ]
+        total = len(parts)
+        partials: list[str] = []
+        for idx, part in enumerate(parts, 1):
+            logging.debug(
+                "Chunk %s/%s from %s: %s tokens, %s characters",
+                idx,
+                total,
+                source,
+                _count_tokens(part),
+                len(part),
+            )
+            resp = client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
+            logging.debug(
+                "LLM response %s/%s length: %s characters",
+                idx,
+                total,
+                len(resp),
+            )
+            partials.append(resp)
         merge_input = "\n\n".join(partials)
         try:
-            return client.summarize(
+            final_resp = client.summarize(
                 merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
             )
+            logging.debug("Merged LLM response length: %s characters", len(final_resp))
+            return final_resp
         except Exception:
             return merge_input
 
@@ -330,6 +353,8 @@ def main(argv: list[str] | None = None) -> int:
     files = collect_files(target, args.include_files)
     texts = [extract_text(f) for f in files]
     combined = "\n".join(t for t in texts if t)
+    logging.basicConfig(level=logging.DEBUG if args.chunking != "none" else logging.INFO)
+    sources = ", ".join(f.name for f in files)
 
     client = LLMClient()
     try:
@@ -337,7 +362,9 @@ def main(argv: list[str] | None = None) -> int:
         if callable(ping):
             ping()
         response = (
-            _summarize_manual(client, combined, args.chunking) if combined else ""
+            _summarize_manual(client, combined, args.chunking, source=sources or "combined")
+            if combined
+            else ""
         )
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
