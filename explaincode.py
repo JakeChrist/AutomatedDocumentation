@@ -30,6 +30,18 @@ except Exception:  # pragma: no cover - optional import
     letter = None
 
 
+# core manual sections expected in the generated documentation
+REQUIRED_SECTIONS = [
+    "Overview",
+    "Purpose & Problem Solving",
+    "How to Run",
+    "Inputs",
+    "Outputs",
+    "System Requirements",
+    "Examples",
+]
+
+
 def collect_files(base: Path, extra_patterns: Iterable[str] | None = None) -> Iterable[Path]:
     """Return files from *base* relevant for summarisation."""
     files = []
@@ -117,7 +129,11 @@ def extract_text(path: Path) -> str:
 
 
 def render_html(sections: Dict[str, str], title: str) -> str:
-    """Return HTML for ``sections`` with ``title``."""
+    """Return HTML for ``sections`` with ``title``.
+
+    Sections are rendered dynamically based on the keys returned from the
+    language model, allowing arbitrary headings beyond the required set.
+    """
     parts = [
         "<html><head><meta charset='utf-8'>",
         "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}</style>",
@@ -131,31 +147,30 @@ def render_html(sections: Dict[str, str], title: str) -> str:
 
 
 def parse_manual(text: str) -> Dict[str, str]:
-    """Parse ``text`` from the LLM into structured sections."""
-    keys = [
-        "Overview",
-        "Purpose & Problem Solving",
-        "How to Run",
-        "Inputs",
-        "Outputs",
-        "System Requirements",
-        "Examples",
-    ]
-    sections: Dict[str, str] = {k: "" for k in keys}
+    """Parse ``text`` from the LLM into structured sections.
+
+    The language model may return any set of headings. This parser splits the
+    input on lines containing a colon (``Section: content``) and keeps the
+    sections in the order they appear. Missing required sections are appended
+    with a default message.
+    """
+
+    sections: Dict[str, str] = {}
     current: str | None = None
     for line in text.splitlines():
         stripped = line.strip()
-        for key in keys:
-            if stripped.lower().startswith(key.lower()):
-                current = key
-                value = stripped[len(key):].lstrip(": ")
-                sections[current] = value
-                break
-        else:
-            if current:
-                sections[current] += ("\n" if sections[current] else "") + stripped
-    for key in keys:
-        sections[key] = sections[key].strip() or "No information provided."
+        if not stripped:
+            continue
+        match = re.match(r"^([A-Za-z &]+):\s*(.*)$", stripped)
+        if match:
+            current = match.group(1).strip()
+            sections[current] = match.group(2).strip()
+        elif current:
+            sections[current] += ("\n" if sections[current] else "") + stripped
+
+    for key in REQUIRED_SECTIONS:
+        sections[key] = sections.get(key, "").strip() or "No information provided."
+
     return sections
 
 
@@ -167,21 +182,12 @@ def infer_sections(text: str) -> Dict[str, str]:
     ``Overview`` section and other sections receive default messages.
     """
 
-    keys = [
-        "Overview",
-        "Purpose & Problem Solving",
-        "How to Run",
-        "Inputs",
-        "Outputs",
-        "System Requirements",
-        "Examples",
-    ]
-    sections: Dict[str, str] = {k: "" for k in keys}
+    sections: Dict[str, str] = {}
     text = text.strip()
     if text:
         sections["Overview"] = text
-    for key in keys:
-        sections[key] = sections[key] or "No information provided."
+    for key in REQUIRED_SECTIONS:
+        sections[key] = sections.get(key, "") or "No information provided."
     return sections
 
 
