@@ -111,7 +111,9 @@ Control how text is split with `--chunking`:
 
 Auto mode uses built-in limits of **2,000 tokens** or **6,000 characters**. When
 either threshold is exceeded, the text is split, each chunk is summarized, and
-the partial summaries are merged into a single paragraph.
+the partial summaries are merged into a single paragraph. Splitting favors
+natural boundaries such as blank lines, Markdown headings, and fenced code
+blocks so that paragraphs and examples remain intact.
 
 Example usage:
 
