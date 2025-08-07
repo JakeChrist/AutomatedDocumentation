@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import re
+import subprocess
+import tempfile
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Callable, Dict, Iterable
 import sys
 
 from bs4 import BeautifulSoup
@@ -190,11 +193,33 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
     return chunks
 
 
+def _edit_chunks_in_editor(chunks: list[str]) -> list[str]:
+    """Open ``chunks`` in user's editor for optional modification.
+
+    Chunks are separated by lines containing ``---``. Returns the edited
+    chunks after the editor is closed. Empty chunks are discarded.
+    """
+
+    separator = "\n\n---\n\n"
+    initial = separator.join(chunks)
+    with tempfile.NamedTemporaryFile("w+", suffix=".md", delete=False) as tmp:
+        tmp.write(initial)
+        tmp.flush()
+        editor = os.environ.get("EDITOR") or os.environ.get("VISUAL") or "vi"
+        subprocess.call([editor, tmp.name])
+        tmp.seek(0)
+        data = tmp.read()
+    Path(tmp.name).unlink(missing_ok=True)
+    parts = re.split(r"\n\s*---\s*\n", data)
+    return [p.strip() for p in parts if p.strip()]
+
+
 def _summarize_manual(
     client: LLMClient,
     text: str,
     chunking: str = "auto",
     source: str = "combined",
+    post_chunk_hook: Callable[[list[str]], list[str]] | None = None,
 ) -> str:
     """Return a manual summary for ``text`` using ``chunking`` strategy."""
 
@@ -240,6 +265,12 @@ def _summarize_manual(
         if not partials:
             sections = infer_sections(text)
             return "\n".join(f"{k}: {v}" for k, v in sections.items())
+
+        if post_chunk_hook:
+            try:
+                partials = post_chunk_hook(partials)
+            except Exception as exc:  # pragma: no cover - defensive
+                logging.debug("Chunk post-processing failed: %s", exc)
 
         merge_input = "\n\n".join(partials)
         try:
@@ -364,6 +395,11 @@ def main(argv: list[str] | None = None) -> int:
         default="auto",
         help="Chunking mode: auto (default) chunks only when needed; manual always chunks; none disables chunking.",
     )
+    parser.add_argument(
+        "--edit-chunks",
+        action="store_true",
+        help="Edit chunk summaries in $EDITOR before merging",
+    )
     args = parser.parse_args(argv)
 
     target = Path(args.path)
@@ -380,8 +416,15 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
+        hook = _edit_chunks_in_editor if args.edit_chunks else None
         response = (
-            _summarize_manual(client, combined, args.chunking, source=sources or "combined")
+            _summarize_manual(
+                client,
+                combined,
+                args.chunking,
+                source=sources or "combined",
+                post_chunk_hook=hook,
+            )
             if combined
             else ""
         )
