@@ -131,6 +131,32 @@ def test_chunking_triggers_multiple_calls_and_logs(capsys: pytest.CaptureFixture
     assert "Merged LLM response length" in out
 
 
+def test_chunk_edit_hook_applied() -> None:
+    paragraph = "word " * 2000
+    text = "\n\n".join([paragraph, paragraph])
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls.append(
+                {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
+            )
+            return f"resp{len(self.calls)}"
+
+    def hook(chunks: list[str]) -> list[str]:
+        return [c.upper() for c in chunks]
+
+    client = Dummy()
+    result = explaincode._summarize_manual(
+        client, text, chunking="auto", source="src", post_chunk_hook=hook
+    )
+
+    assert result == "resp3"
+    assert client.calls[2]["text"] == "RESP1\n\nRESP2"
+
+
 def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     big_text = "data " * 5000
     (tmp_path / "README.md").write_text(big_text, encoding="utf-8")
