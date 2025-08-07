@@ -6,6 +6,7 @@ import argparse
 import re
 from pathlib import Path
 from typing import Dict, Iterable
+import sys
 
 from bs4 import BeautifulSoup
 
@@ -158,6 +159,32 @@ def parse_manual(text: str) -> Dict[str, str]:
     return sections
 
 
+def infer_sections(text: str) -> Dict[str, str]:
+    """Infer manual sections heuristically from plain ``text``.
+
+    This is a lightweight fallback used when the language model cannot
+    provide a structured summary. The combined text is placed in the
+    ``Overview`` section and other sections receive default messages.
+    """
+
+    keys = [
+        "Overview",
+        "Purpose & Problem Solving",
+        "How to Run",
+        "Inputs",
+        "Outputs",
+        "System Requirements",
+        "Examples",
+    ]
+    sections: Dict[str, str] = {k: "" for k in keys}
+    text = text.strip()
+    if text:
+        sections["Overview"] = text
+    for key in keys:
+        sections[key] = sections[key] or "No information provided."
+    return sections
+
+
 def write_pdf(html: str, path: Path) -> bool:
     """Write ``html`` to ``path`` as a PDF. Returns ``True`` on success."""
     if canvas is None:  # pragma: no cover - optional branch
@@ -202,8 +229,19 @@ def main(argv: list[str] | None = None) -> int:
     combined = "\n".join(t for t in texts if t)
 
     client = LLMClient()
-    response = client.summarize(combined, "user_manual") if combined else ""
-    sections = parse_manual(response)
+    try:
+        ping = getattr(client, "ping", None)
+        if callable(ping):
+            ping()
+        response = client.summarize(combined, "user_manual") if combined else ""
+    except Exception as exc:  # pragma: no cover - network or attribute failure
+        print(
+            f"[INFO] LLM summarization failed; using fallback: {exc}",
+            file=sys.stderr,
+        )
+        sections = infer_sections(combined)
+    else:
+        sections = parse_manual(response)
     html = render_html(sections, args.title)
 
     base_name = slugify(args.title)
