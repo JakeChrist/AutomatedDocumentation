@@ -20,7 +20,7 @@ def _create_fixture(tmp_path: Path) -> None:
 
 def _mock_llm_client() -> object:
     class Dummy:
-        def summarize(self, text: str, prompt_type: str) -> str:  # pragma: no cover - simple stub
+        def summarize(self, text: str, prompt_type: str, system_prompt: str | None = None) -> str:  # pragma: no cover - simple stub
             return textwrap.dedent(
                 """
                 Overview: Demo project
