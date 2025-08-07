@@ -61,6 +61,12 @@ PROMPT_TEMPLATES: Dict[str, str] = {
         "{text}"
     ),
     "docstring": "{text}",
+    "user_manual": (
+        "Given the following context and documentation files, generate a clear, "
+        "detailed User’s Manual for a technically literate audience. Cover: "
+        "purpose, problem it solves, how to run it, input/output specs, and "
+        "examples if possible.\n\n{text}"
+    ),
 }
 
 

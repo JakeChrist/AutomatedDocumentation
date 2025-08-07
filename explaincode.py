@@ -8,6 +8,8 @@ from typing import Dict, Iterable
 
 from bs4 import BeautifulSoup
 
+from llm_client import LLMClient
+
 try:  # optional dependency
     import markdown  # type: ignore
 except Exception:  # pragma: no cover - optional import
@@ -26,20 +28,24 @@ except Exception:  # pragma: no cover - optional import
     letter = None
 
 
-def collect_files(base: Path) -> Iterable[Path]:
+def collect_files(base: Path, extra_patterns: Iterable[str] | None = None) -> Iterable[Path]:
     """Return files from *base* relevant for summarisation."""
     files = []
     docs_dir = base / "Docs"
     if docs_dir.is_dir():
         files.extend(docs_dir.glob("*.html"))
 
-    root_patterns = ["README.md", "*.md", "*.txt", "*.docx", "*.html"]
+    root_patterns = ["README.md", "*.txt", "*.html", "*.docx"]
     for pattern in root_patterns:
         files.extend(base.glob(pattern))
 
-    sample_patterns = ["*.json", "*.csv", "*.txt"]
+    sample_patterns = ["*.csv", "*.json", "*.txt"]
     for pattern in sample_patterns:
         files.extend(base.glob(pattern))
+
+    if extra_patterns:
+        for pattern in extra_patterns:
+            files.extend(base.glob(pattern))
 
     seen = set()
     unique = []
@@ -73,42 +79,49 @@ def extract_text(path: Path) -> str:
         return ""
 
 
-def infer_sections(text: str) -> Dict[str, str]:
-    """Naively infer documentation sections from ``text``."""
-    sections = {
-        "Overview": "",
-        "How to Use It": "",
-        "Inputs and Outputs": "",
-        "System Requirements": "",
-    }
-    for line in text.splitlines():
-        lower = line.lower()
-        if not sections["Overview"] and any(k in lower for k in ["overview", "purpose", "project"]):
-            sections["Overview"] = line.strip()
-        if not sections["How to Use It"] and any(k in lower for k in ["use", "usage", "run", "execute"]):
-            sections["How to Use It"] = line.strip()
-        if not sections["Inputs and Outputs"] and any(k in lower for k in ["input", "output"]):
-            sections["Inputs and Outputs"] = line.strip()
-        if not sections["System Requirements"] and any(k in lower for k in ["requirement", "dependency", "requires"]):
-            sections["System Requirements"] = line.strip()
-
-    for key, value in sections.items():
-        if not value:
-            sections[key] = "No information available."
-    return sections
 
 
-def render_html(sections: Dict[str, str]) -> str:
-    """Return HTML for ``sections``."""
+def render_html(sections: Dict[str, str], title: str) -> str:
+    """Return HTML for ``sections`` with ``title``."""
     parts = [
         "<html><head><meta charset='utf-8'>",
         "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}</style>",
         "</head><body>",
+        f"<h1>{title}</h1>",
     ]
-    for title, content in sections.items():
-        parts.append(f"<h2>{title}</h2><p>{content}</p>")
+    for sec_title, content in sections.items():
+        parts.append(f"<h2>{sec_title}</h2><p>{content}</p>")
     parts.append("</body></html>")
     return "\n".join(parts)
+
+
+def parse_manual(text: str) -> Dict[str, str]:
+    """Parse ``text`` from the LLM into structured sections."""
+    keys = [
+        "Overview",
+        "Purpose & Problem Solving",
+        "How to Run",
+        "Inputs",
+        "Outputs",
+        "System Requirements",
+        "Examples",
+    ]
+    sections: Dict[str, str] = {k: "" for k in keys}
+    current: str | None = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        for key in keys:
+            if stripped.lower().startswith(key.lower()):
+                current = key
+                value = stripped[len(key):].lstrip(": ")
+                sections[current] = value
+                break
+        else:
+            if current:
+                sections[current] += ("\n" if sections[current] else "") + stripped
+    for key in keys:
+        sections[key] = sections[key].strip() or "No information provided."
+    return sections
 
 
 def write_pdf(html: str, path: Path) -> bool:
@@ -133,22 +146,31 @@ def main(argv: list[str] | None = None) -> int:
         help="output format for the summary",
     )
     parser.add_argument("--output", help="Destination directory for generated summary")
+    parser.add_argument("--title", default="User Manual", help="Title for the generated manual")
+    parser.add_argument(
+        "--include-files",
+        nargs="*",
+        default=[],
+        help="Additional glob patterns to include",
+    )
     args = parser.parse_args(argv)
 
     target = Path(args.path)
     out_dir = Path(args.output) if args.output else target
     out_dir.mkdir(parents=True, exist_ok=True)
-    files = collect_files(target)
+    files = collect_files(target, args.include_files)
     texts = [extract_text(f) for f in files]
     combined = "\n".join(t for t in texts if t)
 
-    sections = infer_sections(combined)
-    html = render_html(sections)
+    client = LLMClient()
+    response = client.summarize(combined, "user_manual") if combined else ""
+    sections = parse_manual(response)
+    html = render_html(sections, args.title)
 
     if args.output_format == "html":
-        (out_dir / "summary.html").write_text(html, encoding="utf-8")
+        (out_dir / "user_manual.html").write_text(html, encoding="utf-8")
     else:
-        success = write_pdf(html, out_dir / "summary.pdf")
+        success = write_pdf(html, out_dir / "user_manual.pdf")
         if not success:
             print("PDF generation requires the reportlab package.")
             return 1
