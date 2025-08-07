@@ -72,3 +72,22 @@ def test_custom_output_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--output", str(out_dir)])
     assert (out_dir / "user_manual.html").exists()
+
+
+def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _create_fixture(tmp_path)
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    main(["--path", str(tmp_path), "--title", "Fancy Guide"])
+    out_file = tmp_path / "fancy_guide.html"
+    assert out_file.exists()
+    assert "<h1>Fancy Guide</h1>" in out_file.read_text(encoding="utf-8")
+
+
+def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _create_fixture(tmp_path)
+    index = tmp_path / "Docs" / "index.html"
+    index.write_text("<html><body><ul></ul></body></html>", encoding="utf-8")
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    main(["--path", str(tmp_path), "--insert-into-index"])
+    html = index.read_text(encoding="utf-8")
+    assert '<a href="user_manual.html">User Manual</a>' in html
