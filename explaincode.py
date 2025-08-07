@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from pathlib import Path
 from typing import Dict, Iterable
 
@@ -54,6 +55,32 @@ def collect_files(base: Path, extra_patterns: Iterable[str] | None = None) -> It
             unique.append(f)
             seen.add(f)
     return unique
+
+
+def slugify(text: str) -> str:
+    """Return filesystem-friendly slug from ``text``."""
+    slug = re.sub(r"[^a-z0-9]+", "_", text.strip().lower())
+    return slug.strip("_") or "user_manual"
+
+
+def insert_into_index(index_path: Path, title: str, filename: str) -> None:
+    """Insert a link to ``filename`` with ``title`` into ``index_path`` if possible."""
+    try:
+        soup = BeautifulSoup(index_path.read_text(encoding="utf-8"), "html.parser")
+    except Exception:
+        return
+    ul = soup.find("ul")
+    if ul is None:
+        return
+    for a in ul.find_all("a"):
+        if a.get("href") == filename:
+            return
+    li = soup.new_tag("li")
+    a = soup.new_tag("a", href=filename)
+    a.string = title
+    li.append(a)
+    ul.append(li)
+    index_path.write_text(str(soup), encoding="utf-8")
 
 
 def extract_text(path: Path) -> str:
@@ -149,9 +176,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--title", default="User Manual", help="Title for the generated manual")
     parser.add_argument(
         "--include-files",
-        nargs="*",
+        action="append",
         default=[],
-        help="Additional glob patterns to include",
+        help="Additional glob patterns to include. Can be supplied multiple times",
+    )
+    parser.add_argument(
+        "--insert-into-index",
+        action="store_true",
+        help="Insert link to the manual into docs/index.html",
     )
     args = parser.parse_args(argv)
 
@@ -167,13 +199,22 @@ def main(argv: list[str] | None = None) -> int:
     sections = parse_manual(response)
     html = render_html(sections, args.title)
 
+    base_name = slugify(args.title)
+    out_file = out_dir / f"{base_name}.{'html' if args.output_format == 'html' else 'pdf'}"
     if args.output_format == "html":
-        (out_dir / "user_manual.html").write_text(html, encoding="utf-8")
+        out_file.write_text(html, encoding="utf-8")
     else:
-        success = write_pdf(html, out_dir / "user_manual.pdf")
+        success = write_pdf(html, out_file)
         if not success:
             print("PDF generation requires the reportlab package.")
             return 1
+
+    if args.insert_into_index:
+        for candidate in [target / "docs" / "index.html", target / "Docs" / "index.html"]:
+            if candidate.exists():
+                insert_into_index(candidate, args.title, out_file.name)
+                break
+
     return 0
 
 
