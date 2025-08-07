@@ -46,6 +46,26 @@ Optional flags:
 
 The LLM must be running and reachable via `llm_client.py`.
 
+## GUI Usage
+
+Install `PyQt5` to enable the graphical interface:
+
+```bash
+pip install pyqt5
+```
+
+Launch the GUI:
+
+```bash
+python gui_wrapper.py
+```
+
+The interface provides:
+
+- Project and output directory selectors
+- DocGen options such as including private functions and choosing a language
+- ExplainCode options for selecting the output format and adding an optional data file
+
 ## Using LMStudio as the Backend
 
 1. Launch **LMStudio** and enable its API server (usually at `http://localhost:1234`).
