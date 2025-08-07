@@ -85,9 +85,10 @@ def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
 def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
-    index = tmp_path / "Docs" / "index.html"
+    docs_dir = tmp_path / "Docs"
+    index = docs_dir / "index.html"
     index.write_text("<html><body><ul></ul></body></html>", encoding="utf-8")
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
-    main(["--path", str(tmp_path), "--insert-into-index"])
+    main(["--path", str(tmp_path), "--output", str(docs_dir), "--insert-into-index"])
     html = index.read_text(encoding="utf-8")
     assert '<a href="user_manual.html">User Manual</a>' in html
