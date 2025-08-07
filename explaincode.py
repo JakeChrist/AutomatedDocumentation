@@ -64,22 +64,29 @@ def slugify(text: str) -> str:
 
 
 def insert_into_index(index_path: Path, title: str, filename: str) -> None:
-    """Insert a link to ``filename`` with ``title`` into ``index_path`` if possible."""
+    """Append a navigation entry linking to ``filename`` into ``index_path``."""
     try:
         soup = BeautifulSoup(index_path.read_text(encoding="utf-8"), "html.parser")
     except Exception:
         return
-    ul = soup.find("ul")
-    if ul is None:
+
+    container = soup.find("ul") or soup.find("nav")
+    if container is None:
         return
-    for a in ul.find_all("a"):
-        if a.get("href") == filename:
-            return
-    li = soup.new_tag("li")
+
+    if container.find("a", href=filename):
+        return
+
     a = soup.new_tag("a", href=filename)
     a.string = title
-    li.append(a)
-    ul.append(li)
+
+    if container.name == "ul":
+        li = soup.new_tag("li")
+        li.append(a)
+        container.append(li)
+    else:  # append directly to a nav element
+        container.append(a)
+
     index_path.write_text(str(soup), encoding="utf-8")
 
 
@@ -210,10 +217,9 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
     if args.insert_into_index:
-        for candidate in [target / "docs" / "index.html", target / "Docs" / "index.html"]:
-            if candidate.exists():
-                insert_into_index(candidate, args.title, out_file.name)
-                break
+        index_file = out_dir / "index.html"
+        if index_file.exists():
+            insert_into_index(index_file, args.title, out_file.name)
 
     return 0
 
