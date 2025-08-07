@@ -163,9 +163,10 @@ def test_clean_output_dir(tmp_path: Path) -> None:
 
 def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
     from cache import ResponseCache
-    from docgenerator import _get_tokenizer, _summarize_chunked
+    from chunk_utils import get_tokenizer
+    from docgenerator import _summarize_chunked
 
-    tokenizer = _get_tokenizer()
+    tokenizer = get_tokenizer()
     text = "word " * 50
     cache = ResponseCache(str(tmp_path / "cache.json"))
 
@@ -185,10 +186,11 @@ def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
 
 def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
     from cache import ResponseCache
-    from docgenerator import _get_tokenizer, _summarize_chunked
+    from chunk_utils import get_tokenizer
+    from docgenerator import _summarize_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
-    tokenizer = _get_tokenizer()
+    tokenizer = get_tokenizer()
     text = "word " * 15
     cache = ResponseCache(str(tmp_path / "cache.json"))
     template = PROMPT_TEMPLATES["module"]
@@ -212,7 +214,8 @@ def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
 def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
     from cache import ResponseCache
     from parser_python import parse_python_file
-    from docgenerator import _get_tokenizer, _summarize_module_chunked
+    from chunk_utils import get_tokenizer
+    from docgenerator import _summarize_module_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
     src = (
@@ -229,7 +232,7 @@ def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
     file.write_text(src)
     parsed = parse_python_file(str(file))
 
-    tokenizer = _get_tokenizer()
+    tokenizer = get_tokenizer()
     cache = ResponseCache(str(tmp_path / "cache.json"))
 
     with patch("docgenerator._summarize", return_value="sum") as mock_sum:
@@ -256,7 +259,8 @@ def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
 def test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -> None:
     from cache import ResponseCache
     from parser_python import parse_python_file
-    from docgenerator import _get_tokenizer, _summarize_module_chunked
+    from chunk_utils import get_tokenizer
+    from docgenerator import _summarize_module_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
     class_src = (
@@ -274,7 +278,7 @@ def test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -> None
     file.write_text(class_src)
     parsed = parse_python_file(str(file))
 
-    tokenizer = _get_tokenizer()
+    tokenizer = get_tokenizer()
     cache = ResponseCache(str(tmp_path / "cache.json"))
 
     with patch("docgenerator._summarize", return_value="sum") as mock_sum:

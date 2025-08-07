@@ -15,7 +15,7 @@ import sys
 from bs4 import BeautifulSoup
 
 from llm_client import LLMClient
-from docgenerator import _get_tokenizer, chunk_text
+from chunk_utils import get_tokenizer, chunk_text
 
 try:  # optional dependency
     import markdown  # type: ignore
@@ -132,7 +132,7 @@ def extract_text(path: Path) -> str:
 
 
 
-TOKENIZER = _get_tokenizer()
+TOKENIZER = get_tokenizer()
 CHUNK_SYSTEM_PROMPT = (
     "You are generating part of a user manual. Based on the context provided, "
     "write a section of the guide covering purpose, usage, inputs, outputs, and behavior."
