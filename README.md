@@ -111,7 +111,9 @@ Control how text is split with `--chunking`:
 
 Auto mode uses built-in limits of **2,000 tokens** or **6,000 characters**. When
 either threshold is exceeded, the text is split, each chunk is summarized, and
-the partial summaries are merged into a single paragraph. Splitting favors
+the partial summaries are merged into a single paragraph. If the merged text
+still exceeds the limits, it is split and summarized again until the result
+fits within bounds. Splitting favors
 natural boundaries such as blank lines, Markdown headings, and fenced code
 blocks so that paragraphs and examples remain intact.
 
@@ -125,7 +127,8 @@ python explaincode.py --chunking none --path ./my_project
 
 When chunking is enabled, debug logs report the token and character count of
 each chunk and the length of every response. Warnings are printed if chunking,
-summarization, or the final merge step fails. If all chunks fail, the tool falls
+summarization, or the final merge step fails. Hierarchical merges are logged as
+additional passes. If all chunks fail, the tool falls
 back to `infer_sections`; if merging fails, partial summaries are concatenated.
 
 The utility scans the entire project tree for documentation and sample files.

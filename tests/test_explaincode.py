@@ -157,6 +157,32 @@ def test_chunk_edit_hook_applied() -> None:
     assert client.calls[2]["text"] == "RESP1\n\nRESP2"
 
 
+def test_hierarchical_merge_logged(capsys: pytest.CaptureFixture[str]) -> None:
+    big = "word " * 5000
+    text = "\n\n".join([big, big])
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls.append(
+                {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
+            )
+            if len(self.calls) <= 2:
+                return big
+            return "short"
+
+    client = Dummy()
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
+    result = explaincode._summarize_manual(client, text, chunking="auto", source="src")
+
+    assert result == "short"
+    assert len(client.calls) > 3
+    out = capsys.readouterr().out
+    assert "Hierarchical merge pass" in out
+
+
 def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     big_text = "data " * 5000
     (tmp_path / "README.md").write_text(big_text, encoding="utf-8")
