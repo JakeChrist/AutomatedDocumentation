@@ -273,6 +273,48 @@ def _summarize_manual(
                 logging.debug("Chunk post-processing failed: %s", exc)
 
         merge_input = "\n\n".join(partials)
+        tokens = _count_tokens(merge_input)
+        chars = len(merge_input)
+        iteration = 0
+        while tokens > 2000 or chars > 6000:
+            iteration += 1
+            logging.info(
+                "Hierarchical merge pass %s: %s tokens, %s characters",
+                iteration,
+                tokens,
+                chars,
+            )
+            try:
+                sub_parts = _split_text(merge_input)
+            except Exception as exc:  # pragma: no cover - defensive
+                print(f"[WARN] Hierarchical split failed: {exc}", file=sys.stderr)
+                break
+            new_partials: list[str] = []
+            total = len(sub_parts)
+            for idx, piece in enumerate(sub_parts, 1):
+                logging.debug(
+                    "Merge chunk %s/%s: %s tokens, %s characters",
+                    idx,
+                    total,
+                    _count_tokens(piece),
+                    len(piece),
+                )
+                try:
+                    resp = client.summarize(
+                        piece, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+                    )
+                except Exception as exc:  # pragma: no cover - network failure
+                    print(
+                        f"[WARN] Hierarchical summarization failed for chunk {idx}/{total}: {exc}",
+                        file=sys.stderr,
+                    )
+                    continue
+                new_partials.append(resp)
+            if not new_partials:
+                break
+            merge_input = "\n\n".join(new_partials)
+            tokens = _count_tokens(merge_input)
+            chars = len(merge_input)
         try:
             final_resp = client.summarize(
                 merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
