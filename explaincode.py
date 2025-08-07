@@ -189,26 +189,33 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
     return chunks
 
 
-def _summarize_manual(client: LLMClient, text: str) -> str:
-    """Return a manual summary for ``text`` using chunking when needed."""
+def _summarize_manual(client: LLMClient, text: str, chunking: str = "auto") -> str:
+    """Return a manual summary for ``text`` using ``chunking`` strategy."""
 
     if not text:
         return ""
-    if _count_tokens(text) <= 2000 and len(text) <= 6000:
-        return client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
+    within_limits = _count_tokens(text) <= 2000 and len(text) <= 6000
 
-    parts = _split_text(text)
-    partials = [
-        client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
-        for part in parts
-    ]
-    merge_input = "\n\n".join(partials)
-    try:
-        return client.summarize(
-            merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+    if chunking == "manual" or (chunking == "auto" and not within_limits):
+        parts = _split_text(text)
+        partials = [
+            client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
+            for part in parts
+        ]
+        merge_input = "\n\n".join(partials)
+        try:
+            return client.summarize(
+                merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+            )
+        except Exception:
+            return merge_input
+
+    if chunking == "none" and not within_limits:
+        print(
+            "[WARN] Content exceeds token or character limits; chunking disabled.",
+            file=sys.stderr,
         )
-    except Exception:
-        return merge_input
+    return client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
 
 
 
@@ -309,6 +316,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Insert link to the manual into index.html in the output directory",
     )
+    parser.add_argument(
+        "--chunking",
+        choices=["auto", "manual", "none"],
+        default="auto",
+        help="Chunking mode: auto (default) chunks only when needed; manual always chunks; none disables chunking.",
+    )
     args = parser.parse_args(argv)
 
     target = Path(args.path)
@@ -323,7 +336,9 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response = _summarize_manual(client, combined) if combined else ""
+        response = (
+            _summarize_manual(client, combined, args.chunking) if combined else ""
+        )
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
