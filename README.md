@@ -101,6 +101,14 @@ python explaincode.py --path ./my_project --output ./summaries
 
 Use `--output-format pdf` to produce a PDF report (requires `reportlab`).
 
+Control how text is split with `--chunking`:
+
+| Mode    | Description                                                             |
+|---------|-------------------------------------------------------------------------|
+| `auto`  | Default. Chunk only when content exceeds token or character limits.     |
+| `manual`| Always chunk content regardless of size.                                |
+| `none`  | Disable chunking and warn if limits are exceeded.                       |
+
 The utility scans the entire project tree for documentation and sample files.
 The generated manual is saved to the directory given by `--output` (defaulting
 to the project path). Use `--insert-into-index` to append a link to the manual
