@@ -223,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--insert-into-index",
         action="store_true",
-        help="Insert link to the manual into docs/index.html",
+        help="Insert link to the manual into index.html in the output directory",
     )
     args = parser.parse_args(argv)
 

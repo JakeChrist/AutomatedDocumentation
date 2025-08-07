@@ -101,6 +101,7 @@ python explaincode.py --path ./my_project --output ./summaries
 
 Use `--output-format pdf` to produce a PDF report (requires `reportlab`).
 
-## Documentation
-
-Generated HTML documentation can be found in the **Docs/** directory.
+The utility scans the entire project tree for documentation and sample files.
+The generated manual is saved to the directory given by `--output` (defaulting
+to the project path). Use `--insert-into-index` to append a link to the manual
+into an existing `index.html` within that directory.

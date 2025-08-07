@@ -9,9 +9,11 @@ from explaincode import main
 
 
 def _create_fixture(tmp_path: Path) -> None:
-    docs = tmp_path / "Docs"
-    docs.mkdir()
-    (docs / "page.html").write_text("<html><body><h1>Overview</h1></body></html>", encoding="utf-8")
+    nested = tmp_path / "subdir" / "nested"
+    nested.mkdir(parents=True)
+    (nested / "page.html").write_text(
+        "<html><body><h1>Overview</h1></body></html>", encoding="utf-8"
+    )
     (tmp_path / "README.md").write_text("# Demo\n\nUsage: run it", encoding="utf-8")
     (tmp_path / "sample.json").write_text("{\"input\": \"data\"}", encoding="utf-8")
 
@@ -85,10 +87,11 @@ def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPat
 
 def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
-    docs_dir = tmp_path / "Docs"
-    index = docs_dir / "index.html"
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    index = out_dir / "index.html"
     index.write_text("<html><body><ul></ul></body></html>", encoding="utf-8")
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
-    main(["--path", str(tmp_path), "--output", str(docs_dir), "--insert-into-index"])
+    main(["--path", str(tmp_path), "--output", str(out_dir), "--insert-into-index"])
     html = index.read_text(encoding="utf-8")
     assert '<a href="user_manual.html">User Manual</a>' in html
