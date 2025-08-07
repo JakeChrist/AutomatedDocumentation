@@ -1,6 +1,8 @@
 from pathlib import Path
 import importlib
 import textwrap
+import logging
+import sys
 
 import pytest
 
@@ -95,3 +97,62 @@ def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     main(["--path", str(tmp_path), "--output", str(out_dir), "--insert-into-index"])
     html = index.read_text(encoding="utf-8")
     assert '<a href="user_manual.html">User Manual</a>' in html
+
+
+def test_chunking_triggers_multiple_calls_and_logs(capsys: pytest.CaptureFixture[str]) -> None:
+    paragraph = "word " * 2000
+    text = "\n\n".join([paragraph, paragraph])
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls.append(
+                {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
+            )
+            return f"resp{len(self.calls)}"
+
+    client = Dummy()
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
+    result = explaincode._summarize_manual(client, text, chunking="auto", source="src")
+
+    assert result == "resp3"
+    assert len(client.calls) == 3
+    assert [c["system_prompt"] for c in client.calls[:2]] == [
+        explaincode.CHUNK_SYSTEM_PROMPT,
+        explaincode.CHUNK_SYSTEM_PROMPT,
+    ]
+    assert client.calls[2]["system_prompt"] == explaincode.MERGE_SYSTEM_PROMPT
+    assert client.calls[2]["text"] == "resp1\n\nresp2"
+
+    out = capsys.readouterr().out
+    assert "Chunk 1/2 from src" in out
+    assert "Merged LLM response length" in out
+
+
+def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    big_text = "data " * 5000
+    (tmp_path / "README.md").write_text(big_text, encoding="utf-8")
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls.append(
+                {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
+            )
+            return "done"
+
+    dummy = Dummy()
+    monkeypatch.setattr(explaincode, "LLMClient", lambda: dummy)
+    capsys.readouterr()  # clear any initial warnings
+    main(["--path", str(tmp_path), "--chunking", "none"])
+    captured = capsys.readouterr()
+
+    assert len(dummy.calls) == 1
+    call = dummy.calls[0]
+    assert call["prompt_type"] == "user_manual"
+    assert call["system_prompt"] == explaincode.MERGE_SYSTEM_PROMPT
+    assert "Content exceeds token or character limits; chunking disabled." in captured.err
