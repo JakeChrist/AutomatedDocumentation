@@ -132,9 +132,12 @@ def main(argv: list[str] | None = None) -> int:
         "--output-format", choices=["html", "pdf"], default="html",
         help="output format for the summary",
     )
+    parser.add_argument("--output", help="Destination directory for generated summary")
     args = parser.parse_args(argv)
 
     target = Path(args.path)
+    out_dir = Path(args.output) if args.output else target
+    out_dir.mkdir(parents=True, exist_ok=True)
     files = collect_files(target)
     texts = [extract_text(f) for f in files]
     combined = "\n".join(t for t in texts if t)
@@ -143,9 +146,9 @@ def main(argv: list[str] | None = None) -> int:
     html = render_html(sections)
 
     if args.output_format == "html":
-        (target / "summary.html").write_text(html, encoding="utf-8")
+        (out_dir / "summary.html").write_text(html, encoding="utf-8")
     else:
-        success = write_pdf(html, target / "summary.pdf")
+        success = write_pdf(html, out_dir / "summary.pdf")
         if not success:
             print("PDF generation requires the reportlab package.")
             return 1

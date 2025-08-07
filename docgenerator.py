@@ -64,11 +64,14 @@ def _get_tokenizer():
     if tiktoken is not None:  # pragma: no cover - optional branch
         try:
             return tiktoken.get_encoding("cl100k_base")
-        except Exception:  # pragma: no cover - fallback if model unknown
-            return tiktoken.encoding_for_model("gpt-3.5-turbo")
+        except Exception:  # pragma: no cover - fallback if model unknown or offline
+            try:
+                return tiktoken.encoding_for_model("gpt-3.5-turbo")
+            except Exception:
+                pass
 
     print(
-        "[WARNING] tiktoken is not installed; token counts will be approximate.",
+        "[WARNING] tiktoken is not installed or could not be loaded; token counts will be approximate.",
         file=sys.stderr,
     )
 
