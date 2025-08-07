@@ -23,11 +23,7 @@ from typing import Any
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
-
-try:  # optional dependency used for token counting
-    import tiktoken
-except Exception:  # pragma: no cover - optional import
-    tiktoken = None
+from chunk_utils import get_tokenizer, chunk_text
 try:
     from tqdm import tqdm
 except ImportError:  # pragma: no cover - optional import
@@ -56,44 +52,6 @@ def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, pro
     summary = client.summarize(text, prompt_type)
     cache.set(key, summary)
     return summary
-
-
-def _get_tokenizer():
-    """Return a tokenizer object used for estimating token counts."""
-
-    if tiktoken is not None:  # pragma: no cover - optional branch
-        try:
-            return tiktoken.get_encoding("cl100k_base")
-        except Exception:  # pragma: no cover - fallback if model unknown or offline
-            try:
-                return tiktoken.encoding_for_model("gpt-3.5-turbo")
-            except Exception:
-                pass
-
-    print(
-        "[WARNING] tiktoken is not installed or could not be loaded; token counts will be approximate.",
-        file=sys.stderr,
-    )
-
-    class _Simple:
-        def encode(self, text: str):
-            return text.split()
-
-        def decode(self, tokens):
-            return " ".join(tokens)
-
-    return _Simple()
-
-
-def chunk_text(text: str, tokenizer, chunk_size_tokens: int):
-    """Split ``text`` into chunks roughly ``chunk_size_tokens`` each."""
-
-    tokens = tokenizer.encode(text)
-    chunks = []
-    for i in range(0, len(tokens), chunk_size_tokens):
-        chunk = tokens[i : i + chunk_size_tokens]
-        chunks.append(tokenizer.decode(chunk))
-    return chunks
 
 
 def _chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int):
@@ -543,7 +501,7 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
-    tokenizer = _get_tokenizer()
+    tokenizer = get_tokenizer()
     max_context_tokens = args.max_context_tokens
     chunk_token_budget = int(max_context_tokens * 0.75)
 
