@@ -10,13 +10,27 @@ def test_get_tokenizer_roundtrip() -> None:
     assert decoded.strip() == "hello world"
 
 
-def test_chunk_text_reconstructs_tokens() -> None:
+def test_chunk_text_reconstructs_content() -> None:
     tokenizer = get_tokenizer()
     text = "word " * 50
-    tokens = tokenizer.encode(text)
     chunks = chunk_text(text, tokenizer, 10)
-    rebuilt = []
+    assert "".join(chunks) == text.strip()
+    assert len(chunks) > 1
+
+
+def test_chunk_text_splits_markdown_headings() -> None:
+    tokenizer = get_tokenizer()
+    text = "# H1\npara1\n\n# H2\npara2"
+    chunks = chunk_text(text, tokenizer, 4)
+    assert len(chunks) == 2
+    assert chunks[0].startswith("# H1")
+    assert chunks[1].startswith("# H2")
+
+
+def test_chunk_text_preserves_code_blocks() -> None:
+    tokenizer = get_tokenizer()
+    text = "Intro\n\n```python\nprint('hi')\n```\n\nConclusion"
+    chunks = chunk_text(text, tokenizer, 4)
+    assert any("```python\nprint('hi')\n```" in chunk for chunk in chunks)
     for chunk in chunks:
-        rebuilt.extend(tokenizer.encode(chunk))
-    assert rebuilt == tokens
-    assert len(chunks) == 5
+        assert chunk.count("```") in (0, 2)
