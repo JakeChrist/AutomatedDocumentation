@@ -42,3 +42,10 @@ def test_graceful_missing_docx(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(explaincode, "Document", None)
     main(["--path", str(tmp_path)])
     assert (tmp_path / "summary.html").exists()
+
+
+def test_custom_output_directory(tmp_path: Path) -> None:
+    _create_fixture(tmp_path)
+    out_dir = tmp_path / "dist"
+    main(["--path", str(tmp_path), "--output", str(out_dir)])
+    assert (out_dir / "summary.html").exists()

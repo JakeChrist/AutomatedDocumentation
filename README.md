@@ -73,6 +73,12 @@ Generate a lightweight overview of an existing project and its documentation:
 python explaincode.py --path ./my_project
 ```
 
+Specify a custom destination for the summary with `--output`:
+
+```bash
+python explaincode.py --path ./my_project --output ./summaries
+```
+
 Use `--output-format pdf` to produce a PDF report (requires `reportlab`).
 
 ## Documentation
