@@ -195,7 +195,7 @@ def _summarize_manual(client: LLMClient, text: str) -> str:
     if not text:
         return ""
     if _count_tokens(text) <= 2000 and len(text) <= 6000:
-        return client.summarize(text, "user_manual")
+        return client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
 
     parts = _split_text(text)
     partials = [

@@ -142,7 +142,7 @@ class LLMClient:
             raise ConnectionError(f"Unable to reach LMStudio at {self.base_url}") from exc
 
     def summarize(
-        self, text: str, prompt_type: str, system_prompt: str | None = None
+        self, text: str, prompt_type: str, system_prompt: str = SYSTEM_PROMPT
     ) -> str:
         """Return a summary for ``text`` using ``prompt_type`` template."""
 
@@ -153,7 +153,7 @@ class LLMClient:
             "model": self.model,
             "temperature": 0.3,
             "messages": [
-                {"role": "system", "content": system_prompt or SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
             ],
         }
