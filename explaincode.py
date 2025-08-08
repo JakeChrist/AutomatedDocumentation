@@ -276,7 +276,7 @@ def detect_placeholders(text: str) -> list[str]:
 SECTION_KEYWORDS = {
     "Overview": ["overview"],
     "Purpose & Problem Solving": ["purpose", "problem", "objective", "goal"],
-    "How to Run": ["how to run", "usage", "running", "execution"],
+    "How to Run": ["how to run", "usage", "running", "execution", "run"],
     "Inputs": ["input", "inputs"],
     "Outputs": ["output", "outputs"],
     "System Requirements": ["system requirements", "requirements", "dependencies"],
@@ -465,8 +465,13 @@ def scan_code(
     max_files: int = 12,
     time_budget: int = 20,
     max_bytes_per_file: int = 200_000,
-) -> str:
-    """Collect source code snippets from ``base``."""
+) -> dict[str, dict[str, str]]:
+    """Collect source code snippets from ``base`` grouped by manual section.
+
+    The function searches source files for keywords associated with
+    ``sections`` (defaulting to all known sections) and returns a mapping from
+    section name to a mapping of relative file paths and their snippet text.
+    """
 
     patterns: list[str] = []
     for doc in collect_docs(base):
@@ -486,11 +491,17 @@ def scan_code(
         max_bytes=max_bytes_per_file,
     )
 
-    parts: list[str] = []
+    wanted = sections if sections is not None else list(SECTION_KEYWORDS.keys())
+    categorized: dict[str, dict[str, str]] = {sec: {} for sec in wanted}
+
     for path, text in tqdm(snippets.items(), desc="Collecting snippets"):
         rel = path.relative_to(base)
-        parts.append(f"# File: {rel}\n{text}")
-    return "\n\n".join(parts)
+        lower = text.lower()
+        for section in wanted:
+            keywords = SECTION_KEYWORDS.get(section, [])
+            if any(k in lower for k in keywords):
+                categorized.setdefault(section, {})[str(rel)] = text
+    return {k: v for k, v in categorized.items() if v}
 
 
 def llm_generate_manual(
@@ -575,26 +586,42 @@ FILL_SYSTEM_PROMPT = (
 
 def llm_fill_placeholders(
     manual_text: str,
-    code_snippets: str,
+    code_snippets: dict[str, dict[str, str]],
     client: LLMClient,
     cache: ResponseCache,
 ) -> str:
-    """Fill placeholder tokens in ``manual_text`` using ``code_snippets``."""
+    """Fill placeholder tokens in ``manual_text`` using ``code_snippets``.
 
-    prompt = (
-        "Manual:\n"
-        + manual_text
-        + "\n\nCode Snippets:\n"
-        + code_snippets
-        + "\n\nUpdate the manual by replacing placeholder tokens with the relevant information from the code snippets."
-    )
-    key = ResponseCache.make_key("fill_manual", prompt)
-    cached = cache.get(key)
-    if cached is not None:
-        return cached
-    result = client.summarize(prompt, "docstring", system_prompt=FILL_SYSTEM_PROMPT)
-    cache.set(key, result)
-    return result
+    ``code_snippets`` maps section names to dictionaries of ``path -> text``
+    containing evidence for that section. A separate LLM call is made for each
+    section to update the manual incrementally.
+    """
+
+    for section, files in code_snippets.items():
+        if not files:
+            continue
+        snippet_text = "\n\n".join(
+            f"# File: {path}\n{text}" for path, text in files.items()
+        )
+        prompt = (
+            f"Manual:\n{manual_text}\n\n"
+            f"Section: {section}\n"
+            f"Code Snippets:\n{snippet_text}\n\n"
+            "Update the manual by replacing the placeholder for this section with the relevant information from the code snippets."
+        )
+        key = ResponseCache.make_key(f"fill_manual:{section}", prompt)
+        cached = cache.get(key)
+        if cached is not None:
+            manual_text = cached
+        else:
+            manual_text = client.summarize(
+                prompt, "docstring", system_prompt=FILL_SYSTEM_PROMPT
+            )
+            cache.set(key, manual_text)
+        logging.info(
+            "Filled %s using code from: %s", section, ", ".join(files.keys())
+        )
+    return manual_text
 
 
 def _edit_chunks_in_editor(chunks: list[str]) -> list[str]:
