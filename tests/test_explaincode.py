@@ -253,6 +253,30 @@ def test_extract_snippets_skips_large_file(
     assert "file size" in log and "exceeds limit" in log
 
 
+def test_scan_code_skips_non_source_dirs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "main.py").write_text('"""run code"""', encoding="utf-8")
+
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_main.py").write_text('"""run tests"""', encoding="utf-8")
+
+    examples_dir = tmp_path / "examples"
+    examples_dir.mkdir()
+    (examples_dir / "example.py").write_text('"""run example"""', encoding="utf-8")
+
+    monkeypatch.setattr(explaincode, "collect_docs", lambda base: [])
+    result = explaincode.scan_code(
+        tmp_path, ["How to Run"], max_files=5, time_budget=5, max_bytes_per_file=1000
+    )
+
+    how_to_run = result.get("How to Run", {})
+    assert set(how_to_run.keys()) == {"src/main.py"}
+
+
 def test_scan_code_categorizes_snippets(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

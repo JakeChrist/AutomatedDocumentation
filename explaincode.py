@@ -340,7 +340,22 @@ def rank_code_files(root: Path, patterns: list[str]) -> list[Path]:
     """Return code files under ``root`` ranked by simple heuristics."""
 
     allowed_exts = {".py", ".m", ".ipynb"}
-    skip_dirs = {"venv", ".git", "__pycache__", "node_modules", "dist", "build"}
+    skip_dirs = {
+        "venv",
+        ".git",
+        "__pycache__",
+        "node_modules",
+        "dist",
+        "build",
+        "tests",
+        "test",
+        "examples",
+        "example",
+        "samples",
+        "sample",
+        "fixtures",
+        "fixture",
+    }
     keyword_re = re.compile(
         r"run|main|cli|config|io|dataset|reader|writer|pipeline", re.IGNORECASE
     )
@@ -349,7 +364,8 @@ def rank_code_files(root: Path, patterns: list[str]) -> list[Path]:
     ranked: list[tuple[int, Path]] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [
-            d for d in dirnames if d not in skip_dirs and not d.endswith(".egg-info")
+            d for d in dirnames
+            if d.lower() not in skip_dirs and not d.endswith(".egg-info")
         ]
         for filename in filenames:
             path = Path(dirpath) / filename
