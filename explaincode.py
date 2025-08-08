@@ -711,16 +711,19 @@ def render_html(
     the extracted documentation.
     """
 
-    parts = [
-        "<html><head><meta charset='utf-8'>",
-        (
-            "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}"
-            ".evidence{margin-left:1em;color:#555;font-size:0.9em;}</style>"
-        ),
-        "</head><body>",
-        f"<h1>{html.escape(title)}</h1>",
-    ]
+    def _slugify(text: str) -> str:
+        slug = re.sub(r"[^a-z0-9]+", "-", text.lower())
+        return slug.strip("-")
+
+    nav_items: list[str] = []
+    body_parts: list[str] = []
+
     for sec_title, content in sections.items():
+        anchor = _slugify(sec_title)
+        nav_items.append(
+            f"<li><a href='#" + anchor + f"'>{html.escape(sec_title)}</a></li>"
+        )
+
         evidence = []
         if evidence_map:
             evidence = evidence_map.get(sec_title, {}).get("evidence", [])
@@ -729,11 +732,19 @@ def render_html(
             snippets = "<br/>".join(
                 html.escape(e.get("snippet", "")) for e in evidence if e.get("snippet")
             )
-            sources = "<br/>".join(
-                f"<span class='evidence'>Source: {html.escape(e.get('file', ''))}</span>"
-                for e in evidence if e.get("file")
+            src_items = [
+                f"<li>{html.escape(e.get('file', ''))}</li>"
+                for e in evidence
+                if e.get("file")
+            ]
+            sources_block = (
+                f"<div class='sources'><ul>{''.join(src_items)}</ul></div>"
+                if src_items
+                else ""
             )
-            parts.append(f"<h2>{html.escape(sec_title)}</h2><p>{snippets}</p>{sources}")
+            body_parts.append(
+                f"<h2 id='{anchor}'>{html.escape(sec_title)}</h2><p>{snippets}</p>{sources_block}"
+            )
         else:
             if not text:
                 text = "No information provided."
@@ -746,8 +757,26 @@ def render_html(
                     rendered = html.escape(text)
             else:  # pragma: no cover - optional dependency missing
                 rendered = html.escape(text)
-            parts.append(f"<h2>{html.escape(sec_title)}</h2>{rendered}")
-    parts.append("</body></html>")
+            body_parts.append(
+                f"<h2 id='{anchor}'>{html.escape(sec_title)}</h2>{rendered}"
+            )
+
+    parts = [
+        "<html><head><meta charset='utf-8'>",
+        (
+            "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}"
+            ".evidence{margin-left:1em;color:#555;font-size:0.9em;}"
+            ".sources{margin-left:1em;font-size:0.9em;}"
+            ".sources ul{margin:0;padding-left:1.2em;}</style>"
+        ),
+        "</head><body>",
+        f"<h1>{html.escape(title)}</h1>",
+        "<nav><ul>",
+        "".join(nav_items),
+        "</ul></nav>",
+        "".join(body_parts),
+        "</body></html>",
+    ]
     return "\n".join(parts)
 
 
