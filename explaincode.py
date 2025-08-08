@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Dict, Iterable
 import sys
@@ -238,7 +239,8 @@ def _summarize_manual(
             return "\n".join(f"{k}: {v}" for k, v in sections.items())
 
         total = len(parts)
-        partials: list[str] = []
+        partials: dict[int, str] = {}
+        work: list[tuple[int, str, str]] = []
         for idx, part in enumerate(parts, 1):
             logging.debug(
                 "Chunk %s/%s from %s: %s tokens, %s characters",
@@ -251,26 +253,45 @@ def _summarize_manual(
             key = ResponseCache.make_key(f"{source}:chunk{idx}", part)
             cached = cache.get(key)
             if cached is not None:
-                resp = cached
+                partials[idx] = cached
+                logging.debug(
+                    "LLM response %s/%s length: %s characters",
+                    idx,
+                    total,
+                    len(cached),
+                )
             else:
-                try:
-                    resp = client.summarize(
-                        part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT
+                work.append((idx, part, key))
+
+        if work:
+            with ThreadPoolExecutor() as executor:
+                future_map = {
+                    executor.submit(
+                        client.summarize,
+                        part,
+                        "docstring",
+                        system_prompt=CHUNK_SYSTEM_PROMPT,
+                    ): (idx, key)
+                    for idx, part, key in work
+                }
+                for future in as_completed(future_map):
+                    idx, key = future_map[future]
+                    try:
+                        resp = future.result()
+                    except Exception as exc:  # pragma: no cover - network failure
+                        print(
+                            f"[WARN] Summarization failed for chunk {idx}/{total}: {exc}",
+                            file=sys.stderr,
+                        )
+                        continue
+                    cache.set(key, resp)
+                    logging.debug(
+                        "LLM response %s/%s length: %s characters",
+                        idx,
+                        total,
+                        len(resp),
                     )
-                except Exception as exc:  # pragma: no cover - network failure
-                    print(
-                        f"[WARN] Summarization failed for chunk {idx}/{total}: {exc}",
-                        file=sys.stderr,
-                    )
-                    continue
-                cache.set(key, resp)
-            logging.debug(
-                "LLM response %s/%s length: %s characters",
-                idx,
-                total,
-                len(resp),
-            )
-            partials.append(resp)
+                    partials[idx] = resp
 
         if not partials:
             sections = infer_sections(text)
@@ -278,11 +299,13 @@ def _summarize_manual(
 
         if post_chunk_hook:
             try:
-                partials = post_chunk_hook(partials)
+                ordered = [partials[i] for i in sorted(partials)]
+                ordered = post_chunk_hook(ordered)
+                partials = {i + 1: v for i, v in enumerate(ordered)}
             except Exception as exc:  # pragma: no cover - defensive
                 logging.debug("Chunk post-processing failed: %s", exc)
 
-        merge_input = "\n\n".join(partials)
+        merge_input = "\n\n".join(partials[i] for i in sorted(partials))
         tokens = _count_tokens(merge_input)
         chars = len(merge_input)
         iteration = 0
