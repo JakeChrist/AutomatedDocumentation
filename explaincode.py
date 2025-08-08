@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import tempfile
+import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -168,6 +169,39 @@ def insert_into_index(index_path: Path, title: str, filename: str) -> None:
         container.append(li)
     else:  # append directly to a nav element
         container.append(a)
+
+    index_path.write_text(str(soup), encoding="utf-8")
+
+
+def inject_user_manual(index_path: Path, title: str, filename: str) -> None:
+    """Insert a top-level link to the manual into ``index_path``.
+
+    The link is prepended to the first navigation element (``<nav>`` or ``<ul>``)
+    if present. If neither is found, it is inserted at the start of the first
+    element in ``<body>`` or the document root.
+    """
+
+    try:
+        soup = BeautifulSoup(index_path.read_text(encoding="utf-8"), "html.parser")
+    except Exception:
+        return
+
+    a = soup.new_tag("a", href=filename)
+    a.string = title
+
+    nav = soup.find("nav")
+    if nav is not None:
+        container = nav.find("ul") or nav
+    else:
+        hero = soup.find(class_=re.compile("hero", re.IGNORECASE))
+        container = hero or soup.find("ul") or soup.body or soup
+
+    if container.name == "ul":
+        li = soup.new_tag("li")
+        li.append(a)
+        container.insert(0, li)
+    else:
+        container.insert(0, a)
 
     index_path.write_text(str(soup), encoding="utf-8")
 
@@ -787,7 +821,11 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     target = config.path
-    out_dir = config.output if config.output else target
+    docs_index = target / "docs" / "index.html"
+    if config.output:
+        out_dir = config.output
+    else:
+        out_dir = docs_index.parent if docs_index.exists() else target
     out_dir.mkdir(parents=True, exist_ok=True)
     files = collect_docs(target)
     texts = [extract_text(f) for f in files]
@@ -845,9 +883,22 @@ def main(argv: list[str] | None = None) -> int:
             return 1
 
     if config.insert_into_index:
-        index_file = out_dir / "index.html"
-        if index_file.exists():
-            insert_into_index(index_file, config.title, out_file.name)
+        if docs_index.exists() and not config.output:
+            index_file = docs_index
+            inject_user_manual(index_file, config.title, out_file.name)
+        else:
+            index_file = out_dir / "index.html"
+            if index_file.exists():
+                if not docs_index.exists() and not config.output:
+                    docs_dir = target / "docs"
+                    docs_dir.mkdir(parents=True, exist_ok=True)
+                    new_path = docs_dir / out_file.name
+                    shutil.move(str(out_file), new_path)
+                    out_file = new_path
+                    rel = os.path.relpath(out_file, index_file.parent)
+                else:
+                    rel = out_file.name
+                inject_user_manual(index_file, config.title, rel)
 
     return 0
 

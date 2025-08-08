@@ -6,6 +6,7 @@ import sys
 import time
 
 import pytest
+from bs4 import BeautifulSoup
 
 import explaincode
 from explaincode import main
@@ -191,6 +192,38 @@ def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     main(["--path", str(tmp_path), "--output", str(out_dir), "--insert-into-index"])
     html = index.read_text(encoding="utf-8")
     assert '<a href="user_manual.html">User Manual</a>' in html
+
+
+def test_docs_index_default_and_injection(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _create_fixture(tmp_path)
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "index.html").write_text("<html><body><nav></nav></body></html>", encoding="utf-8")
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    main(["--path", str(tmp_path), "--insert-into-index"])
+    manual = docs_dir / "user_manual.html"
+    assert manual.exists()
+    soup = BeautifulSoup((docs_dir / "index.html").read_text(encoding="utf-8"), "html.parser")
+    nav = soup.find("nav")
+    assert nav is not None
+    first = nav.find("a")
+    assert first and first["href"] == "user_manual.html"
+
+
+def test_insert_into_root_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _create_fixture(tmp_path)
+    (tmp_path / "index.html").write_text("<html><body><nav></nav></body></html>", encoding="utf-8")
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    main(["--path", str(tmp_path), "--insert-into-index"])
+    manual = tmp_path / "docs" / "user_manual.html"
+    assert manual.exists()
+    soup = BeautifulSoup((tmp_path / "index.html").read_text(encoding="utf-8"), "html.parser")
+    nav = soup.find("nav")
+    assert nav is not None
+    first = nav.find("a")
+    assert first and first["href"] == "docs/user_manual.html"
 
 
 def test_chunking_triggers_multiple_calls_and_logs(
