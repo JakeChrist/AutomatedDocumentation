@@ -211,6 +211,47 @@ def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
         assert mock_sum.call_count > 1
 
 
+def test_merge_recurses_when_prompt_too_long(tmp_path: Path) -> None:
+    from cache import ResponseCache
+    from chunk_utils import get_tokenizer
+    from docgenerator import _summarize_chunked
+    from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
+
+    tokenizer = get_tokenizer()
+    text = "word " * 200
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+    template = PROMPT_TEMPLATES["module"]
+    overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
+        tokenizer.encode(template.format(text=""))
+    )
+    max_context_tokens = overhead + 50
+
+    def fake_sum(client, cache_obj, key, text_arg, prompt_type):
+        template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
+        overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
+            tokenizer.encode(template.format(text=""))
+        )
+        available = max_context_tokens - overhead
+        assert len(tokenizer.encode(text_arg)) <= available
+        if prompt_type == "module":
+            return "summary " * 30
+        return "short"
+
+    with patch("docgenerator._summarize", side_effect=fake_sum) as mock_sum:
+        _summarize_chunked(
+            client=object(),
+            cache=cache,
+            key_prefix="k",
+            text=text,
+            prompt_type="module",
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=10,
+        )
+        merge_calls = [c for c in mock_sum.call_args_list if c.args[4] == "docstring"]
+        assert len(merge_calls) > 1
+
+
 def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
     from cache import ResponseCache
     from parser_python import parse_python_file
