@@ -282,24 +282,34 @@ def extract_snippets(
     snippets: dict[Path, str] = {}
     start = time.perf_counter()
     for idx, path in enumerate(files):
+        elapsed = time.perf_counter() - start
+        logging.info("Considering %s (elapsed %.2fs)", path, elapsed)
         if idx >= max_files:
-            logging.info("Skipping %s: file limit reached", path)
+            logging.info("Skipping %s: file limit reached (elapsed %.2fs)", path, elapsed)
             break
-        if time.perf_counter() - start > time_budget:
-            logging.info("Skipping %s: time budget exceeded", path)
+        if elapsed > time_budget:
+            logging.info(
+                "Skipping %s: time budget exceeded (elapsed %.2fs)", path, elapsed
+            )
             break
         try:
             size = path.stat().st_size
         except Exception:
-            logging.info("Skipping %s: cannot stat file", path)
+            logging.info(
+                "Skipping %s: cannot stat file (elapsed %.2fs)", path, elapsed
+            )
             continue
         if size > max_bytes:
-            logging.info("Skipping %s: exceeds max bytes", path)
+            logging.info(
+                "Skipping %s: exceeds max bytes (elapsed %.2fs)", path, elapsed
+            )
             continue
         try:
             text = path.read_text(encoding="utf-8")[:max_bytes]
         except Exception:
-            logging.info("Skipping %s: unreadable", path)
+            logging.info(
+                "Skipping %s: unreadable (elapsed %.2fs)", path, elapsed
+            )
             continue
 
         parts: list[str] = []
@@ -343,7 +353,9 @@ def extract_snippets(
 
         if parts:
             snippets[path] = "\n".join(parts)
-            logging.info("Scanned %s", path)
+            logging.info(
+                "Scanned %s (elapsed %.2fs)", path, time.perf_counter() - start
+            )
     return snippets
 
 
@@ -833,6 +845,9 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.DEBUG if config.chunking != "none" else logging.INFO
     )
 
+    logging.info("DOC PASS started with %d files", len(files))
+    logging.info("Files: %s", ", ".join(str(f) for f in files))
+
     client = LLMClient()
     cache = ResponseCache(str(out_dir / "cache.json"))
     try:
@@ -841,12 +856,31 @@ def main(argv: list[str] | None = None) -> int:
             ping()
         response = llm_generate_manual(texts, client, cache, config.chunking)
         missing = detect_placeholders(response)
-        should_scan = False
-        if not config.no_code:
-            if config.force_code:
+        if missing:
+            logging.info("Pass 1 missing sections: %s", ", ".join(missing))
+        else:
+            logging.info("Pass 1 complete: no sections missing")
+
+        if config.no_code:
+            logging.info("Code scan skipped: --no-code specified")
+            should_scan = False
+        elif config.force_code:
+            logging.info("Code scan triggered: --force-code enabled")
+            should_scan = True
+        elif config.scan_code_if_needed:
+            if missing:
+                logging.info(
+                    "Code scan triggered: missing sections %s",
+                    ", ".join(missing),
+                )
                 should_scan = True
-            elif config.scan_code_if_needed and missing:
-                should_scan = True
+            else:
+                logging.info("Code scan skipped: placeholders resolved")
+                should_scan = False
+        else:
+            logging.info("Code scan skipped: no scan flags provided")
+            should_scan = False
+
         if should_scan:
             code_context = scan_code(
                 target,
@@ -860,6 +894,10 @@ def main(argv: list[str] | None = None) -> int:
                     response, code_context, client, cache
                 )
                 missing = detect_placeholders(response)
+        logging.info(
+            "Pass 2 complete. Unresolved placeholders: %s",
+            ", ".join(missing) if missing else "none",
+        )
         for token in SECTION_PLACEHOLDERS.values():
             response = response.replace(token, "")
         sections = parse_manual(response)
