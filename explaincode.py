@@ -612,13 +612,22 @@ def llm_fill_placeholders(
     code_snippets: dict[str, dict[str, str]],
     client: LLMClient,
     cache: ResponseCache,
+    *,
+    max_context_tokens: int = 4096,
+    chunk_token_budget: int | None = None,
 ) -> str:
     """Fill placeholder tokens in ``manual_text`` using ``code_snippets``.
 
     ``code_snippets`` maps section names to dictionaries of ``path -> text``
     containing evidence for that section. A separate LLM call is made for each
-    section to update the manual incrementally.
+    section to update the manual incrementally. Long snippets are summarized
+    before being sent to the model so that prompts stay within the model's
+    context window.
     """
+
+    tokenizer = get_tokenizer()
+    if chunk_token_budget is None:
+        chunk_token_budget = int(max_context_tokens * 0.75)
 
     for section, files in code_snippets.items():
         if not files:
@@ -626,21 +635,40 @@ def llm_fill_placeholders(
         snippet_text = "\n\n".join(
             f"# File: {path}\n{text}" for path, text in files.items()
         )
+
+        token_usage = len(tokenizer.encode(manual_text)) + len(
+            tokenizer.encode(snippet_text)
+        )
+        if token_usage > max_context_tokens:
+            snippet_text = summarize_chunked(
+                client,
+                cache,
+                f"fill_manual:{section}:snippet",
+                snippet_text,
+                "docstring",
+                system_prompt=FILL_SYSTEM_PROMPT,
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
+            )
+
         prompt = (
             f"Manual:\n{manual_text}\n\n"
             f"Section: {section}\n"
             f"Code Snippets:\n{snippet_text}\n\n"
             "Update the manual by replacing the placeholder for this section with the relevant information from the code snippets."
         )
-        key = ResponseCache.make_key(f"fill_manual:{section}", prompt)
-        cached = cache.get(key)
-        if cached is not None:
-            manual_text = cached
-        else:
-            manual_text = client.summarize(
-                prompt, "docstring", system_prompt=FILL_SYSTEM_PROMPT
-            )
-            cache.set(key, manual_text)
+
+        manual_text = summarize_chunked(
+            client,
+            cache,
+            f"fill_manual:{section}",
+            prompt,
+            "docstring",
+            system_prompt=FILL_SYSTEM_PROMPT,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
+        )
+
         logging.info(
             "Filled %s using code from: %s", section, ", ".join(files.keys())
         )
