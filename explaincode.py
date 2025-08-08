@@ -580,7 +580,13 @@ def llm_generate_manual(
             "following documentation snippets."
             f"\n\n{context}"
         )
-        system_prompt = f"You write the '{section}' section of a user manual."
+        placeholder = SECTION_PLACEHOLDERS[section]
+        system_prompt = (
+            f"You write the '{section}' section of a user manual. "
+            "Use only the provided snippets; if they lack relevant facts, "
+            f"respond with the placeholder token {placeholder}. Do not infer "
+            "information not present in the snippets."
+        )
         tokenizer = get_tokenizer()
         template = PROMPT_TEMPLATES["docstring"]
         overhead = len(tokenizer.encode(system_prompt)) + len(
@@ -613,7 +619,11 @@ def llm_generate_manual(
                 )
                 cache.set(key, result)
         parsed = parse_manual(result, infer_missing=False)
-        sections[section] = parsed.get(section, result.strip())
+        text = parsed.get(section, result.strip())
+        if placeholder in find_placeholders(text):
+            sections[section] = placeholder
+        else:
+            sections[section] = text
         summary = ", ".join(
             f"{path}: {snippet[:30]}" for path, snippet in entries
         )
