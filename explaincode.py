@@ -348,7 +348,7 @@ def scan_code(
     return "\n\n".join(parts)
 
 
-def generate_manual_from_docs(
+def llm_generate_manual(
     docs: list[str],
     client: LLMClient,
     cache: ResponseCache,
@@ -360,17 +360,53 @@ def generate_manual_from_docs(
     return _summarize_manual(client, cache, text, chunking=chunking, source="docs")
 
 
+# Backwards compatibility for older code paths
+generate_manual_from_docs = llm_generate_manual
+
+
 TOKENIZER = get_tokenizer()
 CHUNK_SYSTEM_PROMPT = (
     "You are generating part of a user manual. Based on the context provided, "
-    "write a section of the guide covering purpose, usage, inputs, outputs, and behavior."
+    "write a section of the guide covering purpose, usage, inputs, outputs, and behavior. "
+    "Do not describe individual functions or implementation details. Focus on user-level instructions."
 )
 MERGE_SYSTEM_PROMPT = (
     "You are compiling a user manual. Combine the provided sections into a cohesive guide. "
     "Ensure the manual includes sections for Overview, Purpose & Problem Solving, How to Run, "
     "Inputs, Outputs, System Requirements, and Examples. If information for any section is "
-    "missing, insert the corresponding placeholder token such as [[NEEDS_RUN_INSTRUCTIONS]]."
+    "missing, insert the corresponding placeholder token such as [[NEEDS_RUN_INSTRUCTIONS]]. "
+    "Do not describe individual functions or implementation details; concentrate on user-level instructions."
 )
+
+FILL_SYSTEM_PROMPT = (
+    "You are enhancing a user manual. Use the provided code snippets to replace placeholder tokens "
+    "with the missing information. Do not describe individual functions or implementation details; "
+    "focus on user-level instructions."
+)
+
+
+def llm_fill_placeholders(
+    manual_text: str,
+    code_snippets: str,
+    client: LLMClient,
+    cache: ResponseCache,
+) -> str:
+    """Fill placeholder tokens in ``manual_text`` using ``code_snippets``."""
+
+    prompt = (
+        "Manual:\n"
+        + manual_text
+        + "\n\nCode Snippets:\n"
+        + code_snippets
+        + "\n\nUpdate the manual by replacing placeholder tokens with the relevant information from the code snippets."
+    )
+    key = ResponseCache.make_key("fill_manual", prompt)
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    result = client.summarize(prompt, "docstring", system_prompt=FILL_SYSTEM_PROMPT)
+    cache.set(key, result)
+    return result
 
 
 def _count_tokens(text: str) -> int:
@@ -765,7 +801,7 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response = generate_manual_from_docs(texts, client, cache, config.chunking)
+        response = llm_generate_manual(texts, client, cache, config.chunking)
         missing = detect_placeholders(response)
         should_scan = False
         if not config.no_code:
@@ -781,11 +817,13 @@ def main(argv: list[str] | None = None) -> int:
                 time_budget=config.code_time_budget_seconds,
                 max_bytes_per_file=config.max_bytes_per_file,
             )
-            if code_context:
-                response = generate_manual_from_docs(
-                    texts + [code_context], client, cache, config.chunking
+            if code_context and missing:
+                response = llm_fill_placeholders(
+                    response, code_context, client, cache
                 )
                 missing = detect_placeholders(response)
+        for token in SECTION_PLACEHOLDERS.values():
+            response = response.replace(token, "")
         sections = parse_manual(response)
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
