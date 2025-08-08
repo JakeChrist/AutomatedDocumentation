@@ -15,6 +15,7 @@ from typing import Dict, Iterable
 import sys
 import time
 import ast
+import json
 
 try:
     from tqdm import tqdm
@@ -285,17 +286,17 @@ SECTION_KEYWORDS = {
 
 def map_evidence_to_sections(
     docs: dict[Path, str]
-) -> tuple[dict[str, list[tuple[str, Path]]], dict[Path, set[str]]]:
+) -> tuple[dict[str, list[tuple[Path, str]]], dict[Path, set[str]]]:
     """Map documentation snippets to manual sections.
 
     Returns a tuple ``(section_map, file_map)`` where ``section_map`` maps
-    section names to a list of ``(snippet, source_path)`` tuples and
+    section names to a list of ``(source_path, snippet)`` tuples and
     ``file_map`` maps each ``source_path`` to the set of sections it
     contributed to. Only the top 10 snippets (by length) are kept per
     section.
     """
 
-    section_map: dict[str, list[tuple[str, Path]]] = {
+    section_map: dict[str, list[tuple[Path, str]]] = {
         name: [] for name in SECTION_KEYWORDS
     }
     file_map: dict[Path, set[str]] = {}
@@ -320,13 +321,13 @@ def map_evidence_to_sections(
                     if snippet_lines:
                         snippet += "\n" + " ".join(snippet_lines).strip()
                     if snippet:
-                        section_map[section].append((snippet, path))
+                        section_map[section].append((path, snippet))
                         file_map.setdefault(path, set()).add(section)
                     break
 
     for section in section_map:
         entries = section_map[section]
-        entries.sort(key=lambda x: len(x[0]), reverse=True)
+        entries.sort(key=lambda x: len(x[1]), reverse=True)
         section_map[section] = entries[:10]
 
     return section_map, file_map
@@ -497,25 +498,37 @@ def llm_generate_manual(
     client: LLMClient,
     cache: ResponseCache,
     chunking: str = "auto",
-) -> tuple[str, dict[Path, set[str]]]:
+) -> tuple[str, dict[Path, set[str]], dict[str, dict[str, object]]]:
     """Generate a manual from supplied documentation ``docs``.
 
     The function maps documentation snippets to manual sections, performs an
     LLM call per section, and assembles the final manual text. It returns the
-    manual text and a mapping of source files to the sections they
-    contributed.
+    manual text, a mapping of source files to the sections they contributed,
+    and an evidence map capturing the snippets used for each section.
     """
 
     section_map, file_map = map_evidence_to_sections(docs)
 
     sections: dict[str, str] = {}
+    evidence_map: dict[str, dict[str, object]] = {}
     for section in REQUIRED_SECTIONS:
         entries = section_map.get(section, [])
-        if not entries:
+        inferred = not entries
+        evidence_map[section] = {
+            "inferred": inferred,
+            "evidence": [
+                {"file": str(path), "snippet": snippet}
+                for path, snippet in entries
+            ],
+        }
+        if inferred:
             sections[section] = SECTION_PLACEHOLDERS[section]
+            logging.info(
+                "Section %s generated with inferred content; evidence: none", section
+            )
             continue
-        context = "\n\n".join(snippet for snippet, _ in entries)
-        for _, path in entries:
+        context = "\n\n".join(snippet for _, snippet in entries)
+        for path, snippet in entries:
             logging.info("Section %s snippet from %s", section, path)
         prompt = (
             f"Write the '{section}' section of a user manual using the "
@@ -535,9 +548,18 @@ def llm_generate_manual(
             cache.set(key, result)
         parsed = parse_manual(result, infer_missing=False)
         sections[section] = parsed.get(section, result.strip())
+        summary = ", ".join(
+            f"{path}: {snippet[:30]}" for path, snippet in entries
+        )
+        logging.info(
+            "Section %s generated using [%s]; inferred=%s",
+            section,
+            summary or "none",
+            inferred,
+        )
 
     manual_text = "\n".join(f"{sec}: {txt}" for sec, txt in sections.items())
-    return manual_text, file_map
+    return manual_text, file_map, evidence_map
 
 
 # Backwards compatibility for older code paths
@@ -778,11 +800,12 @@ def main(argv: list[str] | None = None) -> int:
 
     client = LLMClient()
     cache = ResponseCache(str(out_dir / "cache.json"))
+    evidence_map: dict[str, dict[str, object]] = {}
     try:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response, file_sections = llm_generate_manual(
+        response, file_sections, evidence_map = llm_generate_manual(
             doc_texts, client, cache, config.chunking
         )
         for f in files:
@@ -845,6 +868,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         combined = "\n".join(t for t in texts if t)
         sections = infer_sections(combined)
+        evidence_map = {}
     html = render_html(sections, config.title)
 
     base_name = slugify(config.title)
@@ -874,6 +898,11 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     rel = out_file.name
                 inject_user_manual(index_file, config.title, rel)
+
+    evidence_path = out_file.with_name(f"{out_file.stem}_evidence.json")
+    evidence_path.write_text(
+        json.dumps(evidence_map, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     return 0
 

@@ -5,6 +5,7 @@ import textwrap
 import logging
 import sys
 import time
+import json
 
 import pytest
 from bs4 import BeautifulSoup
@@ -119,7 +120,12 @@ def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path)])
     manual = tmp_path / "user_manual.html"
+    evidence = tmp_path / "user_manual_evidence.json"
     assert manual.exists()
+    assert evidence.exists()
+    data = json.loads(evidence.read_text(encoding="utf-8"))
+    assert "Overview" in data
+    assert data["Overview"]["evidence"]
     assert "No information provided." not in manual.read_text(encoding="utf-8")
 
 
@@ -130,6 +136,7 @@ def test_pdf_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--output-format", "pdf"])
     assert (tmp_path / "user_manual.pdf").exists()
+    assert (tmp_path / "user_manual_evidence.json").exists()
 
 
 def test_graceful_missing_docx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -146,6 +153,7 @@ def test_graceful_missing_docx(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) 
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path)])
     assert (tmp_path / "user_manual.html").exists()
+    assert (tmp_path / "user_manual_evidence.json").exists()
 
 
 def test_custom_output_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -154,6 +162,7 @@ def test_custom_output_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--output", str(out_dir)])
     assert (out_dir / "user_manual.html").exists()
+    assert (out_dir / "user_manual_evidence.json").exists()
 
 
 def test_collect_docs_filters(tmp_path: Path) -> None:
@@ -370,7 +379,9 @@ def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--title", "Fancy Guide"])
     out_file = tmp_path / "fancy_guide.html"
+    evidence_file = tmp_path / "fancy_guide_evidence.json"
     assert out_file.exists()
+    assert evidence_file.exists()
     assert "<h1>Fancy Guide</h1>" in out_file.read_text(encoding="utf-8")
 
 
@@ -396,7 +407,9 @@ def test_docs_index_default_and_injection(
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--insert-into-index"])
     manual = docs_dir / "user_manual.html"
+    evidence = docs_dir / "user_manual_evidence.json"
     assert manual.exists()
+    assert evidence.exists()
     soup = BeautifulSoup((docs_dir / "index.html").read_text(encoding="utf-8"), "html.parser")
     nav = soup.find("nav")
     assert nav is not None
@@ -410,7 +423,9 @@ def test_insert_into_root_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path), "--insert-into-index"])
     manual = tmp_path / "docs" / "user_manual.html"
+    evidence = tmp_path / "docs" / "user_manual_evidence.json"
     assert manual.exists()
+    assert evidence.exists()
     soup = BeautifulSoup((tmp_path / "index.html").read_text(encoding="utf-8"), "html.parser")
     nav = soup.find("nav")
     assert nav is not None
