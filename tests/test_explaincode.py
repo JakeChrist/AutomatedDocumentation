@@ -207,6 +207,24 @@ def test_collect_docs_filters(tmp_path: Path) -> None:
     assert "keep.md" in names and "skip.txt" not in names
 
 
+def test_map_evidence_overview_priority_and_filters() -> None:
+    docs = {
+        Path("README.md"): "# Overview\nreadme info",
+        Path("docs/guide.md"): "# Overview\ndocs info",
+        Path("src/other.md"): "# Overview\nother info",
+        Path("tests/ignore.md"): "# Overview\ntest info",
+        Path("examples/ignore.md"): "# Overview\nexample info",
+        Path("fixtures/ignore.md"): "# Overview\nfixture info",
+    }
+    section_map, _ = explaincode.map_evidence_to_sections(docs)
+    sources = [p.as_posix() for p, _ in section_map["Overview"]]
+    assert "tests/ignore.md" not in sources
+    assert "examples/ignore.md" not in sources
+    assert "fixtures/ignore.md" not in sources
+    assert set(sources[:2]) == {"README.md", "docs/guide.md"}
+    assert sources[2] == "src/other.md"
+
+
 def test_detect_placeholders() -> None:
     text = "Overview: [[NEEDS_OVERVIEW]]\nInputs: data\nOutputs: [[NEEDS_OUTPUTS]]"
     missing = explaincode.detect_placeholders(text)
