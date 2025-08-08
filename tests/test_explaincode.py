@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Iterable
 import importlib
 import textwrap
 import logging
@@ -98,7 +99,40 @@ def test_detect_placeholders() -> None:
     assert set(missing) == {"Overview", "Outputs"}
 
 
-def test_code_scan_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+
+
+def test_full_docs_no_code_scan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    _create_fixture(tmp_path)
+    tracker = {"rank": 0, "extract": 0}
+
+    def fake_rank(root: Path, patterns: list[str]) -> list[Path]:
+        tracker["rank"] += 1
+        return [tmp_path / "a.py"]
+
+    def fake_extract(
+        files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int
+    ) -> dict[Path, str]:
+        tracker["extract"] += 1
+        return {}
+
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    monkeypatch.setattr(explaincode, "rank_code_files", fake_rank)
+    monkeypatch.setattr(explaincode, "extract_snippets", fake_extract)
+
+    caplog.set_level(logging.INFO)
+    main(["--path", str(tmp_path), "--scan-code-if-needed"])
+    assert tracker["rank"] == 0
+    assert tracker["extract"] == 0
+    log = caplog.text
+    assert "DOC PASS" in log
+    assert "Code scan skipped" in log
+
+
+def test_missing_run_triggers_code_fallback_with_limits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
     (tmp_path / "README.md").write_text("Only overview", encoding="utf-8")
 
     class Dummy:
@@ -108,47 +142,54 @@ def test_code_scan_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
         def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
             self.calls += 1
             if self.calls == 1:
-                return "Overview: x\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
-            return "Overview: x\nHow to Run: use it"
+                return "Overview: x\\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
+            return "Overview: x\\nHow to Run: use it"
 
-    called: dict[str, bool] = {}
+    paths = [tmp_path / f"f{i}.py" for i in range(3)]
+    tracker: dict[str, object] = {"rank": 0, "extract": 0}
 
-    def fake_scan_code(
-        base: Path, sections: list[str] | None = None, **kwargs
-    ) -> str:
-        called["yes"] = True
-        return "def run(): pass"
+    def fake_rank(root: Path, patterns: list[str]) -> list[Path]:
+        tracker["rank"] += 1
+        return paths
+
+    def fake_extract(
+        files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int
+    ) -> dict[Path, str]:
+        tracker["extract"] += 1
+        lst = list(files)
+        tracker["kwargs"] = {"max_files": max_files, "time_budget": time_budget}
+        tracker["scanned"] = lst[:max_files]
+        return {p: "code" for p in lst[:max_files]}
 
     monkeypatch.setattr(explaincode, "LLMClient", lambda: Dummy())
-    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
+    monkeypatch.setattr(explaincode, "rank_code_files", fake_rank)
+    monkeypatch.setattr(explaincode, "extract_snippets", fake_extract)
 
-    main(["--path", str(tmp_path), "--scan-code-if-needed"])
+    caplog.set_level(logging.INFO)
+    main(
+        [
+            "--path",
+            str(tmp_path),
+            "--scan-code-if-needed",
+            "--max-code-files",
+            "1",
+            "--code-time-budget-seconds",
+            "5",
+        ]
+    )
     html = (tmp_path / "user_manual.html").read_text(encoding="utf-8")
     assert "NEEDS_RUN_INSTRUCTIONS" not in html
-    assert called.get("yes")
+    assert tracker["rank"] == 1
+    assert tracker["extract"] == 1
+    assert tracker["kwargs"] == {"max_files": 1, "time_budget": 5}
+    assert len(tracker["scanned"]) == 1
+    log = caplog.text
+    assert "Pass 1 missing sections: How to Run" in log
+    assert "Code scan triggered" in log
 
 
-def test_force_code_triggers_scan(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    _create_fixture(tmp_path)
-    called: dict[str, bool] = {}
-
-    def fake_scan_code(
-        base: Path, sections: list[str] | None = None, **kwargs
-    ) -> str:
-        called["yes"] = True
-        return ""
-
-    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
-    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
-
-    main(["--path", str(tmp_path), "--force-code"])
-    assert called.get("yes")
-
-
-def test_no_code_overrides_force(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_no_code_flag_skips_code_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     (tmp_path / "README.md").write_text("Only overview", encoding="utf-8")
 
@@ -156,21 +197,60 @@ def test_no_code_overrides_force(
         def summarize(
             self, text: str, prompt_type: str, system_prompt: str = ""
         ) -> str:
-            return "Overview: x\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
+            return "Overview: x\\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
 
-    called: dict[str, bool] = {}
+    tracker = {"rank": 0, "extract": 0}
 
-    def fake_scan_code(
-        base: Path, sections: list[str] | None = None, **kwargs
-    ) -> str:
-        called["yes"] = True
-        return "def run(): pass"
+    def fake_rank(root: Path, patterns: list[str]) -> list[Path]:
+        tracker["rank"] += 1
+        return []
+
+    def fake_extract(
+        files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int
+    ) -> dict[Path, str]:
+        tracker["extract"] += 1
+        return {}
 
     monkeypatch.setattr(explaincode, "LLMClient", lambda: Dummy())
-    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
+    monkeypatch.setattr(explaincode, "rank_code_files", fake_rank)
+    monkeypatch.setattr(explaincode, "extract_snippets", fake_extract)
 
-    main(["--path", str(tmp_path), "--scan-code-if-needed", "--force-code", "--no-code"])
-    assert "yes" not in called
+    caplog.set_level(logging.INFO)
+    main(["--path", str(tmp_path), "--scan-code-if-needed", "--no-code"])
+    assert tracker["rank"] == 0
+    assert tracker["extract"] == 0
+    log = caplog.text
+    assert "Code scan skipped: --no-code specified" in log
+    assert "Unresolved placeholders: How to Run" in log
+
+
+def test_force_code_flag_triggers_code_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    _create_fixture(tmp_path)
+    tracker = {"rank": 0, "extract": 0}
+
+    def fake_rank(root: Path, patterns: list[str]) -> list[Path]:
+        tracker["rank"] += 1
+        return [tmp_path / "script.py"]
+
+    def fake_extract(
+        files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int
+    ) -> dict[Path, str]:
+        tracker["extract"] += 1
+        return {next(iter(files)): "code"}
+
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    monkeypatch.setattr(explaincode, "rank_code_files", fake_rank)
+    monkeypatch.setattr(explaincode, "extract_snippets", fake_extract)
+
+    caplog.set_level(logging.INFO)
+    main(["--path", str(tmp_path), "--force-code"])
+    assert tracker["rank"] == 1
+    assert tracker["extract"] == 1
+    log = caplog.text
+    assert "Code scan triggered: --force-code enabled" in log
+    assert "Pass 1 complete: no sections missing" in log
 
 
 def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
