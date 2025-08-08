@@ -127,6 +127,21 @@ def test_render_html_renders_markdown_headings_and_code() -> None:
     assert code is not None and "print('hi')" in code.text
 
 
+def test_render_html_includes_toc_and_sources_block() -> None:
+    sections = {"Overview": "", "How to Run": ""}
+    evidence = {
+        "Overview": {"evidence": [{"snippet": "info", "file": "readme.md"}]},
+        "How to Run": {"evidence": [{"snippet": "run", "file": "run.py"}]},
+    }
+    html = explaincode.render_html(sections, "Manual", evidence)
+    soup = BeautifulSoup(html, "html.parser")
+    nav = soup.find("nav")
+    assert nav is not None and nav.find("a", href="#overview") is not None
+    sources_blocks = soup.find_all("div", class_="sources")
+    assert any("readme.md" in block.text for block in sources_blocks)
+    assert any("run.py" in block.text for block in sources_blocks)
+
+
 def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
@@ -138,7 +153,11 @@ def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     data = json.loads(evidence.read_text(encoding="utf-8"))
     assert "Overview" in data
     assert data["Overview"]["evidence"]
-    assert "No information provided." not in manual.read_text(encoding="utf-8")
+    html_text = manual.read_text(encoding="utf-8")
+    assert "No information provided." not in html_text
+    soup = BeautifulSoup(html_text, "html.parser")
+    nav = soup.find("nav")
+    assert nav is not None and nav.find("a", href="#overview") is not None
 
 
 def test_pdf_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
