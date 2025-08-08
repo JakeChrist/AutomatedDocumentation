@@ -34,8 +34,10 @@ except Exception:  # pragma: no cover - optional import
 
 from bs4 import BeautifulSoup
 
-from llm_client import LLMClient
+from llm_client import LLMClient, PROMPT_TEMPLATES
 from cache import ResponseCache
+from chunk_utils import get_tokenizer
+from summarize_utils import summarize_chunked
 from manual_utils import (
     CHUNK_SYSTEM_PROMPT,
     MERGE_SYSTEM_PROMPT,
@@ -546,17 +548,38 @@ def llm_generate_manual(
             "following documentation snippets."
             f"\n\n{context}"
         )
-        key = ResponseCache.make_key(f"section:{section}", prompt)
-        cached = cache.get(key)
-        if cached is not None:
-            result = cached
-        else:
-            result = client.summarize(
+        system_prompt = f"You write the '{section}' section of a user manual."
+        tokenizer = get_tokenizer()
+        template = PROMPT_TEMPLATES["docstring"]
+        overhead = len(tokenizer.encode(system_prompt)) + len(
+            tokenizer.encode(template.format(text=""))
+        )
+        max_context_tokens = 4096
+        chunk_token_budget = int(max_context_tokens * 0.75)
+        available = max_context_tokens - overhead
+        if len(tokenizer.encode(prompt)) > available:
+            result = summarize_chunked(
+                client,
+                cache,
+                f"section:{section}",
                 prompt,
                 "docstring",
-                system_prompt=f"You write the '{section}' section of a user manual.",
+                system_prompt=system_prompt,
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
             )
-            cache.set(key, result)
+        else:
+            key = ResponseCache.make_key(f"section:{section}", prompt)
+            cached = cache.get(key)
+            if cached is not None:
+                result = cached
+            else:
+                result = client.summarize(
+                    prompt,
+                    "docstring",
+                    system_prompt=system_prompt,
+                )
+                cache.set(key, result)
         parsed = parse_manual(result, infer_missing=False)
         sections[section] = parsed.get(section, result.strip())
         summary = ", ".join(
