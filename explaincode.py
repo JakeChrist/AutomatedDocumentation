@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Callable, Dict, Iterable
 import sys
 import time
+import ast
 
 from bs4 import BeautifulSoup
 
@@ -203,6 +204,115 @@ def detect_placeholders(text: str) -> list[str]:
     return missing
 
 
+def rank_code_files(root: Path, patterns: list[str]) -> list[Path]:
+    """Return code files under ``root`` ranked by simple heuristics."""
+
+    allowed_exts = {".py", ".m", ".ipynb"}
+    skip_dirs = {"venv", ".git", "__pycache__", "node_modules", "dist", "build"}
+    keyword_re = re.compile(
+        r"run|main|cli|config|io|dataset|reader|writer|pipeline", re.IGNORECASE
+    )
+    doc_refs = {p.lower() for p in patterns}
+
+    ranked: list[tuple[int, Path]] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [
+            d for d in dirnames if d not in skip_dirs and not d.endswith(".egg-info")
+        ]
+        for filename in filenames:
+            path = Path(dirpath) / filename
+            if path.suffix not in allowed_exts:
+                continue
+            rel = str(path.relative_to(root)).lower()
+            score = 0
+            if keyword_re.search(rel):
+                score += 2
+            for ptn in doc_refs:
+                if ptn and ptn in rel:
+                    score += 1
+            ranked.append((score, path))
+
+    ranked.sort(key=lambda x: (-x[0], str(x[1])))
+    return [p for _, p in ranked]
+
+
+def extract_snippets(
+    files: Iterable[Path],
+    *,
+    max_files: int,
+    time_budget: int,
+    max_bytes: int,
+) -> dict[Path, str]:
+    """Extract relevant code snippets from ``files``."""
+
+    snippets: dict[Path, str] = {}
+    start = time.perf_counter()
+    for idx, path in enumerate(files):
+        if idx >= max_files:
+            logging.info("Skipping %s: file limit reached", path)
+            break
+        if time.perf_counter() - start > time_budget:
+            logging.info("Skipping %s: time budget exceeded", path)
+            break
+        try:
+            size = path.stat().st_size
+        except Exception:
+            logging.info("Skipping %s: cannot stat file", path)
+            continue
+        if size > max_bytes:
+            logging.info("Skipping %s: exceeds max bytes", path)
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")[:max_bytes]
+        except Exception:
+            logging.info("Skipping %s: unreadable", path)
+            continue
+
+        parts: list[str] = []
+        if path.suffix == ".py":
+            try:
+                tree = ast.parse(text)
+            except Exception:
+                tree = None
+            if tree is not None:
+                module_doc = ast.get_docstring(tree)
+                if module_doc:
+                    parts.append(f"Module docstring:\n{module_doc}")
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                        doc = ast.get_docstring(node)
+                        if doc:
+                            kind = "Class" if isinstance(node, ast.ClassDef) else "Function"
+                            parts.append(f"{kind} {node.name} docstring:\n{doc}")
+                        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                            args = [a.arg for a in node.args.args]
+                            if any(
+                                re.search(r"(path|file|config|io)", a, re.IGNORECASE)
+                                for a in args
+                            ):
+                                sig = f"def {node.name}({', '.join(args)}):"
+                                parts.append(f"I/O signature: {sig}")
+                cli_lines = [
+                    line.strip()
+                    for line in text.splitlines()
+                    if "ArgumentParser" in line or "add_argument" in line
+                ]
+                if cli_lines:
+                    parts.append("CLI parser:\n" + "\n".join(cli_lines))
+                main_match = re.search(
+                    r"if __name__ == ['\"]__main__['\"]:(.*)", text, re.DOTALL
+                )
+                if main_match:
+                    parts.append("__main__ block:\n" + main_match.group(0).strip())
+        else:
+            parts.append(text)
+
+        if parts:
+            snippets[path] = "\n".join(parts)
+            logging.info("Scanned %s", path)
+    return snippets
+
+
 def scan_code(
     base: Path,
     sections: list[str] | None = None,
@@ -211,35 +321,31 @@ def scan_code(
     time_budget: int = 20,
     max_bytes_per_file: int = 200_000,
 ) -> str:
-    """Collect source code snippets from ``base``.
+    """Collect source code snippets from ``base``."""
 
-    Parameters are best-effort constraints. ``sections`` can specify which
-    manual sections are missing; it is currently unused but retained for
-    compatibility with future implementations.
-    """
-
-    try:
-        from scanner import scan_directory
-    except Exception:  # pragma: no cover - defensive
-        return ""
-
-    try:
-        files = scan_directory(str(base), [])[:max_files]
-    except Exception:  # pragma: no cover - defensive
-        files = []
-
-    snippets: list[str] = []
-    start = time.perf_counter()
-    for filename in files:
-        if time.perf_counter() - start > time_budget:
-            break
-        path = Path(filename)
+    patterns: list[str] = []
+    for doc in collect_docs(base):
         try:
-            with path.open(encoding="utf-8") as fh:
-                snippets.append(fh.read(max_bytes_per_file))
-        except Exception:  # pragma: no cover - best effort
+            text = extract_text(doc)
+        except Exception:
             continue
-    return "\n\n".join(snippets)
+        for match in re.findall(r"[\w/.-]+", text):
+            if "/" in match or match.endswith(".py"):
+                patterns.append(match)
+
+    files = rank_code_files(base, patterns)
+    snippets = extract_snippets(
+        files,
+        max_files=max_files,
+        time_budget=time_budget,
+        max_bytes=max_bytes_per_file,
+    )
+
+    parts: list[str] = []
+    for path, text in snippets.items():
+        rel = path.relative_to(base)
+        parts.append(f"# File: {rel}\n{text}")
+    return "\n\n".join(parts)
 
 
 def generate_manual_from_docs(
