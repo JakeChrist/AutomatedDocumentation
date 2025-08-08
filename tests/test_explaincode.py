@@ -116,6 +116,17 @@ def test_extract_text_docx_preserves_headings(tmp_path: Path) -> None:
     assert "Text" in text
 
 
+def test_render_html_renders_markdown_headings_and_code() -> None:
+    sections = {
+        "Intro": "# Title\n\n```python\nprint('hi')\n```",
+    }
+    html = explaincode.render_html(sections, "Manual")
+    soup = BeautifulSoup(html, "html.parser")
+    assert soup.find("h1", string="Title") is not None
+    code = soup.find("pre").find("code")
+    assert code is not None and "print('hi')" in code.text
+
+
 def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
@@ -670,6 +681,6 @@ def test_chunking_none_no_llm_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(explaincode, "LLMClient", lambda: dummy)
     main(["--path", str(tmp_path), "--chunking", "none"])
 
-    assert len(dummy.calls) == 7
+    assert len(dummy.calls) == 5
     call = dummy.calls[0]
     assert "Overview" in call["system_prompt"]

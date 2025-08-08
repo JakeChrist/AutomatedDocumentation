@@ -735,8 +735,18 @@ def render_html(
             )
             parts.append(f"<h2>{html.escape(sec_title)}</h2><p>{snippets}</p>{sources}")
         else:
-            display = html.escape(text) if text else "No information provided."
-            parts.append(f"<h2>{html.escape(sec_title)}</h2><p>{display}</p>")
+            if not text:
+                text = "No information provided."
+            if markdown is not None:
+                try:
+                    rendered = markdown.markdown(
+                        text, extensions=["fenced_code", "tables"]
+                    )
+                except Exception:
+                    rendered = html.escape(text)
+            else:  # pragma: no cover - optional dependency missing
+                rendered = html.escape(text)
+            parts.append(f"<h2>{html.escape(sec_title)}</h2>{rendered}")
     parts.append("</body></html>")
     return "\n".join(parts)
 
