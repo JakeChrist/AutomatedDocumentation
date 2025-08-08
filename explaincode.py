@@ -9,9 +9,11 @@ import re
 import subprocess
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, Iterable
 import sys
+import time
 
 from bs4 import BeautifulSoup
 
@@ -60,6 +62,24 @@ SECTION_PLACEHOLDERS = {
     "System Requirements": "[[NEEDS_REQUIREMENTS]]",
     "Examples": "[[NEEDS_EXAMPLES]]",
 }
+
+
+@dataclass
+class Config:
+    """Configuration parsed from CLI arguments."""
+
+    path: Path
+    output_format: str
+    output: Path | None
+    title: str
+    insert_into_index: bool
+    chunking: str
+    scan_code_if_needed: bool
+    no_code: bool
+    force_code: bool
+    max_code_files: int
+    code_time_budget_seconds: int
+    max_bytes_per_file: int
 
 
 def collect_docs(base: Path) -> list[Path]:
@@ -183,11 +203,19 @@ def detect_placeholders(text: str) -> list[str]:
     return missing
 
 
-def scan_code(base: Path, sections: list[str] | None = None) -> str:
+def scan_code(
+    base: Path,
+    sections: list[str] | None = None,
+    *,
+    max_files: int = 12,
+    time_budget: int = 20,
+    max_bytes_per_file: int = 200_000,
+) -> str:
     """Collect source code snippets from ``base``.
 
-    ``sections`` can specify which manual sections are missing; it is currently
-    unused but retained for compatibility with future implementations.
+    Parameters are best-effort constraints. ``sections`` can specify which
+    manual sections are missing; it is currently unused but retained for
+    compatibility with future implementations.
     """
 
     try:
@@ -196,15 +224,19 @@ def scan_code(base: Path, sections: list[str] | None = None) -> str:
         return ""
 
     try:
-        files = scan_directory(str(base), [])
+        files = scan_directory(str(base), [])[:max_files]
     except Exception:  # pragma: no cover - defensive
         files = []
 
     snippets: list[str] = []
+    start = time.perf_counter()
     for filename in files:
+        if time.perf_counter() - start > time_budget:
+            break
         path = Path(filename)
         try:
-            snippets.append(path.read_text(encoding="utf-8"))
+            with path.open(encoding="utf-8") as fh:
+                snippets.append(fh.read(max_bytes_per_file))
         except Exception:  # pragma: no cover - best effort
             continue
     return "\n\n".join(snippets)
@@ -580,14 +612,46 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Scan project code if manual sections are missing after doc pass",
     )
+    parser.add_argument("--no-code", action="store_true", help="Do not scan project code")
+    parser.add_argument("--force-code", action="store_true", help="Always scan project code")
+    parser.add_argument("--max-code-files", type=int, default=12, help="Maximum number of code files to scan")
+    parser.add_argument(
+        "--code-time-budget-seconds",
+        type=int,
+        default=20,
+        help="Time budget in seconds for scanning code",
+    )
+    parser.add_argument(
+        "--max-bytes-per-file",
+        type=int,
+        default=200_000,
+        help="Maximum bytes to read from each code file",
+    )
     args = parser.parse_args(argv)
 
-    target = Path(args.path)
-    out_dir = Path(args.output) if args.output else target
+    config = Config(
+        path=Path(args.path),
+        output_format=args.output_format,
+        output=Path(args.output) if args.output else None,
+        title=args.title,
+        insert_into_index=args.insert_into_index,
+        chunking=args.chunking,
+        scan_code_if_needed=args.scan_code_if_needed,
+        no_code=args.no_code,
+        force_code=args.force_code,
+        max_code_files=args.max_code_files,
+        code_time_budget_seconds=args.code_time_budget_seconds,
+        max_bytes_per_file=args.max_bytes_per_file,
+    )
+
+    target = config.path
+    out_dir = config.output if config.output else target
     out_dir.mkdir(parents=True, exist_ok=True)
     files = collect_docs(target)
     texts = [extract_text(f) for f in files]
-    logging.basicConfig(level=logging.DEBUG if args.chunking != "none" else logging.INFO)
+    logging.basicConfig(
+        level=logging.DEBUG if config.chunking != "none" else logging.INFO
+    )
 
     client = LLMClient()
     cache = ResponseCache(str(out_dir / "cache.json"))
@@ -595,13 +659,25 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response = generate_manual_from_docs(texts, client, cache, args.chunking)
+        response = generate_manual_from_docs(texts, client, cache, config.chunking)
         missing = detect_placeholders(response)
-        if missing and args.scan_code_if_needed:
-            code_context = scan_code(target, missing)
+        should_scan = False
+        if not config.no_code:
+            if config.force_code:
+                should_scan = True
+            elif config.scan_code_if_needed and missing:
+                should_scan = True
+        if should_scan:
+            code_context = scan_code(
+                target,
+                missing,
+                max_files=config.max_code_files,
+                time_budget=config.code_time_budget_seconds,
+                max_bytes_per_file=config.max_bytes_per_file,
+            )
             if code_context:
                 response = generate_manual_from_docs(
-                    texts + [code_context], client, cache, args.chunking
+                    texts + [code_context], client, cache, config.chunking
                 )
                 missing = detect_placeholders(response)
         sections = parse_manual(response)
@@ -612,11 +688,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         combined = "\n".join(t for t in texts if t)
         sections = infer_sections(combined)
-    html = render_html(sections, args.title)
+    html = render_html(sections, config.title)
 
-    base_name = slugify(args.title)
-    out_file = out_dir / f"{base_name}.{'html' if args.output_format == 'html' else 'pdf'}"
-    if args.output_format == "html":
+    base_name = slugify(config.title)
+    out_file = out_dir / f"{base_name}.{'html' if config.output_format == 'html' else 'pdf'}"
+    if config.output_format == "html":
         out_file.write_text(html, encoding="utf-8")
     else:
         success = write_pdf(html, out_file)
@@ -624,10 +700,10 @@ def main(argv: list[str] | None = None) -> int:
             print("PDF generation requires the reportlab package.")
             return 1
 
-    if args.insert_into_index:
+    if config.insert_into_index:
         index_file = out_dir / "index.html"
         if index_file.exists():
-            insert_into_index(index_file, args.title, out_file.name)
+            insert_into_index(index_file, config.title, out_file.name)
 
     return 0
 

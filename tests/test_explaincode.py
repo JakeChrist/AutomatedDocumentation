@@ -112,7 +112,9 @@ def test_code_scan_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
 
     called: dict[str, bool] = {}
 
-    def fake_scan_code(base: Path, sections: list[str] | None = None) -> str:
+    def fake_scan_code(
+        base: Path, sections: list[str] | None = None, **kwargs
+    ) -> str:
         called["yes"] = True
         return "def run(): pass"
 
@@ -123,6 +125,51 @@ def test_code_scan_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     html = (tmp_path / "user_manual.html").read_text(encoding="utf-8")
     assert "NEEDS_RUN_INSTRUCTIONS" not in html
     assert called.get("yes")
+
+
+def test_force_code_triggers_scan(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _create_fixture(tmp_path)
+    called: dict[str, bool] = {}
+
+    def fake_scan_code(
+        base: Path, sections: list[str] | None = None, **kwargs
+    ) -> str:
+        called["yes"] = True
+        return ""
+
+    monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
+    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
+
+    main(["--path", str(tmp_path), "--force-code"])
+    assert called.get("yes")
+
+
+def test_no_code_overrides_force(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    (tmp_path / "README.md").write_text("Only overview", encoding="utf-8")
+
+    class Dummy:
+        def summarize(
+            self, text: str, prompt_type: str, system_prompt: str = ""
+        ) -> str:
+            return "Overview: x\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
+
+    called: dict[str, bool] = {}
+
+    def fake_scan_code(
+        base: Path, sections: list[str] | None = None, **kwargs
+    ) -> str:
+        called["yes"] = True
+        return "def run(): pass"
+
+    monkeypatch.setattr(explaincode, "LLMClient", lambda: Dummy())
+    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
+
+    main(["--path", str(tmp_path), "--scan-code-if-needed", "--force-code", "--no-code"])
+    assert "yes" not in called
 
 
 def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
