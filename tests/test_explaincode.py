@@ -8,6 +8,7 @@ import pytest
 
 import explaincode
 from explaincode import main
+from cache import ResponseCache
 
 
 def _create_fixture(tmp_path: Path) -> None:
@@ -99,7 +100,9 @@ def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     assert '<a href="user_manual.html">User Manual</a>' in html
 
 
-def test_chunking_triggers_multiple_calls_and_logs(capsys: pytest.CaptureFixture[str]) -> None:
+def test_chunking_triggers_multiple_calls_and_logs(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     paragraph = "word " * 2000
     text = "\n\n".join([paragraph, paragraph])
 
@@ -114,8 +117,11 @@ def test_chunking_triggers_multiple_calls_and_logs(capsys: pytest.CaptureFixture
             return f"resp{len(self.calls)}"
 
     client = Dummy()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
-    result = explaincode._summarize_manual(client, text, chunking="auto", source="src")
+    result = explaincode._summarize_manual(
+        client, cache, text, chunking="auto", source="src"
+    )
 
     assert result == "resp3"
     assert len(client.calls) == 3
@@ -131,7 +137,7 @@ def test_chunking_triggers_multiple_calls_and_logs(capsys: pytest.CaptureFixture
     assert "Merged LLM response length" in out
 
 
-def test_chunk_edit_hook_applied() -> None:
+def test_chunk_edit_hook_applied(tmp_path: Path) -> None:
     paragraph = "word " * 2000
     text = "\n\n".join([paragraph, paragraph])
 
@@ -149,15 +155,18 @@ def test_chunk_edit_hook_applied() -> None:
         return [c.upper() for c in chunks]
 
     client = Dummy()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
     result = explaincode._summarize_manual(
-        client, text, chunking="auto", source="src", post_chunk_hook=hook
+        client, cache, text, chunking="auto", source="src", post_chunk_hook=hook
     )
 
     assert result == "resp3"
     assert client.calls[2]["text"] == "RESP1\n\nRESP2"
 
 
-def test_hierarchical_merge_logged(capsys: pytest.CaptureFixture[str]) -> None:
+def test_hierarchical_merge_logged(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     big = "word " * 5000
     text = "\n\n".join([big, big])
 
@@ -174,13 +183,48 @@ def test_hierarchical_merge_logged(capsys: pytest.CaptureFixture[str]) -> None:
             return "short"
 
     client = Dummy()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
-    result = explaincode._summarize_manual(client, text, chunking="auto", source="src")
+    result = explaincode._summarize_manual(
+        client, cache, text, chunking="auto", source="src"
+    )
 
     assert result == "short"
     assert len(client.calls) > 3
     out = capsys.readouterr().out
     assert "Hierarchical merge pass" in out
+
+
+def test_cached_chunks_reused(tmp_path: Path) -> None:
+    paragraph = "word " * 2000
+    text = "\n\n".join([paragraph, paragraph])
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[dict] = []
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls.append(
+                {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
+            )
+            return f"resp{len(self.calls)}"
+
+    cache_file = tmp_path / "cache.json"
+    cache = ResponseCache(str(cache_file))
+    client1 = Dummy()
+    result1 = explaincode._summarize_manual(
+        client1, cache, text, chunking="auto", source="src"
+    )
+    assert result1 == "resp3"
+    assert len(client1.calls) == 3
+
+    client2 = Dummy()
+    cache2 = ResponseCache(str(cache_file))
+    result2 = explaincode._summarize_manual(
+        client2, cache2, text, chunking="auto", source="src"
+    )
+    assert result2 == "resp3"
+    assert len(client2.calls) == 0
 
 
 def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
