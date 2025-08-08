@@ -167,7 +167,16 @@ def _summarize_chunked(
         if len(items) == 1:
             single = items[0]
             key = ResponseCache.make_key(f"{key_prefix}:merge{depth}:solo", single)
-            return _summarize(client, cache, key, single, "docstring")
+            return _summarize_chunked(
+                client,
+                cache,
+                key,
+                single,
+                "docstring",
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
+            )
         groups: list[list[str]] = []
         current: list[str] = []
         current_tokens = 0
@@ -259,7 +268,16 @@ def _summarize_module_chunked(
         if len(items) == 1:
             single = items[0]
             key = ResponseCache.make_key(f"{key_prefix}:merge{depth}:solo", single)
-            return _summarize(client, cache, key, single, "docstring")
+            return _summarize_chunked(
+                client,
+                cache,
+                key,
+                single,
+                "docstring",
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
+            )
         groups: list[list[str]] = []
         current: list[str] = []
         current_tokens = 0
