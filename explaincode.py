@@ -49,6 +49,47 @@ REQUIRED_SECTIONS = [
 ]
 
 
+# mapping of required sections to placeholder tokens used when information is
+# missing from the documentation sources. This acts as a checklist for coverage.
+SECTION_PLACEHOLDERS = {
+    "Overview": "[[NEEDS_OVERVIEW]]",
+    "Purpose & Problem Solving": "[[NEEDS_PURPOSE]]",
+    "How to Run": "[[NEEDS_RUN_INSTRUCTIONS]]",
+    "Inputs": "[[NEEDS_INPUTS]]",
+    "Outputs": "[[NEEDS_OUTPUTS]]",
+    "System Requirements": "[[NEEDS_REQUIREMENTS]]",
+    "Examples": "[[NEEDS_EXAMPLES]]",
+}
+
+
+def collect_docs(base: Path) -> list[Path]:
+    """Return documentation files under ``base``.
+
+    Only the following locations and patterns are included:
+
+    * ``docs/**/*.html`` and ``docs/**/*.md``
+    * Project root ``README.md`` and any ``*.md``, ``*.txt``, ``*.html`` or
+      ``*.docx`` files
+    """
+
+    files: list[Path] = []
+    for pattern in ["README.md", "*.md", "*.txt", "*.html", "*.docx"]:
+        files.extend(base.glob(pattern))
+
+    docs_dir = base / "docs"
+    if docs_dir.exists():
+        for pattern in ["**/*.html", "**/*.md"]:
+            files.extend(docs_dir.glob(pattern))
+
+    seen: set[Path] = set()
+    unique: list[Path] = []
+    for f in files:
+        if f.is_file() and f not in seen:
+            unique.append(f)
+            seen.add(f)
+    return unique
+
+
 def collect_files(base: Path, extra_patterns: Iterable[str] | None = None) -> Iterable[Path]:
     """Return files from *base* relevant for summarisation."""
     patterns = [
@@ -132,6 +173,53 @@ def extract_text(path: Path) -> str:
     except Exception:
         return ""
 
+def detect_placeholders(text: str) -> list[str]:
+    """Return section names still marked by placeholder tokens."""
+
+    missing: list[str] = []
+    for name, token in SECTION_PLACEHOLDERS.items():
+        if token in text:
+            missing.append(name)
+    return missing
+
+
+def scan_code(base: Path, sections: list[str] | None = None) -> str:
+    """Collect source code snippets from ``base``.
+
+    ``sections`` can specify which manual sections are missing; it is currently
+    unused but retained for compatibility with future implementations.
+    """
+
+    try:
+        from scanner import scan_directory
+    except Exception:  # pragma: no cover - defensive
+        return ""
+
+    try:
+        files = scan_directory(str(base), [])
+    except Exception:  # pragma: no cover - defensive
+        files = []
+
+    snippets: list[str] = []
+    for filename in files:
+        path = Path(filename)
+        try:
+            snippets.append(path.read_text(encoding="utf-8"))
+        except Exception:  # pragma: no cover - best effort
+            continue
+    return "\n\n".join(snippets)
+
+
+def generate_manual_from_docs(
+    docs: list[str],
+    client: LLMClient,
+    cache: ResponseCache,
+    chunking: str = "auto",
+) -> str:
+    """Generate a manual from supplied documentation ``docs``."""
+
+    text = "\n".join(d for d in docs if d)
+    return _summarize_manual(client, cache, text, chunking=chunking, source="docs")
 
 
 TOKENIZER = get_tokenizer()
@@ -140,7 +228,10 @@ CHUNK_SYSTEM_PROMPT = (
     "write a section of the guide covering purpose, usage, inputs, outputs, and behavior."
 )
 MERGE_SYSTEM_PROMPT = (
-    "You are compiling a user manual. Combine the provided sections into a cohesive guide."
+    "You are compiling a user manual. Combine the provided sections into a cohesive guide. "
+    "Ensure the manual includes sections for Overview, Purpose & Problem Solving, How to Run, "
+    "Inputs, Outputs, System Requirements, and Examples. If information for any section is "
+    "missing, insert the corresponding placeholder token such as [[NEEDS_RUN_INSTRUCTIONS]]."
 )
 
 
@@ -474,12 +565,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", help="Destination directory for generated summary")
     parser.add_argument("--title", default="User Manual", help="Title for the generated manual")
     parser.add_argument(
-        "--include-files",
-        action="append",
-        default=[],
-        help="Additional glob patterns to include. Can be supplied multiple times",
-    )
-    parser.add_argument(
         "--insert-into-index",
         action="store_true",
         help="Insert link to the manual into index.html in the output directory",
@@ -491,20 +576,18 @@ def main(argv: list[str] | None = None) -> int:
         help="Chunking mode: auto (default) chunks only when needed; manual always chunks; none disables chunking.",
     )
     parser.add_argument(
-        "--edit-chunks",
+        "--scan-code-if-needed",
         action="store_true",
-        help="Edit chunk summaries in $EDITOR before merging",
+        help="Scan project code if manual sections are missing after doc pass",
     )
     args = parser.parse_args(argv)
 
     target = Path(args.path)
     out_dir = Path(args.output) if args.output else target
     out_dir.mkdir(parents=True, exist_ok=True)
-    files = collect_files(target, args.include_files)
+    files = collect_docs(target)
     texts = [extract_text(f) for f in files]
-    combined = "\n".join(t for t in texts if t)
     logging.basicConfig(level=logging.DEBUG if args.chunking != "none" else logging.INFO)
-    sources = ", ".join(f.name for f in files)
 
     client = LLMClient()
     cache = ResponseCache(str(out_dir / "cache.json"))
@@ -512,27 +595,23 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        hook = _edit_chunks_in_editor if args.edit_chunks else None
-        response = (
-            _summarize_manual(
-                client,
-                cache,
-                combined,
-                args.chunking,
-                source=sources or "combined",
-                post_chunk_hook=hook,
-            )
-            if combined
-            else ""
-        )
+        response = generate_manual_from_docs(texts, client, cache, args.chunking)
+        missing = detect_placeholders(response)
+        if missing and args.scan_code_if_needed:
+            code_context = scan_code(target, missing)
+            if code_context:
+                response = generate_manual_from_docs(
+                    texts + [code_context], client, cache, args.chunking
+                )
+                missing = detect_placeholders(response)
+        sections = parse_manual(response)
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
             file=sys.stderr,
         )
+        combined = "\n".join(t for t in texts if t)
         sections = infer_sections(combined)
-    else:
-        sections = parse_manual(response)
     html = render_html(sections, args.title)
 
     base_name = slugify(args.title)
