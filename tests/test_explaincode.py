@@ -225,6 +225,23 @@ def test_map_evidence_overview_priority_and_filters() -> None:
     assert sources[2] == "src/other.md"
 
 
+def test_map_evidence_snippet_limits() -> None:
+    long_content = "# Inputs\n" + "\n".join(
+        f"line {i}" for i in range(1, explaincode.MAX_SNIPPET_LINES + 10)
+    )
+    docs = {
+        Path("src/long.md"): long_content,
+        Path("tests/short.md"): long_content,
+    }
+    section_map, _ = explaincode.map_evidence_to_sections(docs)
+    snippets = {p.as_posix(): snip for p, snip in section_map["Inputs"]}
+    assert (
+        f"line {explaincode.MAX_SNIPPET_LINES + 1}" not in snippets["src/long.md"]
+    )
+    assert f"line {explaincode.MAX_SNIPPET_LINES}" in snippets["src/long.md"]
+    assert snippets["tests/short.md"] == "# Inputs"
+
+
 def test_detect_placeholders() -> None:
     text = "Overview: [[NEEDS_OVERVIEW]]\nInputs: data\nOutputs: [[NEEDS_OUTPUTS]]"
     missing = explaincode.detect_placeholders(text)

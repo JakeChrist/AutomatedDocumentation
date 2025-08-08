@@ -286,6 +286,11 @@ SECTION_KEYWORDS = {
     "Examples": ["example", "examples"],
 }
 
+# Maximum number of lines to include in a collected snippet. Limiting
+# the snippet size helps avoid large generic blocks from dominating the
+# evidence collected for a section.
+MAX_SNIPPET_LINES = 20
+
 
 def map_evidence_to_sections(
     docs: dict[Path, str]
@@ -304,15 +309,19 @@ def map_evidence_to_sections(
     }
     file_map: dict[Path, set[str]] = {}
 
+    skip_dirs = {"tests", "examples", "fixtures"}
     for path, text in docs.items():
+        parts_lower = {p.lower() for p in path.parts}
+        in_excluded_dir = bool(skip_dirs & parts_lower)
         lines = text.splitlines()
         for idx, line in enumerate(lines):
             lowered = line.strip().lower()
             for section, keywords in SECTION_KEYWORDS.items():
                 if any(re.search(rf"\b{re.escape(k)}\b", lowered) for k in keywords):
+                    max_lines = 0 if in_excluded_dir else MAX_SNIPPET_LINES
                     snippet_lines: list[str] = []
                     j = idx + 1
-                    while j < len(lines):
+                    while j < len(lines) and len(snippet_lines) < max_lines:
                         nxt = lines[j]
                         if not nxt.strip():
                             break
@@ -324,10 +333,8 @@ def map_evidence_to_sections(
                     if snippet_lines:
                         snippet += "\n" + " ".join(snippet_lines).strip()
                     if snippet:
-                        if section == "Overview":
-                            parts_lower = [p.lower() for p in path.parts]
-                            if any(bad in parts_lower for bad in ("tests", "examples", "fixtures")):
-                                break
+                        if section == "Overview" and in_excluded_dir:
+                            break
                         section_map[section].append((path, snippet))
                         file_map.setdefault(path, set()).add(section)
                     break
