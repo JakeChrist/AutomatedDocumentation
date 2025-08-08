@@ -533,7 +533,7 @@ def llm_generate_manual(
                 system_prompt=f"You write the '{section}' section of a user manual.",
             )
             cache.set(key, result)
-        parsed = parse_manual(result)
+        parsed = parse_manual(result, infer_missing=False)
         sections[section] = parsed.get(section, result.strip())
 
     manual_text = "\n".join(f"{sec}: {txt}" for sec, txt in sections.items())
@@ -615,13 +615,18 @@ def render_html(sections: Dict[str, str], title: str) -> str:
     return "\n".join(parts)
 
 
-def parse_manual(text: str) -> Dict[str, str]:
+def parse_manual(
+    text: str,
+    client: "LLMClient | None" = None,
+    infer_missing: bool = True,
+) -> Dict[str, str]:
     """Parse ``text`` from the LLM into structured sections.
 
     The language model may return any set of headings. This parser splits the
     input on lines containing a colon (``Section: content``) and keeps the
-    sections in the order they appear. Missing required sections are appended
-    with a default message.
+    sections in the order they appear. When ``infer_missing`` is ``True``,
+    absent required sections are inferred using the language model and marked
+    as ``(inferred)``.
     """
 
     sections: Dict[str, str] = {}
@@ -637,8 +642,26 @@ def parse_manual(text: str) -> Dict[str, str]:
         elif current:
             sections[current] += ("\n" if sections[current] else "") + stripped
 
-    for key in REQUIRED_SECTIONS:
-        sections[key] = sections.get(key, "").strip() or "No information provided."
+    missing = [key for key in REQUIRED_SECTIONS if not sections.get(key, "").strip()]
+    if infer_missing and missing:
+        if client is None:
+            client = LLMClient()
+        for key in missing:
+            prompt = (
+                f"Based on the following manual draft, write a short '{key}' section.\n\n{text}"
+            )
+            try:
+                guess = client.summarize(
+                    prompt,
+                    "docstring",
+                    system_prompt=f"You fill in the '{key}' section of a user manual.",
+                )
+            except Exception:  # pragma: no cover - network issues
+                guess = ""
+            sections[key] = (guess.strip() or f"{key} details") + " (inferred)"
+    else:
+        for key in missing:
+            sections[key] = "No information provided."
 
     return sections
 
@@ -646,17 +669,22 @@ def parse_manual(text: str) -> Dict[str, str]:
 def infer_sections(text: str) -> Dict[str, str]:
     """Infer manual sections heuristically from plain ``text``.
 
-    This is a lightweight fallback used when the language model cannot
-    provide a structured summary. The combined text is placed in the
-    ``Overview`` section and other sections receive default messages.
+    This is a lightweight fallback used when the language model cannot provide
+    a structured summary. When ``text`` is non-empty, the combined text is
+    placed in the ``Overview`` section and placeholder content labelled
+    ``(inferred)`` is generated for the remaining sections. If ``text`` is
+    empty, a default message is used to indicate that no information exists.
     """
 
     sections: Dict[str, str] = {}
     text = text.strip()
     if text:
         sections["Overview"] = text
-    for key in REQUIRED_SECTIONS:
-        sections[key] = sections.get(key, "") or "No information provided."
+        for key in REQUIRED_SECTIONS:
+            sections.setdefault(key, f"{key} details (inferred)")
+    else:
+        for key in REQUIRED_SECTIONS:
+            sections[key] = "No information provided."
     return sections
 
 
@@ -809,7 +837,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         for token in SECTION_PLACEHOLDERS.values():
             response = response.replace(token, "")
-        sections = parse_manual(response)
+        sections = parse_manual(response, client=client)
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
