@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 import explaincode
 from explaincode import main
+import manual_utils
 from cache import ResponseCache
 
 
@@ -328,7 +329,7 @@ def test_chunking_triggers_multiple_calls_and_logs(
     client = Dummy()
     cache = ResponseCache(str(tmp_path / "cache.json"))
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
-    result = explaincode._summarize_manual(
+    result = manual_utils._summarize_manual(
         client, cache, text, chunking="auto", source="src"
     )
 
@@ -367,7 +368,7 @@ def test_chunk_edit_hook_applied(tmp_path: Path) -> None:
 
     client = Dummy()
     cache = ResponseCache(str(tmp_path / "cache.json"))
-    result = explaincode._summarize_manual(
+    result = manual_utils._summarize_manual(
         client, cache, text, chunking="auto", source="src", post_chunk_hook=hook
     )
 
@@ -389,7 +390,7 @@ def test_parallel_chunk_summarization(tmp_path: Path) -> None:
     client = SlowClient()
     cache = ResponseCache(str(tmp_path / "cache.json"))
     start = time.perf_counter()
-    explaincode._summarize_manual(client, cache, text, chunking="auto", source="src")
+    manual_utils._summarize_manual(client, cache, text, chunking="auto", source="src")
     duration = time.perf_counter() - start
     assert duration < delay * 1.5
 
@@ -415,7 +416,7 @@ def test_hierarchical_merge_logged(
     client = Dummy()
     cache = ResponseCache(str(tmp_path / "cache.json"))
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, force=True)
-    result = explaincode._summarize_manual(
+    result = manual_utils._summarize_manual(
         client, cache, text, chunking="auto", source="src"
     )
 
@@ -442,7 +443,7 @@ def test_cached_chunks_reused(tmp_path: Path) -> None:
     cache_file = tmp_path / "cache.json"
     cache = ResponseCache(str(cache_file))
     client1 = Dummy()
-    result1 = explaincode._summarize_manual(
+    result1 = manual_utils._summarize_manual(
         client1, cache, text, chunking="auto", source="src"
     )
     assert result1 == "resp3"
@@ -450,7 +451,7 @@ def test_cached_chunks_reused(tmp_path: Path) -> None:
 
     client2 = Dummy()
     cache2 = ResponseCache(str(cache_file))
-    result2 = explaincode._summarize_manual(
+    result2 = manual_utils._summarize_manual(
         client2, cache2, text, chunking="auto", source="src"
     )
     assert result2 == "resp3"
