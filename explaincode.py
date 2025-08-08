@@ -301,7 +301,11 @@ def extract_snippets(
             continue
         if size > max_bytes:
             logging.info(
-                "Skipping %s: exceeds max bytes (elapsed %.2fs)", path, elapsed
+                "Skipping %s: file size %d exceeds limit %d bytes (elapsed %.2fs)",
+                path,
+                size,
+                max_bytes,
+                elapsed,
             )
             continue
         try:

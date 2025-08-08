@@ -100,6 +100,20 @@ def test_detect_placeholders() -> None:
     assert set(missing) == {"Overview", "Outputs"}
 
 
+def test_extract_snippets_skips_large_file(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    big_file = tmp_path / "big.py"
+    big_file.write_bytes(b"a" * 210_000)
+    caplog.set_level(logging.INFO)
+    snippets = explaincode.extract_snippets(
+        [big_file], max_files=1, time_budget=5, max_bytes=200_000
+    )
+    assert big_file not in snippets
+    log = caplog.text
+    assert "file size" in log and "exceeds limit" in log
+
+
 
 
 def test_full_docs_no_code_scan(
