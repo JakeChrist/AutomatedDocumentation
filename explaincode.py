@@ -869,6 +869,52 @@ def parse_manual(
     return sections
 
 
+def validate_manual_references(
+    sections: Dict[str, str],
+    project_root: Path,
+    evidence_map: dict[str, dict[str, object]] | None = None,
+) -> None:
+    """Flag references in ``sections`` that lack corresponding files.
+
+    Each section's text is scanned for substrings that resemble file paths or
+    module names (e.g., ``module.py`` or ``sub/dir/file.m``). If a referenced
+    file cannot be found anywhere under ``project_root``, the reference is
+    annotated with ``[missing]`` in the section text. When ``evidence_map`` is
+    provided, missing references are also recorded under the corresponding
+    section in a ``missing_references`` list.
+
+    The ``sections`` mapping is modified in place.
+    """
+
+    pattern = re.compile(
+        r"\b[\w./-]+\.(?:py|m|md|rst|txt|json|yaml|yml|csv)\b"
+    )
+
+    existing_paths = {
+        p.relative_to(project_root).as_posix()
+        for p in project_root.rglob("*")
+        if p.is_file()
+    }
+    existing_names = {Path(p).name for p in existing_paths}
+
+    for title, text in sections.items():
+        missing: list[str] = []
+
+        def repl(match: re.Match[str]) -> str:
+            ref = match.group(0)
+            if ref in existing_paths or ref in existing_names:
+                return ref
+            missing.append(ref)
+            return f"{ref} [missing]"
+
+        updated = pattern.sub(repl, text)
+        sections[title] = updated
+        if missing and evidence_map is not None:
+            evidence_map.setdefault(title, {}).setdefault(
+                "missing_references", []
+            ).extend(missing)
+
+
 def infer_sections(text: str) -> Dict[str, str]:
     """Infer manual sections heuristically from plain ``text``.
 
@@ -1042,6 +1088,7 @@ def main(argv: list[str] | None = None) -> int:
         for token in SECTION_PLACEHOLDERS.values():
             response = response.replace(token, "")
         sections = parse_manual(response, infer_missing=False)
+        validate_manual_references(sections, target, evidence_map)
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
@@ -1050,6 +1097,7 @@ def main(argv: list[str] | None = None) -> int:
         combined = "\n".join(t for t in texts if t)
         sections = infer_sections(combined)
         evidence_map = {}
+        validate_manual_references(sections, target, evidence_map)
     html = render_html(sections, config.title, evidence_map)
 
     base_name = slugify(config.title)

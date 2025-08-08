@@ -243,6 +243,16 @@ def test_parse_manual_infers_missing_sections() -> None:
     assert "No information provided." not in parsed["Inputs"]
 
 
+def test_validate_manual_references_flags_missing(tmp_path: Path) -> None:
+    (tmp_path / "exists.py").write_text("pass", encoding="utf-8")
+    sections = {"Overview": "See exists.py and missing.py for details"}
+    evidence: dict[str, dict[str, object]] = {}
+    explaincode.validate_manual_references(sections, tmp_path, evidence)
+    assert "exists.py" in sections["Overview"]
+    assert "missing.py [missing]" in sections["Overview"]
+    assert evidence["Overview"]["missing_references"] == ["missing.py"]
+
+
 def test_infer_sections_infers_entries() -> None:
     sections = explaincode.infer_sections("Some context")
     assert sections["Overview"] == "Some context"
