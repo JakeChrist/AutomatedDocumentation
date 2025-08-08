@@ -18,8 +18,18 @@ import ast
 
 try:
     from tqdm import tqdm
-except ImportError:  # pragma: no cover - optional import
-    tqdm = lambda x, **kwargs: x
+except Exception:  # pragma: no cover - optional import
+    def tqdm(iterable, **kwargs):
+        """Fallback progress iterator when tqdm is unavailable."""
+        total = len(iterable) if hasattr(iterable, "__len__") else None
+        desc = kwargs.get("desc", "")
+        for i, item in enumerate(iterable, 1):
+            if total:
+                print(f"\r{desc} {i}/{total}", end="", file=sys.stderr)
+            else:
+                print(f"\r{desc} {i}", end="", file=sys.stderr)
+            yield item
+        print(file=sys.stderr)
 
 from bs4 import BeautifulSoup
 
