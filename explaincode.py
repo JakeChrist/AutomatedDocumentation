@@ -232,17 +232,36 @@ def extract_text(path: Path) -> str:
         if suffix == ".html":
             content = path.read_text(encoding="utf-8")
             soup = BeautifulSoup(content, "html.parser")
-            return soup.get_text("\n")
+            for heading in soup.find_all([f"h{i}" for i in range(1, 7)]):
+                level = int(heading.name[1])
+                text = heading.get_text(" ", strip=True)
+                heading.replace_with(soup.new_string("#" * level + " " + text))
+            for pre in soup.find_all("pre"):
+                code = pre.get_text()
+                fenced = "```\n" + code.strip("\n") + "\n```"
+                pre.replace_with(soup.new_string(fenced))
+            text = soup.get_text("\n")
+            lines = [line.strip() for line in text.splitlines()]
+            return "\n".join(line for line in lines if line)
         if suffix in {".md"}:
-            content = path.read_text(encoding="utf-8")
-            if markdown is not None:
-                html = markdown.markdown(content)
-                soup = BeautifulSoup(html, "html.parser")
-                return soup.get_text("\n")
-            return content
+            return path.read_text(encoding="utf-8")
         if suffix == ".docx" and Document is not None:
             doc = Document(str(path))
-            return "\n".join(p.text for p in doc.paragraphs)
+            lines = []
+            for p in doc.paragraphs:
+                text = p.text.strip()
+                if not text:
+                    continue
+                style = getattr(p.style, "name", "")
+                if style.startswith("Heading"):
+                    try:
+                        level = int(style.split()[1])
+                        lines.append("#" * level + " " + text)
+                    except Exception:
+                        lines.append(text)
+                else:
+                    lines.append(text)
+            return "\n".join(lines)
         return path.read_text(encoding="utf-8")
     except Exception:
         return ""

@@ -67,6 +67,53 @@ def _mock_llm_client() -> object:
     return Dummy()
 
 
+def test_extract_text_markdown_preserves_headings_and_code(tmp_path: Path) -> None:
+    content = """
+# Title
+
+Text
+
+```python
+print('hi')
+```
+"""
+    md = tmp_path / "readme.md"
+    md.write_text(content, encoding="utf-8")
+    text = explaincode.extract_text(md)
+    assert "# Title" in text
+    assert "```python" in text
+    assert "print('hi')" in text
+
+
+def test_extract_text_html_preserves_headings_and_code(tmp_path: Path) -> None:
+    html = (
+        "<html><body><h1>Main</h1><p>Intro</p>"
+        "<h2>Section</h2><pre><code>print('hi')</code></pre></body></html>"
+    )
+    page = tmp_path / "page.html"
+    page.write_text(html, encoding="utf-8")
+    text = explaincode.extract_text(page)
+    assert "# Main" in text
+    assert "## Section" in text
+    assert "```" in text and "print('hi')" in text
+
+
+def test_extract_text_docx_preserves_headings(tmp_path: Path) -> None:
+    try:
+        from docx import Document
+    except Exception:  # pragma: no cover - dependency missing
+        pytest.skip("python-docx not installed")
+
+    doc = Document()
+    doc.add_heading("Title", level=1)
+    doc.add_paragraph("Text")
+    path = tmp_path / "doc.docx"
+    doc.save(path)
+    text = explaincode.extract_text(path)
+    assert text.splitlines()[0] == "# Title"
+    assert "Text" in text
+
+
 def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
