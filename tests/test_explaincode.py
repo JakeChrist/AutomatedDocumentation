@@ -118,7 +118,9 @@ def test_html_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     _create_fixture(tmp_path)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
     main(["--path", str(tmp_path)])
-    assert (tmp_path / "user_manual.html").exists()
+    manual = tmp_path / "user_manual.html"
+    assert manual.exists()
+    assert "No information provided." not in manual.read_text(encoding="utf-8")
 
 
 def test_pdf_summary_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -169,6 +171,32 @@ def test_detect_placeholders() -> None:
     text = "Overview: [[NEEDS_OVERVIEW]]\nInputs: data\nOutputs: [[NEEDS_OUTPUTS]]"
     missing = explaincode.detect_placeholders(text)
     assert set(missing) == {"Overview", "Outputs"}
+
+
+def test_parse_manual_infers_missing_sections() -> None:
+    class Stub:
+        def summarize(self, prompt: str, prompt_type: str, system_prompt: str = "") -> str:
+            return "guessed"
+
+    client = Stub()
+    parsed = explaincode.parse_manual("Overview: hi", client=client)
+    assert parsed["Overview"] == "hi"
+    assert parsed["Inputs"].endswith("(inferred)")
+    assert "No information provided." not in parsed["Inputs"]
+
+
+def test_infer_sections_infers_entries() -> None:
+    sections = explaincode.infer_sections("Some context")
+    assert sections["Overview"] == "Some context"
+    for key in explaincode.REQUIRED_SECTIONS:
+        if key != "Overview":
+            assert sections[key].endswith("(inferred)")
+    assert "No information provided." not in "".join(sections.values())
+
+
+def test_infer_sections_no_context_defaults() -> None:
+    sections = explaincode.infer_sections("")
+    assert all(v == "No information provided." for v in sections.values())
 
 
 def test_extract_snippets_skips_large_file(
@@ -559,6 +587,6 @@ def test_chunking_none_no_llm_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(explaincode, "LLMClient", lambda: dummy)
     main(["--path", str(tmp_path), "--chunking", "none"])
 
-    assert len(dummy.calls) == 1
+    assert len(dummy.calls) == 7
     call = dummy.calls[0]
     assert "Overview" in call["system_prompt"]
