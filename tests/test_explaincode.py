@@ -80,6 +80,51 @@ def test_custom_output_directory(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert (out_dir / "user_manual.html").exists()
 
 
+def test_collect_docs_filters(tmp_path: Path) -> None:
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "keep.md").write_text("hi", encoding="utf-8")
+    (tmp_path / "docs" / "skip.txt").write_text("no", encoding="utf-8")
+    (tmp_path / "README.md").write_text("readme", encoding="utf-8")
+    (tmp_path / "extra.md").write_text("extra", encoding="utf-8")
+    files = explaincode.collect_docs(tmp_path)
+    names = {f.name for f in files}
+    assert "keep.md" in names and "skip.txt" not in names
+
+
+def test_detect_placeholders() -> None:
+    text = "Overview: [[NEEDS_OVERVIEW]]\nInputs: data\nOutputs: [[NEEDS_OUTPUTS]]"
+    missing = explaincode.detect_placeholders(text)
+    assert set(missing) == {"Overview", "Outputs"}
+
+
+def test_code_scan_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    (tmp_path / "README.md").write_text("Only overview", encoding="utf-8")
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            self.calls += 1
+            if self.calls == 1:
+                return "Overview: x\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
+            return "Overview: x\nHow to Run: use it"
+
+    called: dict[str, bool] = {}
+
+    def fake_scan_code(base: Path, sections: list[str] | None = None) -> str:
+        called["yes"] = True
+        return "def run(): pass"
+
+    monkeypatch.setattr(explaincode, "LLMClient", lambda: Dummy())
+    monkeypatch.setattr(explaincode, "scan_code", fake_scan_code)
+
+    main(["--path", str(tmp_path), "--scan-code-if-needed"])
+    html = (tmp_path / "user_manual.html").read_text(encoding="utf-8")
+    assert "NEEDS_RUN_INSTRUCTIONS" not in html
+    assert called.get("yes")
+
+
 def test_custom_title_and_filename(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     _create_fixture(tmp_path)
     monkeypatch.setattr(explaincode, "LLMClient", _mock_llm_client)
