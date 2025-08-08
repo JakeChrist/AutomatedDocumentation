@@ -324,13 +324,28 @@ def map_evidence_to_sections(
                     if snippet_lines:
                         snippet += "\n" + " ".join(snippet_lines).strip()
                     if snippet:
+                        if section == "Overview":
+                            parts_lower = [p.lower() for p in path.parts]
+                            if any(bad in parts_lower for bad in ("tests", "examples", "fixtures")):
+                                break
                         section_map[section].append((path, snippet))
                         file_map.setdefault(path, set()).add(section)
                     break
 
     for section in section_map:
         entries = section_map[section]
-        entries.sort(key=lambda x: len(x[1]), reverse=True)
+        if section == "Overview":
+            def _key(item: tuple[Path, str]) -> tuple[int, int]:
+                p, snip = item
+                parts_lower = [part.lower() for part in p.parts]
+                in_docs = "docs" in parts_lower
+                is_readme = p.name.lower() == "readme.md"
+                priority = 0 if is_readme or in_docs else 1
+                return (priority, -len(snip))
+
+            entries.sort(key=_key)
+        else:
+            entries.sort(key=lambda x: len(x[1]), reverse=True)
         section_map[section] = entries[:10]
 
     return section_map, file_map
