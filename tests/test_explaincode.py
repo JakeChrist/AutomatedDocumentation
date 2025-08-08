@@ -3,6 +3,7 @@ import importlib
 import textwrap
 import logging
 import sys
+import time
 
 import pytest
 
@@ -103,8 +104,9 @@ def test_insert_into_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 def test_chunking_triggers_multiple_calls_and_logs(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    paragraph = "word " * 2000
-    text = "\n\n".join([paragraph, paragraph])
+    paragraph1 = "aaa " * 2000
+    paragraph2 = "bbb " * 2000
+    text = "\n\n".join([paragraph1, paragraph2])
 
     class Dummy:
         def __init__(self) -> None:
@@ -114,7 +116,9 @@ def test_chunking_triggers_multiple_calls_and_logs(
             self.calls.append(
                 {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
             )
-            return f"resp{len(self.calls)}"
+            if system_prompt == explaincode.MERGE_SYSTEM_PROMPT:
+                return "final"
+            return text.split()[0]
 
     client = Dummy()
     cache = ResponseCache(str(tmp_path / "cache.json"))
@@ -123,14 +127,13 @@ def test_chunking_triggers_multiple_calls_and_logs(
         client, cache, text, chunking="auto", source="src"
     )
 
-    assert result == "resp3"
+    assert result == "final"
     assert len(client.calls) == 3
-    assert [c["system_prompt"] for c in client.calls[:2]] == [
-        explaincode.CHUNK_SYSTEM_PROMPT,
-        explaincode.CHUNK_SYSTEM_PROMPT,
-    ]
-    assert client.calls[2]["system_prompt"] == explaincode.MERGE_SYSTEM_PROMPT
-    assert client.calls[2]["text"] == "resp1\n\nresp2"
+    chunk_calls = client.calls[:-1]
+    merge_call = client.calls[-1]
+    assert all(c["system_prompt"] == explaincode.CHUNK_SYSTEM_PROMPT for c in chunk_calls)
+    assert merge_call["system_prompt"] == explaincode.MERGE_SYSTEM_PROMPT
+    assert merge_call["text"] == "aaa\n\nbbb"
 
     out = capsys.readouterr().out
     assert "Chunk 1/2 from src" in out
@@ -138,8 +141,9 @@ def test_chunking_triggers_multiple_calls_and_logs(
 
 
 def test_chunk_edit_hook_applied(tmp_path: Path) -> None:
-    paragraph = "word " * 2000
-    text = "\n\n".join([paragraph, paragraph])
+    paragraph1 = "aaa " * 2000
+    paragraph2 = "bbb " * 2000
+    text = "\n\n".join([paragraph1, paragraph2])
 
     class Dummy:
         def __init__(self) -> None:
@@ -149,7 +153,9 @@ def test_chunk_edit_hook_applied(tmp_path: Path) -> None:
             self.calls.append(
                 {"text": text, "prompt_type": prompt_type, "system_prompt": system_prompt}
             )
-            return f"resp{len(self.calls)}"
+            if system_prompt == explaincode.MERGE_SYSTEM_PROMPT:
+                return "final"
+            return text.split()[0]
 
     def hook(chunks: list[str]) -> list[str]:
         return [c.upper() for c in chunks]
@@ -160,8 +166,27 @@ def test_chunk_edit_hook_applied(tmp_path: Path) -> None:
         client, cache, text, chunking="auto", source="src", post_chunk_hook=hook
     )
 
-    assert result == "resp3"
-    assert client.calls[2]["text"] == "RESP1\n\nRESP2"
+    assert result == "final"
+    assert client.calls[-1]["text"] == "AAA\n\nBBB"
+
+
+def test_parallel_chunk_summarization(tmp_path: Path) -> None:
+    paragraph = "word " * 2000
+    text = "\n\n".join([paragraph, paragraph])
+    delay = 0.2
+
+    class SlowClient:
+        def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
+            if system_prompt == explaincode.CHUNK_SYSTEM_PROMPT:
+                time.sleep(delay)
+            return "ok"
+
+    client = SlowClient()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+    start = time.perf_counter()
+    explaincode._summarize_manual(client, cache, text, chunking="auto", source="src")
+    duration = time.perf_counter() - start
+    assert duration < delay * 1.5
 
 
 def test_hierarchical_merge_logged(
