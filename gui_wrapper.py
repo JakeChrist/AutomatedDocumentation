@@ -1,5 +1,7 @@
 import sys
 import subprocess
+import threading
+import re
 from pathlib import Path
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -54,17 +56,56 @@ class CommandRunner(QtCore.QThread):
         super().__init__()
         self.cmds = cmds
 
+    def _reader(self, stream):
+        """Read a stream character by character and emit chunks.
+
+        Carriage returns are emitted so the GUI can handle progress
+        bar updates. Any buffered text is flushed when the stream ends.
+        """
+
+        buf = ""
+        while True:
+            ch = stream.read(1)
+            if ch == "":
+                if buf:
+                    self.output.emit(buf)
+                break
+            if ch == "\r":
+                if buf:
+                    self.output.emit(buf)
+                    buf = ""
+                self.output.emit("\r")
+            elif ch == "\n":
+                self.output.emit(buf + "\n")
+                buf = ""
+            else:
+                buf += ch
+
     def run(self):
         rc = 0
         for cmd in self.cmds:
             self.output.emit(f"$ {' '.join(cmd)}\n")
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True)
-                if result.stdout:
-                    self.output.emit(result.stdout)
-                if result.stderr:
-                    self.output.emit(result.stderr)
-                rc = result.returncode
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                )
+
+                threads = [
+                    threading.Thread(target=self._reader, args=(proc.stdout,), daemon=True),
+                    threading.Thread(target=self._reader, args=(proc.stderr,), daemon=True),
+                ]
+                for t in threads:
+                    t.start()
+
+                rc = proc.wait()
+
+                for t in threads:
+                    t.join()
+
                 if rc != 0:
                     break
             except Exception as exc:
@@ -222,7 +263,16 @@ class MainWindow(QtWidgets.QWidget):
             line_edit.setText(path)
 
     def append_log(self, text):
-        self.log.appendPlainText(text)
+        cursor = self.log.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        for part in re.split('(\r)', text):
+            if part == '\r':
+                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+                cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+            else:
+                cursor.insertText(part)
+        self.log.setTextCursor(cursor)
         sb = self.log.verticalScrollBar()
         sb.setValue(sb.maximum())
 
