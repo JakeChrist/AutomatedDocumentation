@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 
 from llm_client import LLMClient
 from chunk_utils import get_tokenizer, chunk_text
+from cache import ResponseCache
 
 try:  # optional dependency
     import markdown  # type: ignore
@@ -216,6 +217,7 @@ def _edit_chunks_in_editor(chunks: list[str]) -> list[str]:
 
 def _summarize_manual(
     client: LLMClient,
+    cache: ResponseCache,
     text: str,
     chunking: str = "auto",
     source: str = "combined",
@@ -246,14 +248,22 @@ def _summarize_manual(
                 _count_tokens(part),
                 len(part),
             )
-            try:
-                resp = client.summarize(part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT)
-            except Exception as exc:  # pragma: no cover - network failure
-                print(
-                    f"[WARN] Summarization failed for chunk {idx}/{total}: {exc}",
-                    file=sys.stderr,
-                )
-                continue
+            key = ResponseCache.make_key(f"{source}:chunk{idx}", part)
+            cached = cache.get(key)
+            if cached is not None:
+                resp = cached
+            else:
+                try:
+                    resp = client.summarize(
+                        part, "docstring", system_prompt=CHUNK_SYSTEM_PROMPT
+                    )
+                except Exception as exc:  # pragma: no cover - network failure
+                    print(
+                        f"[WARN] Summarization failed for chunk {idx}/{total}: {exc}",
+                        file=sys.stderr,
+                    )
+                    continue
+                cache.set(key, resp)
             logging.debug(
                 "LLM response %s/%s length: %s characters",
                 idx,
@@ -299,38 +309,58 @@ def _summarize_manual(
                     _count_tokens(piece),
                     len(piece),
                 )
-                try:
-                    resp = client.summarize(
-                        piece, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
-                    )
-                except Exception as exc:  # pragma: no cover - network failure
-                    print(
-                        f"[WARN] Hierarchical summarization failed for chunk {idx}/{total}: {exc}",
-                        file=sys.stderr,
-                    )
-                    continue
+                key = ResponseCache.make_key(
+                    f"{source}:merge{iteration}:chunk{idx}", piece
+                )
+                cached = cache.get(key)
+                if cached is not None:
+                    resp = cached
+                else:
+                    try:
+                        resp = client.summarize(
+                            piece, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+                        )
+                    except Exception as exc:  # pragma: no cover - network failure
+                        print(
+                            f"[WARN] Hierarchical summarization failed for chunk {idx}/{total}: {exc}",
+                            file=sys.stderr,
+                        )
+                        continue
+                    cache.set(key, resp)
                 new_partials.append(resp)
             if not new_partials:
                 break
             merge_input = "\n\n".join(new_partials)
             tokens = _count_tokens(merge_input)
             chars = len(merge_input)
-        try:
-            final_resp = client.summarize(
-                merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
-            )
-            logging.debug("Merged LLM response length: %s characters", len(final_resp))
-            return final_resp
-        except Exception as exc:  # pragma: no cover - network failure
-            print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
-            return merge_input
+        key = ResponseCache.make_key(f"{source}:final", merge_input)
+        cached = cache.get(key)
+        if cached is not None:
+            final_resp = cached
+        else:
+            try:
+                final_resp = client.summarize(
+                    merge_input, "docstring", system_prompt=MERGE_SYSTEM_PROMPT
+                )
+                cache.set(key, final_resp)
+            except Exception as exc:  # pragma: no cover - network failure
+                print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
+                return merge_input
+        logging.debug("Merged LLM response length: %s characters", len(final_resp))
+        return final_resp
 
     if chunking == "none" and not within_limits:
         print(
             "[WARN] Content exceeds token or character limits; chunking disabled.",
             file=sys.stderr,
         )
-    return client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
+    key = ResponseCache.make_key(f"{source}:full", text)
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
+    resp = client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
+    cache.set(key, resp)
+    return resp
 
 
 
@@ -454,6 +484,7 @@ def main(argv: list[str] | None = None) -> int:
     sources = ", ".join(f.name for f in files)
 
     client = LLMClient()
+    cache = ResponseCache(str(out_dir / "cache.json"))
     try:
         ping = getattr(client, "ping", None)
         if callable(ping):
@@ -462,6 +493,7 @@ def main(argv: list[str] | None = None) -> int:
         response = (
             _summarize_manual(
                 client,
+                cache,
                 combined,
                 args.chunking,
                 source=sources or "combined",
