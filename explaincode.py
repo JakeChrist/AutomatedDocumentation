@@ -16,6 +16,7 @@ import sys
 import time
 import ast
 import json
+import html
 
 try:
     from tqdm import tqdm
@@ -697,20 +698,45 @@ def _edit_chunks_in_editor(chunks: list[str]) -> list[str]:
 
 
 
-def render_html(sections: Dict[str, str], title: str) -> str:
+def render_html(
+    sections: Dict[str, str],
+    title: str,
+    evidence_map: dict[str, dict[str, object]] | None = None,
+) -> str:
     """Return HTML for ``sections`` with ``title``.
 
-    Sections are rendered dynamically based on the keys returned from the
-    language model, allowing arbitrary headings beyond the required set.
+    ``evidence_map`` contains supporting snippets for each section. When a
+    section's content is empty or marked as lacking information, available
+    evidence snippets are rendered instead so that the manual always reflects
+    the extracted documentation.
     """
+
     parts = [
         "<html><head><meta charset='utf-8'>",
-        "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}</style>",
+        (
+            "<style>body{font-family:Arial,sans-serif;margin:20px;}h2{color:#2c3e50;}"
+            ".evidence{margin-left:1em;color:#555;font-size:0.9em;}</style>"
+        ),
         "</head><body>",
-        f"<h1>{title}</h1>",
+        f"<h1>{html.escape(title)}</h1>",
     ]
     for sec_title, content in sections.items():
-        parts.append(f"<h2>{sec_title}</h2><p>{content}</p>")
+        evidence = []
+        if evidence_map:
+            evidence = evidence_map.get(sec_title, {}).get("evidence", [])
+        text = content.strip()
+        if (not text or text.lower() == "no information provided.") and evidence:
+            snippets = "<br/>".join(
+                html.escape(e.get("snippet", "")) for e in evidence if e.get("snippet")
+            )
+            sources = "<br/>".join(
+                f"<span class='evidence'>Source: {html.escape(e.get('file', ''))}</span>"
+                for e in evidence if e.get("file")
+            )
+            parts.append(f"<h2>{html.escape(sec_title)}</h2><p>{snippets}</p>{sources}")
+        else:
+            display = html.escape(text) if text else "No information provided."
+            parts.append(f"<h2>{html.escape(sec_title)}</h2><p>{display}</p>")
     parts.append("</body></html>")
     return "\n".join(parts)
 
@@ -759,9 +785,6 @@ def parse_manual(
             except Exception:  # pragma: no cover - network issues
                 guess = ""
             sections[key] = (guess.strip() or f"{key} details") + " (inferred)"
-    else:
-        for key in missing:
-            sections[key] = "No information provided."
 
     return sections
 
@@ -938,7 +961,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         for token in SECTION_PLACEHOLDERS.values():
             response = response.replace(token, "")
-        sections = parse_manual(response, client=client)
+        sections = parse_manual(response, infer_missing=False)
     except Exception as exc:  # pragma: no cover - network or attribute failure
         print(
             f"[INFO] LLM summarization failed; using fallback: {exc}",
@@ -947,7 +970,7 @@ def main(argv: list[str] | None = None) -> int:
         combined = "\n".join(t for t in texts if t)
         sections = infer_sections(combined)
         evidence_map = {}
-    html = render_html(sections, config.title)
+    html = render_html(sections, config.title, evidence_map)
 
     base_name = slugify(config.title)
     out_file = out_dir / f"{base_name}.{'html' if config.output_format == 'html' else 'pdf'}"
