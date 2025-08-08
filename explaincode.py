@@ -16,6 +16,11 @@ import sys
 import time
 import ast
 
+try:
+    from tqdm import tqdm
+except ImportError:  # pragma: no cover - optional import
+    tqdm = lambda x, **kwargs: x
+
 from bs4 import BeautifulSoup
 
 from llm_client import LLMClient
@@ -281,7 +286,7 @@ def extract_snippets(
 
     snippets: dict[Path, str] = {}
     start = time.perf_counter()
-    for idx, path in enumerate(files):
+    for idx, path in enumerate(tqdm(list(files), desc="Scanning code files")):
         elapsed = time.perf_counter() - start
         logging.info("Considering %s (elapsed %.2fs)", path, elapsed)
         if idx >= max_files:
@@ -392,7 +397,7 @@ def scan_code(
     )
 
     parts: list[str] = []
-    for path, text in snippets.items():
+    for path, text in tqdm(snippets.items(), desc="Collecting snippets"):
         rel = path.relative_to(base)
         parts.append(f"# File: {rel}\n{text}")
     return "\n\n".join(parts)
@@ -609,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = docs_index.parent if docs_index.exists() else target
     out_dir.mkdir(parents=True, exist_ok=True)
     files = collect_docs(target)
-    texts = [extract_text(f) for f in files]
+    texts = [extract_text(f) for f in tqdm(files, desc="Reading docs")]
     logging.basicConfig(
         level=logging.DEBUG if config.chunking != "none" else logging.INFO
     )
