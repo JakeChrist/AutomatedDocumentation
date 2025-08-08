@@ -253,6 +253,66 @@ def detect_placeholders(text: str) -> list[str]:
     return [name for name, token in SECTION_PLACEHOLDERS.items() if token in tokens]
 
 
+SECTION_KEYWORDS = {
+    "Overview": ["overview"],
+    "Purpose & Problem Solving": ["purpose", "problem", "objective", "goal"],
+    "How to Run": ["how to run", "usage", "running", "execution"],
+    "Inputs": ["input", "inputs"],
+    "Outputs": ["output", "outputs"],
+    "System Requirements": ["system requirements", "requirements", "dependencies"],
+    "Examples": ["example", "examples"],
+}
+
+
+def map_evidence_to_sections(
+    docs: dict[Path, str]
+) -> tuple[dict[str, list[tuple[str, Path]]], dict[Path, set[str]]]:
+    """Map documentation snippets to manual sections.
+
+    Returns a tuple ``(section_map, file_map)`` where ``section_map`` maps
+    section names to a list of ``(snippet, source_path)`` tuples and
+    ``file_map`` maps each ``source_path`` to the set of sections it
+    contributed to. Only the top 10 snippets (by length) are kept per
+    section.
+    """
+
+    section_map: dict[str, list[tuple[str, Path]]] = {
+        name: [] for name in SECTION_KEYWORDS
+    }
+    file_map: dict[Path, set[str]] = {}
+
+    for path, text in docs.items():
+        lines = text.splitlines()
+        for idx, line in enumerate(lines):
+            lowered = line.strip().lower()
+            for section, keywords in SECTION_KEYWORDS.items():
+                if any(re.search(rf"\b{re.escape(k)}\b", lowered) for k in keywords):
+                    snippet_lines: list[str] = []
+                    j = idx + 1
+                    while j < len(lines):
+                        nxt = lines[j]
+                        if not nxt.strip():
+                            break
+                        if nxt.lstrip().startswith("#") or re.match(r"\s*<h[1-6]", nxt):
+                            break
+                        snippet_lines.append(nxt.strip())
+                        j += 1
+                    snippet = line.strip()
+                    if snippet_lines:
+                        snippet += "\n" + " ".join(snippet_lines).strip()
+                    if snippet:
+                        section_map[section].append((snippet, path))
+                        file_map.setdefault(path, set()).add(section)
+                    break
+
+    for section in section_map:
+        entries = section_map[section]
+        entries.sort(key=lambda x: len(x[0]), reverse=True)
+        section_map[section] = entries[:10]
+
+    return section_map, file_map
+
+
 def rank_code_files(root: Path, patterns: list[str]) -> list[Path]:
     """Return code files under ``root`` ranked by simple heuristics."""
 
@@ -414,15 +474,51 @@ def scan_code(
 
 
 def llm_generate_manual(
-    docs: list[str],
+    docs: dict[Path, str],
     client: LLMClient,
     cache: ResponseCache,
     chunking: str = "auto",
-) -> str:
-    """Generate a manual from supplied documentation ``docs``."""
+) -> tuple[str, dict[Path, set[str]]]:
+    """Generate a manual from supplied documentation ``docs``.
 
-    text = "\n".join(d for d in docs if d)
-    return _summarize_manual(client, cache, text, chunking=chunking, source="docs")
+    The function maps documentation snippets to manual sections, performs an
+    LLM call per section, and assembles the final manual text. It returns the
+    manual text and a mapping of source files to the sections they
+    contributed.
+    """
+
+    section_map, file_map = map_evidence_to_sections(docs)
+
+    sections: dict[str, str] = {}
+    for section in REQUIRED_SECTIONS:
+        entries = section_map.get(section, [])
+        if not entries:
+            sections[section] = SECTION_PLACEHOLDERS[section]
+            continue
+        context = "\n\n".join(snippet for snippet, _ in entries)
+        for _, path in entries:
+            logging.info("Section %s snippet from %s", section, path)
+        prompt = (
+            f"Write the '{section}' section of a user manual using the "
+            "following documentation snippets."
+            f"\n\n{context}"
+        )
+        key = ResponseCache.make_key(f"section:{section}", prompt)
+        cached = cache.get(key)
+        if cached is not None:
+            result = cached
+        else:
+            result = client.summarize(
+                prompt,
+                "docstring",
+                system_prompt=f"You write the '{section}' section of a user manual.",
+            )
+            cache.set(key, result)
+        parsed = parse_manual(result)
+        sections[section] = parsed.get(section, result.strip())
+
+    manual_text = "\n".join(f"{sec}: {txt}" for sec, txt in sections.items())
+    return manual_text, file_map
 
 
 # Backwards compatibility for older code paths
@@ -624,7 +720,8 @@ def main(argv: list[str] | None = None) -> int:
         out_dir = docs_index.parent if docs_index.exists() else target
     out_dir.mkdir(parents=True, exist_ok=True)
     files = collect_docs(target)
-    texts = [extract_text(f) for f in tqdm(files, desc="Reading docs")]
+    doc_texts = {f: extract_text(f) for f in tqdm(files, desc="Reading docs")}
+    texts = list(doc_texts.values())
     logging.basicConfig(
         level=logging.DEBUG if config.chunking != "none" else logging.INFO
     )
@@ -638,7 +735,16 @@ def main(argv: list[str] | None = None) -> int:
         ping = getattr(client, "ping", None)
         if callable(ping):
             ping()
-        response = llm_generate_manual(texts, client, cache, config.chunking)
+        response, file_sections = llm_generate_manual(
+            doc_texts, client, cache, config.chunking
+        )
+        for f in files:
+            sections = sorted(file_sections.get(f, set()))
+            logging.info(
+                "%s contributes to sections: %s",
+                f,
+                ", ".join(sections) if sections else "none",
+            )
         missing = detect_placeholders(response)
         if missing:
             logging.info("Pass 1 missing sections: %s", ", ".join(missing))

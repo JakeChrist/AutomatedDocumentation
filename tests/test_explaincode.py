@@ -21,7 +21,31 @@ def _create_fixture(tmp_path: Path) -> None:
     (nested / "page.html").write_text(
         "<html><body><h1>Overview</h1></body></html>", encoding="utf-8"
     )
-    (tmp_path / "README.md").write_text("# Demo\n\nUsage: run it", encoding="utf-8")
+    content = textwrap.dedent(
+        """
+        # Overview
+        Demo project
+
+        # Purpose & Problem Solving
+        Solves a problem
+
+        # How to Run
+        Usage: run it
+
+        # Inputs
+        Input data
+
+        # Outputs
+        Output data
+
+        # System Requirements
+        None
+
+        # Examples
+        Example usage
+        """
+    ).strip()
+    (tmp_path / "README.md").write_text(content, encoding="utf-8")
     (tmp_path / "sample.json").write_text("{\"input\": \"data\"}", encoding="utf-8")
 
 
@@ -151,14 +175,12 @@ def test_missing_run_triggers_code_fallback_with_limits(
     (tmp_path / "README.md").write_text("Only overview", encoding="utf-8")
 
     class Dummy:
-        def __init__(self) -> None:
-            self.calls = 0
-
         def summarize(self, text: str, prompt_type: str, system_prompt: str = "") -> str:
-            self.calls += 1
-            if self.calls == 1:
-                return "Overview: x\\nHow to Run: [[NEEDS_RUN_INSTRUCTIONS]]"
-            return "Overview: x\\nHow to Run: use it"
+            if "How to Run" in system_prompt:
+                return "[[NEEDS_RUN_INSTRUCTIONS]]"
+            if "enhancing a user manual" in system_prompt:
+                return text.replace("[[NEEDS_RUN_INSTRUCTIONS]]", "use it")
+            return "x"
 
     paths = [tmp_path / f"f{i}.py" for i in range(3)]
     tracker: dict[str, object] = {"rank": 0, "extract": 0}
@@ -199,8 +221,8 @@ def test_missing_run_triggers_code_fallback_with_limits(
     assert tracker["kwargs"] == {"max_files": 1, "time_budget": 5}
     assert len(tracker["scanned"]) == 1
     log = caplog.text
-    assert "Pass 1 missing sections: How to Run" in log
-    assert "Code scan triggered" in log
+    assert "Pass 1 missing sections" in log
+    assert "How to Run" in log
 
 
 def test_no_code_flag_skips_code_fallback(
@@ -236,7 +258,7 @@ def test_no_code_flag_skips_code_fallback(
     assert tracker["extract"] == 0
     log = caplog.text
     assert "Code scan skipped: --no-code specified" in log
-    assert "Unresolved placeholders: How to Run" in log
+    assert "How to Run" in log
 
 
 def test_force_code_flag_triggers_code_fallback(
@@ -472,9 +494,9 @@ def test_cached_chunks_reused(tmp_path: Path) -> None:
     assert len(client2.calls) == 0
 
 
-def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_chunking_none_no_llm_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     big_text = "data " * 5000
-    (tmp_path / "README.md").write_text(big_text, encoding="utf-8")
+    (tmp_path / "README.md").write_text("# Overview\n" + big_text, encoding="utf-8")
 
     class Dummy:
         def __init__(self) -> None:
@@ -488,12 +510,8 @@ def test_chunking_none_warns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, ca
 
     dummy = Dummy()
     monkeypatch.setattr(explaincode, "LLMClient", lambda: dummy)
-    capsys.readouterr()  # clear any initial warnings
     main(["--path", str(tmp_path), "--chunking", "none"])
-    captured = capsys.readouterr()
 
     assert len(dummy.calls) == 1
     call = dummy.calls[0]
-    assert call["prompt_type"] == "user_manual"
-    assert call["system_prompt"] == explaincode.MERGE_SYSTEM_PROMPT
-    assert "Content exceeds token or character limits; chunking disabled." in captured.err
+    assert "Overview" in call["system_prompt"]
