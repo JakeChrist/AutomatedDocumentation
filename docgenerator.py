@@ -24,6 +24,7 @@ from cache import ResponseCache
 from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
 from chunk_utils import get_tokenizer, chunk_text
+from summarize_utils import summarize_chunked
 try:
     from tqdm import tqdm
 except ImportError:  # pragma: no cover - optional import
@@ -105,105 +106,8 @@ def _chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int):
     return chunks
 
 
-def _summarize_chunked(
-    client: LLMClient,
-    cache: ResponseCache,
-    key_prefix: str,
-    text: str,
-    prompt_type: str,
-    tokenizer,
-    max_context_tokens: int,
-    chunk_token_budget: int,
-) -> str:
-    """Summarize ``text`` by chunking if necessary."""
-
-    template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
-    overhead_tokens = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
-        tokenizer.encode(template.format(text=""))
-    )
-    available_tokens = max(1, max_context_tokens - overhead_tokens)
-
-    if len(tokenizer.encode(text)) <= available_tokens:
-        key = ResponseCache.make_key(key_prefix, text)
-        return _summarize(client, cache, key, text, prompt_type)
-
-    chunk_size_tokens = min(chunk_token_budget, available_tokens)
-    try:
-        parts = chunk_text(text, tokenizer, chunk_size_tokens)
-    except Exception as exc:  # pragma: no cover - defensive
-        print(f"[WARN] Chunking failed: {exc}", file=sys.stderr)
-        key = ResponseCache.make_key(key_prefix, text)
-        try:
-            return _summarize(client, cache, key, text, prompt_type)
-        except Exception:
-            return sanitize_summary("")
-
-    partials = []
-    for idx, part in enumerate(parts):
-        key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
-        try:
-            partials.append(_summarize(client, cache, key, part, prompt_type))
-        except Exception as exc:  # pragma: no cover - network failure
-            print(f"[WARN] Summarization failed for chunk {idx}: {exc}", file=sys.stderr)
-    if not partials:
-        return sanitize_summary("")
-
-    instructions = (
-        "You are a documentation generator.\n\n"
-        "Combine the following summaries into a single technical paragraph.\n"
-        "Do not critique, evaluate, or offer suggestions.\n"
-        "Do not speculate or use uncertain language.\n"
-        "Only summarize what the code explicitly defines.\n\n"
-    )
-    instr_tokens = len(tokenizer.encode(instructions))
-    merge_budget = max(1, available_tokens - instr_tokens)
-
-    def _merge_recursive(items: list[str], depth: int = 0) -> str:
-        merge_text = "\n".join(f"- {p}" for p in items)
-        prompt = instructions + merge_text
-        if len(tokenizer.encode(prompt)) <= available_tokens:
-            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}", prompt)
-            return _summarize(client, cache, key, prompt, "docstring")
-        if len(items) == 1:
-            single = items[0]
-            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}:solo", single)
-            return _summarize_chunked(
-                client,
-                cache,
-                key,
-                single,
-                "docstring",
-                tokenizer,
-                max_context_tokens,
-                chunk_token_budget,
-            )
-        groups: list[list[str]] = []
-        current: list[str] = []
-        current_tokens = 0
-        for p in items:
-            bullet = f"- {p}\n"
-            b_tokens = len(tokenizer.encode(bullet))
-            if current and current_tokens + b_tokens > merge_budget:
-                groups.append(current)
-                current = [p]
-                current_tokens = b_tokens
-            else:
-                current.append(p)
-                current_tokens += b_tokens
-        if current:
-            groups.append(current)
-
-        merged: list[str] = []
-        for idx, grp in enumerate(groups):
-            merged.append(_merge_recursive(grp, depth + 1))
-        return _merge_recursive(merged, depth + 1)
-
-    try:
-        final_summary = _merge_recursive(partials)
-    except Exception as exc:  # pragma: no cover - network failure
-        print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
-        return sanitize_summary("\n".join(partials))
-    return sanitize_summary(final_summary)
+# Backwards compatibility shim: import the shared helper
+_summarize_chunked = summarize_chunked
 
 
 def _summarize_module_chunked(
@@ -274,9 +178,8 @@ def _summarize_module_chunked(
                 key,
                 single,
                 "docstring",
-                tokenizer,
-                max_context_tokens,
-                chunk_token_budget,
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
             )
         groups: list[list[str]] = []
         current: list[str] = []
@@ -410,9 +313,8 @@ def _rewrite_docstring(
         key,
         prompt,
         "docstring",
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens=max_context_tokens,
+        chunk_token_budget=chunk_token_budget,
     )
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
@@ -439,9 +341,8 @@ def _summarize_methods_recursive(
             key,
             src,
             "function",
-            tokenizer,
-            max_context_tokens,
-            chunk_token_budget,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
         )
         method["summary"] = summary
         method["docstring"] = summary
@@ -499,9 +400,8 @@ def _summarize_class_recursive(
         cls_key,
         class_prompt,
         "docstring",
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens=max_context_tokens,
+        chunk_token_budget=chunk_token_budget,
     )
     cls_summary = sanitize_summary(cls_summary)
     original_doc = class_data.get("docstring", "")
@@ -708,9 +608,8 @@ def main(argv: list[str] | None = None) -> int:
             readme_key,
             md_context,
             "readme",
-            tokenizer,
-            max_context_tokens,
-            chunk_token_budget,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
         )
         readme_summary = sanitize_summary(readme_summary)
 
@@ -721,9 +620,8 @@ def main(argv: list[str] | None = None) -> int:
         project_key,
         project_outline,
         "project",
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens=max_context_tokens,
+        chunk_token_budget=chunk_token_budget,
     )
     project_summary = sanitize_summary(raw_summary)
     if readme_summary:
@@ -754,9 +652,8 @@ def main(argv: list[str] | None = None) -> int:
                 func_key,
                 prompt,
                 "docstring",
-                tokenizer,
-                max_context_tokens,
-                chunk_token_budget,
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
             )
             func["summary"] = func_summary
             _rewrite_docstring(

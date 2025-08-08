@@ -133,7 +133,7 @@ def test_readme_summary_used(tmp_path: Path) -> None:
     with patch("docgenerator.LLMClient") as MockClient:
         instance = MockClient.return_value
         instance.ping.return_value = True
-        instance.summarize.side_effect = lambda text, pt: f"{pt} summary"
+        instance.summarize.side_effect = lambda text, pt, **kwargs: f"{pt} summary"
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
 
@@ -164,20 +164,19 @@ def test_clean_output_dir(tmp_path: Path) -> None:
 def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
     from cache import ResponseCache
     from chunk_utils import get_tokenizer
-    from docgenerator import _summarize_chunked
+    from summarize_utils import summarize_chunked
 
     tokenizer = get_tokenizer()
     text = "word " * 50
     cache = ResponseCache(str(tmp_path / "cache.json"))
 
-    with patch("docgenerator._summarize", return_value="summary") as mock_sum:
-        _summarize_chunked(
+    with patch("summarize_utils._summarize", return_value="summary") as mock_sum:
+        summarize_chunked(
             client=object(),
             cache=cache,
             key_prefix="k",
             text=text,
             prompt_type="module",
-            tokenizer=tokenizer,
             max_context_tokens=10,
             chunk_token_budget=5,
         )
@@ -187,7 +186,7 @@ def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
 def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
     from cache import ResponseCache
     from chunk_utils import get_tokenizer
-    from docgenerator import _summarize_chunked
+    from summarize_utils import summarize_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
     tokenizer = get_tokenizer()
@@ -197,14 +196,13 @@ def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
     overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(tokenizer.encode(template.format(text="")))
     max_context_tokens = overhead + 10
 
-    with patch("docgenerator._summarize", return_value="summary") as mock_sum:
-        _summarize_chunked(
+    with patch("summarize_utils._summarize", return_value="summary") as mock_sum:
+        summarize_chunked(
             client=object(),
             cache=cache,
             key_prefix="k",
             text=text,
             prompt_type="module",
-            tokenizer=tokenizer,
             max_context_tokens=max_context_tokens,
             chunk_token_budget=100,
         )
@@ -214,7 +212,7 @@ def test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -> None:
 def test_merge_recurses_when_prompt_too_long(tmp_path: Path) -> None:
     from cache import ResponseCache
     from chunk_utils import get_tokenizer
-    from docgenerator import _summarize_chunked
+    from summarize_utils import summarize_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
     tokenizer = get_tokenizer()
@@ -226,7 +224,7 @@ def test_merge_recurses_when_prompt_too_long(tmp_path: Path) -> None:
     )
     max_context_tokens = overhead + 50
 
-    def fake_sum(client, cache_obj, key, text_arg, prompt_type):
+    def fake_sum(client, cache_obj, key, text_arg, prompt_type, *, system_prompt=""):
         template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
         overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
             tokenizer.encode(template.format(text=""))
@@ -237,14 +235,13 @@ def test_merge_recurses_when_prompt_too_long(tmp_path: Path) -> None:
             return "summary " * 30
         return "short"
 
-    with patch("docgenerator._summarize", side_effect=fake_sum) as mock_sum:
-        _summarize_chunked(
+    with patch("summarize_utils._summarize", side_effect=fake_sum) as mock_sum:
+        summarize_chunked(
             client=object(),
             cache=cache,
             key_prefix="k",
             text=text,
             prompt_type="module",
-            tokenizer=tokenizer,
             max_context_tokens=max_context_tokens,
             chunk_token_budget=10,
         )
@@ -255,7 +252,7 @@ def test_merge_recurses_when_prompt_too_long(tmp_path: Path) -> None:
 def test_single_long_partial_is_recursively_chunked(tmp_path: Path) -> None:
     from cache import ResponseCache
     from chunk_utils import get_tokenizer
-    from docgenerator import _summarize_chunked
+    from summarize_utils import summarize_chunked
     from llm_client import SYSTEM_PROMPT, PROMPT_TEMPLATES
 
     tokenizer = get_tokenizer()
@@ -265,7 +262,7 @@ def test_single_long_partial_is_recursively_chunked(tmp_path: Path) -> None:
     overhead = len(tokenizer.encode(SYSTEM_PROMPT)) + len(tokenizer.encode(template.format(text="")))
     max_context_tokens = overhead + 50
 
-    def fake_sum(client, cache_obj, key, text_arg, prompt_type):
+    def fake_sum(client, cache_obj, key, text_arg, prompt_type, *, system_prompt=""):
         template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
         overhead_local = len(tokenizer.encode(SYSTEM_PROMPT)) + len(
             tokenizer.encode(template.format(text=""))
@@ -276,14 +273,13 @@ def test_single_long_partial_is_recursively_chunked(tmp_path: Path) -> None:
             return "long " * 200
         return "short"
 
-    with patch("docgenerator._summarize", side_effect=fake_sum) as mock_sum:
-        _summarize_chunked(
+    with patch("summarize_utils._summarize", side_effect=fake_sum) as mock_sum:
+        summarize_chunked(
             client=object(),
             cache=cache,
             key_prefix="k",
             text=text,
             prompt_type="module",
-            tokenizer=tokenizer,
             max_context_tokens=max_context_tokens,
             chunk_token_budget=10,
         )
