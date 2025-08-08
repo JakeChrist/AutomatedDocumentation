@@ -148,18 +148,49 @@ def _summarize_chunked(
     if not partials:
         return sanitize_summary("")
 
-    merge_text = "\n".join(f"- {p}" for p in partials)
-    merge_prompt = (
+    instructions = (
         "You are a documentation generator.\n\n"
         "Combine the following summaries into a single technical paragraph.\n"
         "Do not critique, evaluate, or offer suggestions.\n"
         "Do not speculate or use uncertain language.\n"
         "Only summarize what the code explicitly defines.\n\n"
-        + merge_text
     )
-    merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
+    instr_tokens = len(tokenizer.encode(instructions))
+    merge_budget = max(1, available_tokens - instr_tokens)
+
+    def _merge_recursive(items: list[str], depth: int = 0) -> str:
+        merge_text = "\n".join(f"- {p}" for p in items)
+        prompt = instructions + merge_text
+        if len(tokenizer.encode(prompt)) <= available_tokens:
+            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}", prompt)
+            return _summarize(client, cache, key, prompt, "docstring")
+        if len(items) == 1:
+            single = items[0]
+            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}:solo", single)
+            return _summarize(client, cache, key, single, "docstring")
+        groups: list[list[str]] = []
+        current: list[str] = []
+        current_tokens = 0
+        for p in items:
+            bullet = f"- {p}\n"
+            b_tokens = len(tokenizer.encode(bullet))
+            if current and current_tokens + b_tokens > merge_budget:
+                groups.append(current)
+                current = [p]
+                current_tokens = b_tokens
+            else:
+                current.append(p)
+                current_tokens += b_tokens
+        if current:
+            groups.append(current)
+
+        merged: list[str] = []
+        for idx, grp in enumerate(groups):
+            merged.append(_merge_recursive(grp, depth + 1))
+        return _merge_recursive(merged, depth + 1)
+
     try:
-        final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+        final_summary = _merge_recursive(partials)
     except Exception as exc:  # pragma: no cover - network failure
         print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
         return sanitize_summary("\n".join(partials))
@@ -209,18 +240,49 @@ def _summarize_module_chunked(
     if not partials:
         return sanitize_summary("")
 
-    merge_text = "\n".join(f"- {p}" for p in partials)
-    merge_prompt = (
+    instructions = (
         "You are a documentation generator.\n\n"
         "Combine the following summaries into a single technical paragraph.\n"
         "Do not critique, evaluate, or offer suggestions.\n"
         "Do not speculate or use uncertain language.\n"
         "Only summarize what the code explicitly defines.\n\n"
-        + merge_text
     )
-    merge_key = ResponseCache.make_key(f"{key_prefix}:merge", merge_prompt)
+    instr_tokens = len(tokenizer.encode(instructions))
+    merge_budget = max(1, available_tokens - instr_tokens)
+
+    def _merge_recursive(items: list[str], depth: int = 0) -> str:
+        merge_text = "\n".join(f"- {p}" for p in items)
+        prompt = instructions + merge_text
+        if len(tokenizer.encode(prompt)) <= available_tokens:
+            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}", prompt)
+            return _summarize(client, cache, key, prompt, "docstring")
+        if len(items) == 1:
+            single = items[0]
+            key = ResponseCache.make_key(f"{key_prefix}:merge{depth}:solo", single)
+            return _summarize(client, cache, key, single, "docstring")
+        groups: list[list[str]] = []
+        current: list[str] = []
+        current_tokens = 0
+        for p in items:
+            bullet = f"- {p}\n"
+            b_tokens = len(tokenizer.encode(bullet))
+            if current and current_tokens + b_tokens > merge_budget:
+                groups.append(current)
+                current = [p]
+                current_tokens = b_tokens
+            else:
+                current.append(p)
+                current_tokens += b_tokens
+        if current:
+            groups.append(current)
+
+        merged: list[str] = []
+        for idx, grp in enumerate(groups):
+            merged.append(_merge_recursive(grp, depth + 1))
+        return _merge_recursive(merged, depth + 1)
+
     try:
-        final_summary = _summarize(client, cache, merge_key, merge_prompt, "docstring")
+        final_summary = _merge_recursive(partials)
     except Exception as exc:  # pragma: no cover - network failure
         print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
         return sanitize_summary("\n".join(partials))
