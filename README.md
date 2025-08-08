@@ -136,6 +136,37 @@ The generated manual is saved to the directory given by `--output` (defaulting
 to the project path). Use `--insert-into-index` to append a link to the manual
 into an existing `index.html` within that directory.
 
+### Docs-first with Code Fallback
+
+`explaincode.py` looks for documentation and sample files first. Each required
+section gets a placeholder (e.g. `[[NEEDS_OVERVIEW]]`) if no text is found.
+When placeholders remain, a second pass can analyse the project’s source code
+to fill them in.
+
+Code scanning is disabled by default. Enable it only when necessary with
+`--scan-code-if-needed`, force it on with `--force-code`, or skip it entirely
+with `--no-code`. Unresolved placeholders are stripped from the final manual.
+
+Scanning code respects several limits (defaults shown):
+
+| Flag                         | Default | Description                             |
+|------------------------------|---------|-----------------------------------------|
+| `--max-code-files`           | 12      | Maximum number of code files to scan    |
+| `--code-time-budget-seconds` | 20      | Total seconds allowed for code scanning |
+| `--max-bytes-per-file`       | 200000  | Maximum bytes read from each file       |
+
+Example usage:
+
+```bash
+python explaincode.py --path ./my_project --no-code
+python explaincode.py --path ./my_project --force-code
+python explaincode.py --path ./my_project --scan-code-if-needed --max-code-files 20 --code-time-budget-seconds 60 --max-bytes-per-file 100000
+```
+
+Scanning more files or raising limits may slow the run. Logging reports which
+sections are missing, when code scanning is triggered, and whether placeholders
+were resolved.
+
 ## Error Handling
 
 Both `docgenerator.py` and `explaincode.py` attempt to chunk large inputs and
