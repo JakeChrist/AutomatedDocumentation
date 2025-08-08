@@ -6,6 +6,7 @@ import logging
 import sys
 import time
 import json
+import re
 
 import pytest
 from bs4 import BeautifulSoup
@@ -222,6 +223,70 @@ def test_extract_snippets_skips_large_file(
     assert "file size" in log and "exceeds limit" in log
 
 
+def test_scan_code_categorizes_snippets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    paths = [tmp_path / "a.py", tmp_path / "b.py", tmp_path / "c.py"]
+    for p in paths:
+        p.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(explaincode, "collect_docs", lambda base: [])
+    monkeypatch.setattr(explaincode, "rank_code_files", lambda base, patterns: paths)
+
+    def fake_extract(
+        files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int
+    ) -> dict[Path, str]:
+        return {
+            paths[0]: "read input from user",
+            paths[1]: "write output",
+            paths[2]: "run the tool",
+        }
+
+    monkeypatch.setattr(explaincode, "extract_snippets", fake_extract)
+
+    result = explaincode.scan_code(
+        tmp_path, ["Inputs", "Outputs", "How to Run"], max_files=3, time_budget=5, max_bytes_per_file=1000
+    )
+    assert result["Inputs"] == {"a.py": "read input from user"}
+    assert result["Outputs"] == {"b.py": "write output"}
+    assert result["How to Run"] == {"c.py": "run the tool"}
+
+
+def test_llm_fill_placeholders_per_section_logging(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    manual = "Inputs: [[NEEDS_INPUTS]]\nOutputs: [[NEEDS_OUTPUTS]]"
+    evidence = {
+        "Inputs": {"in.py": "input data"},
+        "Outputs": {"out.py": "output data"},
+    }
+
+    class Dummy:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+
+        def summarize(
+            self, text: str, prompt_type: str, system_prompt: str = ""
+        ) -> str:
+            self.calls.append(text)
+            manual_match = re.search(r"Manual:\n(.*?)\n\nSection:", text, re.DOTALL)
+            section_match = re.search(r"Section: (.*?)\n", text)
+            manual_text = manual_match.group(1)
+            section = section_match.group(1)
+            token = explaincode.SECTION_PLACEHOLDERS[section]
+            return manual_text.replace(token, f"filled {section}")
+
+    client = Dummy()
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+    caplog.set_level(logging.INFO)
+    result = explaincode.llm_fill_placeholders(manual, evidence, client, cache)
+    assert "filled Inputs" in result and "filled Outputs" in result
+    assert len(client.calls) == 2
+    log = caplog.text
+    assert "Filled Inputs using code from: in.py" in log
+    assert "Filled Outputs using code from: out.py" in log
+
+
 
 
 def test_full_docs_no_code_scan(
@@ -263,7 +328,9 @@ def test_missing_run_triggers_code_fallback_with_limits(
             if "How to Run" in system_prompt:
                 return "[[NEEDS_RUN_INSTRUCTIONS]]"
             if "enhancing a user manual" in system_prompt:
-                return text.replace("[[NEEDS_RUN_INSTRUCTIONS]]", "use it")
+                manual_match = re.search(r"Manual:\n(.*?)\n\nSection:", text, re.DOTALL)
+                manual_text = manual_match.group(1)
+                return manual_text.replace("[[NEEDS_RUN_INSTRUCTIONS]]", "use it")
             return "x"
 
     paths = [tmp_path / f"f{i}.py" for i in range(3)]
@@ -280,7 +347,7 @@ def test_missing_run_triggers_code_fallback_with_limits(
         lst = list(files)
         tracker["kwargs"] = {"max_files": max_files, "time_budget": time_budget}
         tracker["scanned"] = lst[:max_files]
-        return {p: "code" for p in lst[:max_files]}
+        return {p: "run code" for p in lst[:max_files]}
 
     monkeypatch.setattr(explaincode, "LLMClient", lambda: Dummy())
     monkeypatch.setattr(explaincode, "rank_code_files", fake_rank)
@@ -307,6 +374,7 @@ def test_missing_run_triggers_code_fallback_with_limits(
     log = caplog.text
     assert "Pass 1 missing sections" in log
     assert "How to Run" in log
+    assert "Filled How to Run using code from: f0.py" in log
 
 
 def test_no_code_flag_skips_code_fallback(
