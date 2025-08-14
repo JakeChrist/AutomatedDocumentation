@@ -43,10 +43,10 @@
     </div>
     <div class="content">
         <h1>test_chunk_utils</h1>
-        <p>The module contains tests for two functions: `get_tokenizer` and `chunk_text`. It verifies that the tokenizer encodes and decodes text correctly, reconstructs content when chunked, splits markdown headings appropriately, and preserves code blocks within chunks.</p>
+        <p>The module defines unit tests for functions `get_tokenizer` and `chunk_text`. The tests verify that the tokenizer encodes and decodes text correctly, that the text is reconstructed from chunks without loss, that markdown headings are split appropriately, and that code blocks are preserved across chunk boundaries.</p>
 <h2>Functions</h2>
 <h3 id="test_get_tokenizer_roundtrip">test_get_tokenizer_roundtrip() -&gt; None</h3>
-<p>The function `test_get_tokenizer_roundtrip` tests the round-trip encoding and decoding functionality of a tokenizer. It retrieves a tokenizer instance using the `get_tokenizer` function, encodes a sample text string into tokens, asserts that the result is a list, decodes the tokens back to text, and finally asserts that the decoded text matches the original input after stripping any leading or trailing whitespace.</p>
+<p>This function tests the round-trip functionality of a tokenizer. It retrieves a tokenizer instance using `get_tokenizer()`, encodes a sample text &quot;hello world&quot; into tokens, and then decodes those tokens back to text. The assertions ensure that the decoded text matches the original input after encoding and decoding processes.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_get_tokenizer_roundtrip</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     tokenizer <span style="color: #666666">=</span> get_tokenizer()
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;hello world&quot;</span>
@@ -56,7 +56,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> decoded<span style="color: #666666">.</span>strip() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;hello world&quot;</span>
 </code></pre>
 <h3 id="test_chunk_text_reconstructs_content">test_chunk_text_reconstructs_content() -&gt; None</h3>
-<p>The function `test_chunk_text_reconstructs_content` tests the functionality of splitting and then reconstructing text into chunks. It uses a tokenizer to split the input text into chunks of a specified size (10 in this case). The test asserts that concatenating the chunks reconstructs the original text exactly, ensuring no data is lost during the chunking process. Additionally, it verifies that the number of chunks is greater than one, indicating successful splitting.</p>
+<p>The function `test_chunk_text_reconstructs_content` tests the functionality of the `chunk_text` method. It uses a tokenizer to split a long string into chunks, ensuring that the original content is reconstructed when the chunks are joined together. The test asserts that the concatenated chunks match the original text and that more than one chunk was created, indicating successful splitting.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunk_text_reconstructs_content</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     tokenizer <span style="color: #666666">=</span> get_tokenizer()
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;word &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">50</span>
@@ -65,7 +65,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">len</span>(chunks) <span style="color: #666666">&gt;</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="test_chunk_text_splits_markdown_headings">test_chunk_text_splits_markdown_headings() -&gt; None</h3>
-<p>The function `test_chunk_text_splits_markdown_headings` tests the functionality of splitting text into manageable parts using a tokenizer, specifically focusing on how markdown headings are handled. It asserts that the text is split into two chunks and verifies that each chunk starts with a markdown heading (`# H1` and `# H2`).</p>
+<p>This function tests the `chunk_text` function to ensure it correctly splits text into chunks based on markdown headings. It uses a tokenizer obtained from `get_tokenizer()` and specifies a maximum chunk size of 4 tokens. The test asserts that the text is split into two chunks, with each chunk starting with a markdown heading (`# H1` and `# H2`).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunk_text_splits_markdown_headings</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     tokenizer <span style="color: #666666">=</span> get_tokenizer()
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;# H1</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">para1</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121"># H2</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">para2&quot;</span>
@@ -75,7 +75,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> chunks[<span style="color: #666666">1</span>]<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;# H2&quot;</span>)
 </code></pre>
 <h3 id="test_chunk_text_preserves_code_blocks">test_chunk_text_preserves_code_blocks() -&gt; None</h3>
-<p>The function `test_chunk_text_preserves_code_blocks` tests the `chunk_text` function to ensure that code blocks are preserved when splitting text into chunks. It uses a tokenizer obtained from `get_tokenizer()` and splits the input text into chunks with a maximum length of 4 tokens. The test asserts that at least one chunk contains the entire code block &quot;```python\nprint(&#x27;hi&#x27;)\n```&quot;. Additionally, it checks that each chunk has either zero or two triple backticks, indicating the presence or absence of code blocks.</p>
+<p>The function `test_chunk_text_preserves_code_blocks` tests the functionality of a text chunking mechanism. It uses a tokenizer to split a given text into chunks while ensuring that code blocks are not broken across chunks. The test checks if any chunk contains the specific Python code block and ensures that each chunk has an even number of backticks, indicating proper preservation of code formatting.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunk_text_preserves_code_blocks</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     tokenizer <span style="color: #666666">=</span> get_tokenizer()
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;Intro</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">```python</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">print(&#39;hi&#39;)</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">```</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">Conclusion&quot;</span>

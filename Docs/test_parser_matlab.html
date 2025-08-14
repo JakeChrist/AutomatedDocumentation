@@ -43,10 +43,10 @@
     </div>
     <div class="content">
         <h1>test_parser_matlab</h1>
-        <p>This module includes two test functions for parsing MATLAB files. The `test_parse_simple_matlab` function checks if the parser correctly extracts a header and a single function from a simple MATLAB file. The `test_parse_multiple_functions` function verifies that the parser can handle multiple functions in a single file, including their names and arguments.</p>
+        <p>The module defines two test functions to verify the functionality of a MATLAB file parser. The `test_parse_simple_matlab` function checks if the parser correctly extracts the header and a single function from a simple MATLAB file. The `test_parse_multiple_functions` function tests the parser&#x27;s ability to handle multiple functions within a MATLAB file, verifying both the presence of all functions and their argument lists.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_simple_matlab">test_parse_simple_matlab(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_parse_simple_matlab` tests the parsing of a simple MATLAB file using the `parse_matlab_file` function. It creates a temporary MATLAB file with a header and a single function definition, then asserts that the parsed result contains the correct header and function details. The test checks for the presence of the function name &quot;add&quot; and its arguments [&quot;x&quot;, &quot;y&quot;].</p>
+<p>This function tests the parsing of a simple MATLAB file. It creates a temporary file with MATLAB code, then uses `parse_matlab_file` to parse it. The test checks that the header is correctly extracted and that there is one function defined in the file. The function&#x27;s name and arguments are also verified.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_simple_matlab</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
@@ -69,13 +69,13 @@
     <span style="color: #008000; font-weight: bold">assert</span> func[<span style="color: #BA2121">&quot;args&quot;</span>] <span style="color: #666666">==</span> [<span style="color: #BA2121">&quot;x&quot;</span>, <span style="color: #BA2121">&quot;y&quot;</span>]
 </code></pre>
 <h3 id="test_parse_multiple_functions">test_parse_multiple_functions(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_parse_multiple_functions`, is designed to test the functionality of parsing multiple MATLAB functions from a source file. It creates a temporary file containing two MATLAB functions: `compute` and `square`. The function then calls `parse_matlab_file` with the path to this temporary file as an argument.
+<p>This function, `test_parse_multiple_functions`, is designed to test the parsing of a MATLAB file containing multiple functions. It creates a temporary file with two MATLAB functions: `compute` and `square`. The function then parses this file using `parse_matlab_file` and asserts that the parsed result contains the correct information about the functions.
 
-The expected output is verified through assertions:
-1. The header of the parsed result should be an empty string.
-2. There should be exactly two functions parsed from the file.
-3. The names of these functions should be &quot;compute&quot; and &quot;square&quot;.
-4. The arguments for each function should match their definitions: `compute` takes two arguments (`a`, `b`) and `square` takes one argument (`x`).</p>
+Specifically, it checks:
+- That the header of the file is empty.
+- That there are exactly two functions in the parsed result.
+- That the names of the functions are &quot;compute&quot; and &quot;square&quot;.
+- That the arguments for each function match their definitions: `compute` takes two arguments (`a`, `b`) and `square` takes one argument (`x`).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_multiple_functions</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>

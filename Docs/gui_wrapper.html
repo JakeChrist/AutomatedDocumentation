@@ -43,39 +43,43 @@
     </div>
     <div class="content">
         <h1>gui_wrapper</h1>
-        <p>A PyQt5 application for generating documentation and running ExplainCode. Features include:
+        <p>This code defines a PyQt5 application for running documentation and explanation generation tools. It includes:
 
-- A dark-themed GUI with a header, project/output directory selectors, DocGen/ExplainCode options, and a log area.
-- Drag-and-drop functionality for selecting directories/files in the GUI.
-- Collapsible boxes to organize settings.
-- Asynchronous command execution using `QThread` to handle long-running processes without blocking the main thread.
-- Support for running DocGen and ExplainCode with customizable options.
-- Logging of command output and process status.</p>
+- A `PathLineEdit` class for file path input with drag-and-drop functionality.
+- A `CollapsibleBox` class for creating collapsible sections in the UI.
+- A `CommandRunner` class that runs shell commands asynchronously, emitting output and completion signals.
+- A `MainWindow` class that sets up the GUI, handles user interactions, and manages running commands.
+
+The main window includes:
+- Fields for selecting project and output directories.
+- Options for DocGen and ExplainCode tools, including language selection and data inclusion.
+- A log area to display command output.
+- Buttons to run DocGen, ExplainCode, or both.</p>
 <h2 id="PathLineEdit">Class: PathLineEdit</h2>
-<p>The `PathLineEdit` class is designed for handling file path inputs with drag-and-drop functionality. It initializes with an optional parent object, accepts drops, and processes drop events by extracting URLs from the dropped data to set the object&#x27;s text to the local file path of the first URL.</p>
+<p>The `PathLineEdit` class is designed for use in graphical user interfaces within a documentation tool that generates static HTML documentation for Python and MATLAB projects. It handles drag-and-drop events, specifically accepting URLs and updating the widget&#x27;s text with the local file path of the first URL dropped onto it.</p>
 <h3 id="__init__">Method: __init__(self, parent=None)</h3>
-<p>Initializes an object with optional parent. Sets the object to accept drops.</p>
+<p>Initializes a new instance of the class with an optional parent object. Sets the widget to accept drag-and-drop events.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, parent<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>):
         <span style="color: #008000">super</span>()<span style="color: #666666">.</span><span style="color: #0000FF">__init__</span>(parent)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>setAcceptDrops(<span style="color: #008000; font-weight: bold">True</span>)
 </code></pre>
 <h3 id="dragEnterEvent">Method: dragEnterEvent(self, event)</h3>
-<p>The function `dragEnterEvent` checks if the event contains URLs. If it does, it accepts the proposed action for the event.</p>
+<p>The function `dragEnterEvent` checks if the incoming drag-and-drop event contains URLs. If it does, it accepts the proposed action for the event.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">dragEnterEvent</span>(<span style="color: #008000">self</span>, event):
         <span style="color: #008000; font-weight: bold">if</span> event<span style="color: #666666">.</span>mimeData()<span style="color: #666666">.</span>hasUrls():
             event<span style="color: #666666">.</span>acceptProposedAction()
 </code></pre>
 <h3 id="dropEvent">Method: dropEvent(self, event)</h3>
-<p>The function `dropEvent` handles a drop event by extracting URLs from the dropped data and setting the text of the object to the local file path of the first URL.</p>
+<p>The function `dropEvent` handles a drop event in a graphical user interface. It extracts URLs from the dropped data and sets the text of the widget to the local file path of the first URL.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">dropEvent</span>(<span style="color: #008000">self</span>, event):
         urls <span style="color: #666666">=</span> event<span style="color: #666666">.</span>mimeData()<span style="color: #666666">.</span>urls()
         <span style="color: #008000; font-weight: bold">if</span> urls:
             <span style="color: #008000">self</span><span style="color: #666666">.</span>setText(urls[<span style="color: #666666">0</span>]<span style="color: #666666">.</span>toLocalFile())
 </code></pre>
 <h2 id="CollapsibleBox">Class: CollapsibleBox</h2>
-<p>The `CollapsibleBox` class defines a user interface component with a toggle button and a content widget, allowing for the expansion and collapse of content sections. It includes methods for initializing the component, handling toggling events to show or hide content, and setting the layout of the content widget.</p>
+<p>The `CollapsibleBox` class defines a custom widget for creating expandable sections in graphical user interfaces, suitable for rendering nested functions and subclasses as collapsible boxes. It includes methods for initializing the widget with a toggle button and content area, toggling the visibility of the content based on the state of the toggle button, and setting the content layout of an object.</p>
 <h3 id="__init__">Method: __init__(self, title=&#x27;&#x27;, parent=None)</h3>
-<p>A class with an `__init__` method that initializes a toggle button and a content widget. The toggle button is styled to have no border, light gray text, and bold font weight. It has a right arrow icon and can be toggled on or off. When the toggle button is clicked, it calls the `on_toggled` method. The content widget is initially hidden. A vertical layout is created with no margins, containing both the toggle button and the content widget.</p>
+<p>A class constructor that initializes a custom widget with a toggle button and content area. The toggle button is styled to have no border, light gray text, and bold font weight. It displays the provided title and has an arrow icon on its right side. When clicked, it triggers the `on_toggled` method. Initially, the content area is hidden. The widget uses a vertical layout to arrange the toggle button at the top and the content area below it.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, title<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>, parent<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>):
         <span style="color: #008000">super</span>()<span style="color: #666666">.</span><span style="color: #0000FF">__init__</span>(parent)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>toggle_button <span style="color: #666666">=</span> QtWidgets<span style="color: #666666">.</span>QToolButton(text<span style="color: #666666">=</span>title, checkable<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
@@ -93,7 +97,7 @@
         layout<span style="color: #666666">.</span>addWidget(<span style="color: #008000">self</span><span style="color: #666666">.</span>content)
 </code></pre>
 <h3 id="on_toggled">Method: on_toggled(self)</h3>
-<p>Toggles the state of a button and updates its appearance and visibility based on whether it is checked or not. When the button is checked, it displays a down arrow; when unchecked, it shows a right arrow. Additionally, it controls the visibility of associated content, making it visible when the button is checked and hiding it otherwise.</p>
+<p>Toggles the appearance and visibility of a content area based on the state of a toggle button. When the toggle button is checked, it displays a downward arrow and makes the content visible; when unchecked, it shows a rightward arrow and hides the content.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">on_toggled</span>(<span style="color: #008000">self</span>):
         checked <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>toggle_button<span style="color: #666666">.</span>isChecked()
         arrow <span style="color: #666666">=</span> QtCore<span style="color: #666666">.</span>Qt<span style="color: #666666">.</span>DownArrow <span style="color: #008000; font-weight: bold">if</span> checked <span style="color: #008000; font-weight: bold">else</span> QtCore<span style="color: #666666">.</span>Qt<span style="color: #666666">.</span>RightArrow
@@ -106,7 +110,7 @@
         <span style="color: #008000">self</span><span style="color: #666666">.</span>content<span style="color: #666666">.</span>setLayout(layout)
 </code></pre>
 <h2 id="CommandRunner">Class: CommandRunner</h2>
-<p>The `CommandRunner` class manages the execution of a list of commands, capturing their output in real-time and handling both standard output and standard error streams. It uses threads for efficient reading from these streams and emits the results as they become available, ensuring that any errors are promptly reported.</p>
+<p>The `CommandRunner` class initializes with a list of commands and provides methods to execute these commands sequentially, capturing their output and handling exceptions. It includes a `_reader` function for reading from streams and emitting text chunks, ensuring proper progress bar updates in GUI applications. The `run` method manages the execution flow, waits for subprocesses to complete, and handles errors gracefully by breaking on non-zero exit codes or exceptions.</p>
 <h3 id="__init__">Method: __init__(self, cmds)</h3>
 <p>Initializes an object with a list of commands.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, cmds):
@@ -114,7 +118,7 @@
         <span style="color: #008000">self</span><span style="color: #666666">.</span>cmds <span style="color: #666666">=</span> cmds
 </code></pre>
 <h3 id="_reader">Method: _reader(self, stream)</h3>
-<p>The function `_reader` reads characters from a stream one by one and emits chunks of text. It handles carriage returns (`\r`) to update progress bars in the GUI, flushing any buffered text when the stream ends. It also ensures that newlines (`\n`) are properly emitted with the accumulated buffer.</p>
+<p>The function `_reader` reads characters from a stream one by one and emits chunks of text. It handles carriage returns to update progress bars in the GUI, flushes any buffered text when the stream ends, and ensures that new lines are properly emitted with the accumulated buffer content.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_reader</span>(<span style="color: #008000">self</span>, stream):
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Read a stream character by character and emit chunks.</span>
 
@@ -141,7 +145,7 @@
                 buf <span style="color: #666666">+=</span> ch
 </code></pre>
 <h3 id="run">Method: run(self)</h3>
-<p>The function `run` executes a list of commands (`self.cmds`). For each command, it emits the command string followed by output from both standard output and standard error. It uses threads to read from these streams in real-time. The function captures the return code of the last executed command and emits this code when all commands have been processed or an exception occurs. If any command fails (non-zero return code), the loop breaks, and the function emits a failure status.</p>
+<p>The function `run` executes a list of commands sequentially. For each command, it outputs the command string, starts subprocesses to capture standard output and standard error, reads from these streams in separate threads, waits for the subprocess to finish, and then joins the reading threads. If any subprocess returns a non-zero exit code or an exception occurs, the function breaks out of the loop and emits the final exit code.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run</span>(<span style="color: #008000">self</span>):
         rc <span style="color: #666666">=</span> <span style="color: #666666">0</span>
         <span style="color: #008000; font-weight: bold">for</span> cmd <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>cmds:
@@ -176,9 +180,15 @@
         <span style="color: #008000">self</span><span style="color: #666666">.</span>finished<span style="color: #666666">.</span>emit(rc)
 </code></pre>
 <h2 id="MainWindow">Class: MainWindow</h2>
-<p>This class defines a graphical user interface for a documentation tool that allows users to set project and output directories, configure options such as including private functions and supported languages, and select an output format for ExplainCode. It provides functionality to run commands for generating documentation and explanations, handle logging, and manage the state of running processes.</p>
+<p>The `MainWindow` class defines a PyQt5 window for generating static HTML documentation for Python and MATLAB projects using DocGen-LM. It includes functionalities for selecting project and output directories, choosing languages, specifying output formats, and running document generation or explanation commands. The class also handles logging messages and managing button states during the execution of these commands.</p>
 <h3 id="__init__">Method: __init__(self)</h3>
-<p>This code defines a class that initializes a graphical user interface (GUI) for a documentation tool. The GUI includes sections for setting the project and output directories, configuring DocGen options such as including private functions and supported languages, and selecting an output format for ExplainCode. It also provides checkboxes to include input data analysis and a log area for displaying messages. The GUI contains buttons to run DocGen, ExplainCode, or both.</p>
+<p>A PyQt5 window for a documentation tool named &quot;DocGen-LM Documentation Tool&quot;. The window includes:
+- A header with a logo and title.
+- Fields to select project and output directories with browse buttons.
+- Checkboxes to include private functions and specify languages (Python, MATLAB).
+- Options for output format (HTML, PDF) and including input data analysis with a file selector.
+- A log area for displaying messages.
+- Buttons to run DocGen, ExplainCode, or both.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>):
         <span style="color: #008000">super</span>()<span style="color: #666666">.</span><span style="color: #0000FF">__init__</span>()
         <span style="color: #008000">self</span><span style="color: #666666">.</span>setWindowTitle(<span style="color: #BA2121">&quot;DocGen-LM Documentation Tool&quot;</span>)
@@ -288,7 +298,7 @@
         main_layout<span style="color: #666666">.</span>addLayout(button_layout)
 </code></pre>
 <h3 id="dark_style">Method: dark_style(self)</h3>
-<p>This function returns a string containing CSS styles for various Qt widgets, including QWidget, QLineEdit, QPlainTextEdit, QComboBox, QPushButton, and QLabel. The styles define colors, fonts, borders, padding, and hover effects to give the interface a dark theme appearance.</p>
+<p>The function `dark_style` returns a string containing CSS styles for various Qt widgets, including QWidget, QLineEdit, QPlainTextEdit, QComboBox, QPushButton, and QLabel. The styles define the appearance of these widgets in a dark theme, with specific colors for backgrounds, borders, fonts, and padding.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">dark_style</span>(<span style="color: #008000">self</span>):
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&quot;&quot;</span>
 <span style="color: #BA2121">        QWidget {</span>
@@ -316,14 +326,14 @@
 <span style="color: #BA2121">        &quot;&quot;&quot;</span>
 </code></pre>
 <h3 id="select_dir">Method: select_dir(self, line_edit)</h3>
-<p>Function `select_dir` takes a `line_edit` widget as an argument. It opens a file dialog to allow the user to select an existing directory. If a directory is selected, it sets the text of the `line_edit` widget to the path of the selected directory.</p>
+<p>This function `select_dir` takes a `line_edit` object as an argument. It opens a file dialog to allow the user to select an existing directory. If a directory is selected, it sets the text of the `line_edit` object to the path of the selected directory.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">select_dir</span>(<span style="color: #008000">self</span>, line_edit):
         directory <span style="color: #666666">=</span> QtWidgets<span style="color: #666666">.</span>QFileDialog<span style="color: #666666">.</span>getExistingDirectory(<span style="color: #008000">self</span>, <span style="color: #BA2121">&quot;Select Directory&quot;</span>)
         <span style="color: #008000; font-weight: bold">if</span> directory:
             line_edit<span style="color: #666666">.</span>setText(directory)
 </code></pre>
 <h3 id="select_file">Method: select_file(self, line_edit)</h3>
-<p>Function `select_file` opens a file dialog for selecting data files with extensions `.json`, `.csv`, or `.txt`. If a file is selected, it sets the text of the provided `QLineEdit` widget to the selected file&#x27;s path.</p>
+<p>The function `select_file` opens a file dialog to allow the user to select a data file. If a file is selected, it sets the text of a provided `QLineEdit` widget to the path of the selected file.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">select_file</span>(<span style="color: #008000">self</span>, line_edit):
         path, _ <span style="color: #666666">=</span> QtWidgets<span style="color: #666666">.</span>QFileDialog<span style="color: #666666">.</span>getOpenFileName(
             <span style="color: #008000">self</span>, <span style="color: #BA2121">&quot;Select Data File&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;Data Files (*.json *.csv *.txt);;All Files (*)&quot;</span>
@@ -332,7 +342,7 @@
             line_edit<span style="color: #666666">.</span>setText(path)
 </code></pre>
 <h3 id="append_log">Method: append_log(self, text)</h3>
-<p>Appends text to a log widget, handling carriage returns by clearing the current line before inserting new text. Automatically scrolls the log view to the bottom after appending.</p>
+<p>The function `append_log` appends text to a log widget. It uses a regular expression to split the input text into parts, handling carriage return characters (`\r`) by moving the cursor to the beginning of the line and removing any existing text before inserting new text. After appending all parts, it scrolls the log widget to the bottom.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">append_log</span>(<span style="color: #008000">self</span>, text):
         cursor <span style="color: #666666">=</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>log<span style="color: #666666">.</span>textCursor()
         cursor<span style="color: #666666">.</span>movePosition(QtGui<span style="color: #666666">.</span>QTextCursor<span style="color: #666666">.</span>End)
@@ -348,13 +358,13 @@
         sb<span style="color: #666666">.</span>setValue(sb<span style="color: #666666">.</span>maximum())
 </code></pre>
 <h3 id="set_running">Method: set_running(self, running)</h3>
-<p>The function `set_running` takes a boolean parameter `running`. It iterates over three button objects (`docgen_btn`, `explain_btn`, and `both_btn`) and sets their enabled state to the opposite of the `running` parameter. If `running` is `True`, buttons are disabled; if `False`, they are enabled.</p>
+<p>The function `set_running` takes a boolean parameter `running`. It iterates over three buttons (`docgen_btn`, `explain_btn`, and `both_btn`) and sets their enabled state to the opposite of the `running` parameter. If `running` is `True`, the buttons are disabled; if `running` is `False`, the buttons are enabled.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">set_running</span>(<span style="color: #008000">self</span>, running):
         <span style="color: #008000; font-weight: bold">for</span> btn <span style="color: #AA22FF; font-weight: bold">in</span> (<span style="color: #008000">self</span><span style="color: #666666">.</span>docgen_btn, <span style="color: #008000">self</span><span style="color: #666666">.</span>explain_btn, <span style="color: #008000">self</span><span style="color: #666666">.</span>both_btn):
             btn<span style="color: #666666">.</span>setEnabled(<span style="color: #AA22FF; font-weight: bold">not</span> running)
 </code></pre>
 <h3 id="run_commands">Method: run_commands(self, cmds)</h3>
-<p>The function `run_commands` takes a list of commands as input. It checks if project and output directories are set; if not, it logs an error message. If directories are set, it sets the running state to true, initializes a `CommandRunner` with the provided commands, connects its output signal to a log appending method, connects its finished signal to a handler method, and starts the command execution.</p>
+<p>The function `run_commands` is designed to execute a series of commands within a project environment. It first checks if both the project and output directories are set; if not, it logs an error message and returns without executing any commands. If the directories are set, it proceeds by setting its running state to true, creating an instance of `CommandRunner` with the provided commands, connecting the runner&#x27;s output signal to a method for appending log messages, and connecting the finished signal to a method handling completion. Finally, it starts the command execution.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run_commands</span>(<span style="color: #008000">self</span>, cmds):
         <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>project_edit<span style="color: #666666">.</span>text() <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>output_edit<span style="color: #666666">.</span>text():
             <span style="color: #008000">self</span><span style="color: #666666">.</span>append_log(<span style="color: #BA2121">&quot;Project and output directories must be set.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
@@ -366,13 +376,13 @@
         <span style="color: #008000">self</span><span style="color: #666666">.</span>runner<span style="color: #666666">.</span>start()
 </code></pre>
 <h3 id="on_finished">Method: on_finished(self, code)</h3>
-<p>Function `on_finished` logs the exit code of a process and sets the running status to False.</p>
+<p>The function `on_finished` logs the exit code of a process and sets the running state to False.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">on_finished</span>(<span style="color: #008000">self</span>, code):
         <span style="color: #008000">self</span><span style="color: #666666">.</span>append_log(<span style="color: #BA2121">f&quot;Process finished with exit code </span><span style="color: #A45A77; font-weight: bold">{</span>code<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>set_running(<span style="color: #008000; font-weight: bold">False</span>)
 </code></pre>
 <h3 id="build_docgen_cmd">Method: build_docgen_cmd(self)</h3>
-<p>Constructs a command to run a documentation generator script with specified parameters based on user input. The command includes the Python interpreter, the script name, project and output directories, an optional flag for including private members, and selected programming languages.</p>
+<p>Constructs a command for running a document generator script with specified parameters, including project and output paths, optional private inclusion flag, and selected programming languages.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">build_docgen_cmd</span>(<span style="color: #008000">self</span>):
         cmd <span style="color: #666666">=</span> [
             <span style="color: #BA2121">&quot;pythonw&quot;</span>,
@@ -393,7 +403,7 @@
         <span style="color: #008000; font-weight: bold">return</span> cmd
 </code></pre>
 <h3 id="build_explain_cmd">Method: build_explain_cmd(self)</h3>
-<p>This function constructs a command to run `explaincode.py` with specified parameters. It includes the project path, output file, and output format. Optionally, it can include additional data if a checkbox is checked and text is provided in an edit field. The constructed command is returned as a list of strings.</p>
+<p>Constructs a command list to execute the `explaincode.py` script with specified parameters, including project path, output file, format, and optional data.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">build_explain_cmd</span>(<span style="color: #008000">self</span>):
         cmd <span style="color: #666666">=</span> [
             <span style="color: #BA2121">&quot;pythonw&quot;</span>,
@@ -410,7 +420,7 @@
         <span style="color: #008000; font-weight: bold">return</span> cmd
 </code></pre>
 <h3 id="run_docgen">Method: run_docgen(self)</h3>
-<p>Clears the log and runs a command to build documentation.</p>
+<p>The function `run_docgen` clears the log and runs a command to generate documentation.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">run_docgen</span>(<span style="color: #008000">self</span>):
         <span style="color: #008000">self</span><span style="color: #666666">.</span>log<span style="color: #666666">.</span>clear()
         <span style="color: #008000">self</span><span style="color: #666666">.</span>run_commands([<span style="color: #008000">self</span><span style="color: #666666">.</span>build_docgen_cmd()])

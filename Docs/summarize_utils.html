@@ -43,15 +43,15 @@
     </div>
     <div class="content">
         <h1>summarize_utils</h1>
-        <p>This module provides functions for summarizing text using a language model client and caching responses. It includes:
+        <p>This module provides functions for summarizing text using a language model client and caching the results. It includes:
 
-1. `_summarize`: Summarizes text directly if it fits within the context token limit, otherwise returns cached summary.
-2. `summarize_chunked`: Splits large texts into chunks to fit within context limits, summarizes each chunk, combines them, and caches the result.
+1. `_summarize`: A helper function that summarizes text by calling the LLMClient and caching the result.
+2. `summarize_chunked`: A main function that handles chunking large texts if necessary, then summarizes each chunk and merges them into a single summary.
 
-The module uses a tokenizer for text processing, prompt templates, and system prompts. It handles exceptions during chunking and summarization processes, providing fallbacks and logging warnings.</p>
+The module uses utilities from `cache`, `chunk_utils`, and `llm_client` modules to manage caching, text chunking, and interacting with the language model.</p>
 <h2>Functions</h2>
 <h3 id="_summarize">_summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str, *, system_prompt: str) -&gt; str</h3>
-<p>The function `_summarize` interacts with a language model to generate summaries of text. It uses an `LLMClient` to perform the summarization and a `ResponseCache` to store previously generated summaries for reuse. The function takes several parameters including a cache key, the text to summarize, a prompt type, and a system prompt. If a summary is already cached under the given key, it returns the cached summary; otherwise, it generates a new summary using the language model, caches it, and then returns the generated summary.</p>
+<p>The function `_summarize` takes a language model client, a response cache, a key, the text to be summarized, and a prompt type as inputs. It attempts to retrieve a cached summary using the provided key. If a cached summary is found, it returns that; otherwise, it generates a new summary using the language model client with the given text and prompt type, caches this new summary under the specified key, and then returns it.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize</span>(
     client: LLMClient,
     cache: ResponseCache,
@@ -69,7 +69,17 @@ The module uses a tokenizer for text processing, prompt templates, and system pr
     <span style="color: #008000; font-weight: bold">return</span> summary
 </code></pre>
 <h3 id="summarize_chunked">summarize_chunked(client: LLMClient, cache: ResponseCache, key_prefix: str, text: str, prompt_type: str, *, system_prompt: str=SYSTEM_PROMPT, max_context_tokens: int=4096, chunk_token_budget: int=3072) -&gt; str</h3>
-<p>This function `summarize_chunked` is designed to summarize a given text by chunking it if necessary. It uses an LLMClient for summarization and a ResponseCache for caching responses. The function first checks if the input text can be summarized in one go without exceeding the available token budget. If not, it chunks the text into manageable parts. Each part is then summarized individually. After all parts are summarized, they are combined into a single technical paragraph using another recursive merge process. The function handles exceptions during chunking and summarization, printing warnings and returning sanitized summaries in case of failures.</p>
+<p>This function, `summarize_chunked`, is designed to summarize a given text by chunking it if necessary. It uses an LLM client for summarization and a response cache to store previously generated summaries. The function handles the following steps:
+
+1. **Tokenization**: It tokenizes the input text using a tokenizer.
+2. **Prompt Template**: It selects a prompt template based on the `prompt_type`.
+3. **Overhead Tokens Calculation**: It calculates the number of tokens used by the system prompt and the empty template, subtracting this from the maximum context tokens to determine how many tokens are available for the text itself.
+4. **Chunking**: If the text is too large to fit within the available tokens, it chunks the text into smaller parts based on a `chunk_token_budget`.
+5. **Summarization of Chunks**: It summarizes each chunk individually and stores the results in a list.
+6. **Merging Summaries**: If there are multiple summaries, it combines them into a single technical paragraph using another recursive function `_merge_recursive`. This function ensures that the combined summary does not exceed the available tokens by recursively merging smaller groups of summaries.
+7. **Error Handling**: The function includes error handling to manage cases where chunking or summarization fails.
+
+The final result is sanitized and returned as a string.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize_chunked</span>(
     client: LLMClient,
     cache: ResponseCache,

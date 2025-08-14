@@ -43,10 +43,10 @@
     </div>
     <div class="content">
         <h1>test_parser_python</h1>
-        <p>This module contains tests for parsing Python files using the `parse_python_file` function from the `parser_python` module. It includes several test cases to verify the correctness of the parser, covering various scenarios such as simple modules, complex function signatures, nested structures, deeply nested classes, and classes inside methods. Each test case creates a temporary Python file with specific content, parses it using `parse_python_file`, and asserts that the parsed results match the expected structure and attributes of the code.</p>
+        <p>The module defines several test functions to verify the functionality of a `parse_python_file` function. Each test function creates a temporary Python file with different structures (simple modules, complex signatures, nested classes) and asserts that the `parse_python_file` function correctly parses these structures into a dictionary containing information about modules, classes, methods, and functions.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_simple_module">test_parse_simple_module(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the parsing of a simple Python module using the `parse_python_file` function. It creates a temporary file with a sample Python script containing a module docstring, a class with a method, and a standalone function. The test asserts that the parsed result includes the correct module docstring, class name, class docstring, method signature, method docstring, and source code for both the method and the function. Additionally, it verifies that the function&#x27;s return type is correctly identified as &quot;int&quot;.</p>
+<p>This function `test_parse_simple_module` tests the parsing of a Python module using the `parse_python_file` function. It creates a temporary file with a simple Python module containing a class and a function, then parses the file to extract information about the module, classes, and functions. The test checks that the parsed data matches the expected values for the module docstring, class name, class docstring, method signature, method docstring, and function details.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_simple_module</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -90,7 +90,13 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Add two numbers.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> func[<span style="color: #BA2121">&quot;source&quot;</span>]
 </code></pre>
 <h3 id="test_parse_complex_signature">test_parse_complex_signature(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the parsing of a complex Python function signature. It creates a temporary file with a sample Python code snippet containing a function with various parameters and a docstring. The function then parses this file using `parse_python_file` and checks if the parsed signature matches the expected output, as well as if the docstring is correctly extracted and included in the source code.</p>
+<p>This function `test_parse_complex_signature` is designed to test the parsing of a Python file containing a complex function signature. It uses a temporary directory provided by `tmp_path` to create a sample Python file named `sample.py`. The function writes a specific Python code snippet into this file, which includes a docstring and a complex function definition.
+
+The function then calls `parse_python_file` with the path of the created file as an argument. This function is expected to parse the Python source code and return a dictionary containing information about the parsed file, including its functions.
+
+In the test case, it specifically checks the signature of the first function in the parsed result, which should match the string `&quot;complex(a/, b, *, c: int=1, **kw) -&gt; None&quot;`. It also verifies that the docstring of the function is correctly extracted and matches `&quot;Complex function.&quot;`, and that this docstring is present in the source code.
+
+The assertions ensure that the parsing functionality works as expected for complex Python function signatures.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_complex_signature</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -113,7 +119,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;Complex function.&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> func[<span style="color: #BA2121">&quot;source&quot;</span>]
 </code></pre>
 <h3 id="test_parse_nested_structures">test_parse_nested_structures(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the parsing of nested structures in Python files. It creates a temporary file with nested functions and classes, then uses `parse_python_file` to parse the file. The test asserts that the parsed result contains the expected nested structures: a function named &quot;outer&quot; with a subfunction &quot;inner&quot;, and a class named &quot;A&quot; with a subclass &quot;B&quot; containing a method &quot;method&quot;.</p>
+<p>This function `test_parse_nested_structures` tests the parsing of nested structures in Python code. It creates a temporary file with a Python script containing nested functions and subclasses, then uses the `parse_python_file` function to parse this file. The test asserts that the parsed result correctly identifies the outer function, its inner function, and the classes and methods within them.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_nested_structures</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -148,7 +154,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> sub[<span style="color: #BA2121">&quot;methods&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;method&quot;</span>
 </code></pre>
 <h3 id="test_deeply_nested_classes">test_deeply_nested_classes(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_deeply_nested_classes` is designed to test the parsing of Python files containing deeply nested classes. It uses a temporary directory provided by `tmp_path` to create a file named `deep.py` with a nested class structure. The function then calls `parse_python_file` to parse this file and asserts that the nested classes are correctly identified and their methods are properly listed.</p>
+<p>The function `test_deeply_nested_classes` tests the parsing of Python files containing deeply nested classes. It creates a temporary file with nested class definitions and uses the `parse_python_file` function to parse this file. The test then checks if the nested classes are correctly identified and their methods are properly listed.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_deeply_nested_classes</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>
@@ -171,7 +177,10 @@
     <span style="color: #008000; font-weight: bold">assert</span> c[<span style="color: #BA2121">&quot;methods&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;name&quot;</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;inner&quot;</span>
 </code></pre>
 <h3 id="test_class_inside_method">test_class_inside_method(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the parsing of a Python file containing a class inside another method. It creates a temporary file with the specified source code, parses it using `parse_python_file`, and asserts that the outer class `A` has one subclass `B`, which in turn contains one method `m`.</p>
+<p>This function, `test_class_inside_method`, tests the parsing of a Python file containing a class inside another method. It uses a temporary path to create a source file named &quot;inner.py&quot; with the specified content. The function then parses this file using the `parse_python_file` function and asserts that:
+1. There is one top-level class (`A`) in the parsed result.
+2. Class `A` has one subclass (`B`).
+3. Subclass `B` has one method named `m`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_class_inside_method</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&#39;&#39;&#39;</span>

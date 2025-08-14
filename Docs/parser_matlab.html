@@ -43,10 +43,10 @@
     </div>
     <div class="content">
         <h1>parser_matlab</h1>
-        <p>This module defines a function `parse_matlab_file` that takes the path to a MATLAB `.m` file and returns a dictionary containing the file&#x27;s header comments and any function declarations found. The function extracts leading comment lines as the file header and uses a regular expression to identify and parse function declarations, extracting their names and arguments.</p>
+        <p>This module provides a function `parse_matlab_file` that parses MATLAB `.m` files and extracts basic structure. It reads the file content, identifies leading comment lines as the file header, and uses regular expressions to find and extract function declarations along with their arguments. The result is returned as a dictionary containing the file header comments and a list of functions, each represented by its name and arguments.</p>
 <h2>Functions</h2>
 <h3 id="parse_matlab_file">parse_matlab_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The function `parse_matlab_file` reads a MATLAB `.m` file and extracts its structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found. The function identifies the start of the body by looking for non-comment lines or blank lines following header comments. It uses a regular expression to parse function declarations, extracting the function name and arguments. The result includes both the header text and a list of functions with their names and argument lists.</p>
+<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract basic structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found. Each function entry includes the function name and a list of arguments. The function handles leading comment lines as the file header, identifies function declarations using regular expressions, and organizes them into a structured dictionary format for further processing or documentation generation.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
 

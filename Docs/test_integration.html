@@ -43,12 +43,21 @@
     </div>
     <div class="content">
         <h1>test_integration</h1>
-        <p>The module defines two tests for a documentation generator. The first test, `test_docgenerator_generates_html`, checks that the generator can process Python and MATLAB files in a project directory and produce HTML output with summaries. It uses a mock LLMClient to simulate API responses.
+        <p>The module defines two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML files from Python and MATLAB files in a project directory using a mock LLMClient. It asserts that the correct HTML files are created and contains the expected summary text.
 
-The second test, `test_static_copied_from_any_cwd`, ensures that static files like CSS are copied to the output directory regardless of the current working directory when running the generator.</p>
+The second function, `test_static_copied_from_any_cwd`, tests the copying of static files (e.g., style.css) to the output directory regardless of the current working directory. It uses a mock LLMClient and asserts that the static file is correctly copied to the output directory.</p>
 <h2>Functions</h2>
 <h3 id="test_docgenerator_generates_html">test_docgenerator_generates_html(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_docgenerator_generates_html` tests the functionality of a documentation generator by creating a temporary project directory with Python and MATLAB files. It then simulates an interaction with a language model using a mock client to return a summary for each file. The function asserts that the main command (`main`) returns 0, indicating success. Finally, it checks that HTML files are created in the output directory for each file processed, and verifies that the summary text is included in one of the generated HTML files.</p>
+<p>This function, `test_docgenerator_generates_html`, is designed to test the functionality of a documentation generator tool. It creates a temporary project directory with Python and MATLAB files, simulates interactions with a language model using a mock client, and then verifies that HTML output files are generated correctly.
+
+The function performs the following steps:
+1. Creates a temporary project directory.
+2. Writes a simple Python file (`hello.py`) and a simple MATLAB file (`util.m`) to the project directory.
+3. Sets up a mock client for the language model, which simulates responses to ping and summarize requests.
+4. Calls the `main` function with the project directory path and an output directory path.
+5. Asserts that the return value of the `main` function is 0, indicating successful execution.
+6. Verifies that HTML files for the project, its modules, and functions are created in the output directory.
+7. Reads the content of the generated HTML file for the Python module (`hello.html`) and asserts that it contains a summary string.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_docgenerator_generates_html</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;project&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -75,7 +84,7 @@ The second test, `test_static_copied_from_any_cwd`, ensures that static files li
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_static_copied_from_any_cwd">test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -&gt; None</h3>
-<p>The function `test_static_copied_from_any_cwd` tests the behavior of a documentation generation tool when run from any working directory. It creates a temporary project directory, writes a simple Python module to it, and sets up an output directory for the generated documentation. The function uses a mock LLM client to simulate successful ping and summary responses. It changes the current working directory to the temporary path and runs the main function of the documentation generator with the specified project and output directories. After execution, it asserts that the static `style.css` file has been copied to the output directory.</p>
+<p>This function `test_static_copied_from_any_cwd` is designed to test the generation of static HTML documentation for a Python project. It creates a temporary directory structure with a sample Python module, sets up a mock language model client using `monkeypatch`, and then invokes the main documentation generation function `main`. The test asserts that the output directory contains a static CSS file named &quot;style.css&quot;, indicating successful documentation generation.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_static_copied_from_any_cwd</span>(tmp_path: Path, monkeypatch) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
