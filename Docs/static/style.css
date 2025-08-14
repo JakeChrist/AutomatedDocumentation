@@ -8,6 +8,8 @@ body {
     width: 200px;
     background: #f0f0f0;
     padding: 1rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .content {
