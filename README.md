@@ -15,7 +15,8 @@ Clone the repository and install the required packages:
 pip install -r requirements.txt
 ```
 
-The tool depends on `requests`, `pygments`, and `beautifulsoup4`. It uses the
+The tool depends on `requests`, `pygments`, `beautifulsoup4`, and `tqdm`.
+Progress bars powered by `tqdm` are always displayed. It uses the
 real `requests` library to communicate with LMStudio. Install
 `tiktoken` for accurate token counting as listed in `requirements.txt`.
 For the `explaincode` summary utility, additional packages

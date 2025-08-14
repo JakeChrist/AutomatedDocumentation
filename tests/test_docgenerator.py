@@ -391,10 +391,13 @@ def test_subclass_methods_are_summarized(tmp_path: Path) -> None:
     with patch("docgenerator.LLMClient") as MockClient, patch(
         "docgenerator._summarize",
         return_value="summary",
-    ) as mock_sum:
+    ), patch(
+        "docgenerator._summarize_chunked",
+        return_value="summary",
+    ) as mock_chunk:
         instance = MockClient.return_value
         instance.ping.return_value = True
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
 
-    assert any("B:m" in call.args[2] for call in mock_sum.call_args_list)
+    assert any("B:m" in call.args[2] for call in mock_chunk.call_args_list)
