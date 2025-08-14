@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
         <ul>
         <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
 <li><a href="cache.html">cache</a></li>
+<li><a href="chunk_utils.html">chunk_utils</a></li>
 <li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="explaincode.html">explaincode</a></li>
+<li><a href="gui_wrapper.html">gui_wrapper</a></li>
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
+<li><a href="manual_utils.html">manual_utils</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
 <li><a href="scanner.html">scanner</a></li>
+<li><a href="setup.html">setup</a></li>
+<li><a href="summarize_utils.html">summarize_utils</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_chunk_utils.html">test_chunk_utils</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
 <li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
+<li><a href="test_explaincode.html">test_explaincode</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_manual_utils.html">test_manual_utils</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -33,10 +43,10 @@
     </div>
     <div class="content">
         <h1>test_reviewer</h1>
-        <p>This module defines functions to test the detection of assistant phrasing, contradictions, and hallucinations in Python modules. It uses a temporary directory to create mock module pages and then runs a `main` function from the `reviewer` module on these pages. The tests check for specific phrases like &quot;[ASSISTANT]&quot;, &quot;[CONTRADICTION]&quot;, and &quot;[HALLUCINATION]&quot; in the output, as well as verify that autofix removes certain phrasing from the HTML files.</p>
+        <p>The module defines a test suite for a code review tool. It includes functions to create temporary module pages, and tests to detect issues such as assistant phrasing, contradictions, and hallucinations in the code documentation. The `test_autofix_removes_phrasing` function also checks if autofix functionality removes specified phrases from the generated HTML files.</p>
 <h2>Functions</h2>
 <h3 id="_make_module">_make_module(tmp_path: Path, summary: str, methods=None) -&gt; Path</h3>
-<p>The function `_make_module` creates a mock module page for testing purposes. It takes three parameters: `tmp_path`, which is the temporary directory where the module page will be created; `summary`, which is a string summarizing the module; and `methods`, an optional list of methods to include in a class named &quot;Foo&quot;. The function returns the path to the generated module HTML file.</p>
+<p>The function `_make_module` creates a temporary module page with specified summary and methods. It constructs a dictionary `data` containing the module&#x27;s name, summary, and optionally classes and methods. If methods are provided, it includes a class named &quot;Foo&quot; with an empty docstring and summary, and the list of methods. The function then writes this data to a module page using the `write_module_page` function, which takes the temporary path, data, and a list of tuples specifying file names and paths. Finally, it returns the path to the generated module HTML file (`mod.html`).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_make_module</span>(tmp_path: Path, summary: <span style="color: #008000">str</span>, methods<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> Path:
     data <span style="color: #666666">=</span> {
         <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;mod&quot;</span>,
@@ -52,7 +62,7 @@
     <span style="color: #008000; font-weight: bold">return</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>
 </code></pre>
 <h3 id="test_assistant_phrasing_detected">test_assistant_phrasing_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>This function tests if assistant phrasing is detected and logged during the documentation generation process. It creates a temporary module with assistant phrasing, runs the main documentation generator function on it, captures the output, and asserts that both &quot;[ASSISTANT]&quot; and &quot;mod.html&quot; are present in the output.</p>
+<p>This function `test_assistant_phrasing_detected` is designed to test if the assistant phrasing is detected and included in the output when generating documentation for a Python project. It creates a temporary module with specific content, runs the main function of the project with this temporary path as an argument, captures the standard output, and asserts that both &quot;[ASSISTANT]&quot; and &quot;mod.html&quot; are present in the output.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_assistant_phrasing_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     _make_module(tmp_path, <span style="color: #BA2121">&quot;You can use this class.&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path)])
@@ -61,7 +71,16 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;mod.html&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_contradiction_detected">test_contradiction_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>This function `test_contradiction_detected` is designed to test the detection of contradictions within generated documentation. It creates a temporary module with specified methods, including their names, signatures, docstrings, and source code. The function then calls the main documentation generation process using the path to this temporary module as an argument. After execution, it captures the output from standard out (stdout) using `capsys`. Finally, it asserts that the string &quot;[CONTRADICTION]&quot; is present in the captured output, indicating that a contradiction was detected during the documentation generation process.</p>
+<p>This function `test_contradiction_detected` is designed to test the detection of contradictions within a module&#x27;s documentation. It takes two parameters: `tmp_path`, which is a temporary directory path provided by the `pytest` framework, and `capsys`, which captures standard output and standard error.
+
+The function performs the following steps:
+1. Defines a list of methods with specific attributes such as name, signature, docstring, and source code.
+2. Creates a module in the temporary directory using `_make_module`, passing it the temporary path, a description indicating no methods are defined, and the list of methods.
+3. Calls the `main` function with the string representation of the temporary path.
+4. Reads the captured output from standard output (`out`) using `capsys.readouterr().out`.
+5. Asserts that the string &quot;[CONTRADICTION]&quot; is present in the captured output, indicating that a contradiction has been detected.
+
+This test ensures that the system correctly identifies and reports contradictions in the documentation of Python modules.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_contradiction_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     methods <span style="color: #666666">=</span> [{<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;bar&quot;</span>, <span style="color: #BA2121">&quot;signature&quot;</span>: <span style="color: #BA2121">&quot;def bar()&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}]
     _make_module(tmp_path, <span style="color: #BA2121">&quot;No methods defined&quot;</span>, methods)
@@ -70,7 +89,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[CONTRADICTION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_hallucination_detected">test_hallucination_detected(tmp_path: Path, capsys) -&gt; None</h3>
-<p>The function `test_hallucination_detected` is a test function designed to verify the detection of hallucinations during documentation generation. It creates a temporary module with a specified description, runs the main documentation generation process on this module using the provided path, and then checks if the output contains the marker &quot;[HALLUCINATION]&quot;.</p>
+<p>This function `test_hallucination_detected` is designed to test for the detection of hallucinations during documentation generation. It creates a temporary directory, simulates a module implementation within that directory, and then runs the main documentation generation process using the specified path. The function captures the output generated by the process and asserts that the string &quot;[HALLUCINATION]&quot; is present in the output, indicating that the detection mechanism has identified a potential issue of generating incorrect or misleading information.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_hallucination_detected</span>(tmp_path: Path, capsys) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     _make_module(tmp_path, <span style="color: #BA2121">&quot;Implements tic-tac-toe features&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path)])
@@ -78,7 +97,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;[HALLUCINATION]&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> out
 </code></pre>
 <h3 id="test_autofix_removes_phrasing">test_autofix_removes_phrasing(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_autofix_removes_phrasing` is a test function designed to verify the functionality of an autofix feature within a documentation generation tool. It takes a temporary directory path as input and creates a module file with specific content. The function then runs the main documentation generation process with the `--autofix` option on this temporary directory. After processing, it reads the generated HTML file and asserts that certain phrases (in this case, &quot;You can&quot;) have been removed from the output, indicating that the autofix feature is working as expected by cleaning up phrasing in the generated documentation.</p>
+<p>The function `test_autofix_removes_phrasing` is a unit test that verifies the functionality of an autofix feature. It creates a temporary directory, generates an HTML file with specific content using `_make_module`, and then runs the main function with the `--autofix` option. The test checks if the phrase &quot;You can&quot; has been removed from the generated HTML content.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_autofix_removes_phrasing</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     html_path <span style="color: #666666">=</span> _make_module(tmp_path, <span style="color: #BA2121">&quot;You can call this.&quot;</span>)
     main([<span style="color: #008000">str</span>(tmp_path), <span style="color: #BA2121">&quot;--autofix&quot;</span>])
@@ -86,5 +105,6 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;You can&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
     </div>
+    <script src="static/toggle.js"></script>
 </body>
 </html>

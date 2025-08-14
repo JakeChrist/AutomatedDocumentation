@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
         <ul>
         <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
 <li><a href="cache.html">cache</a></li>
+<li><a href="chunk_utils.html">chunk_utils</a></li>
 <li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="explaincode.html">explaincode</a></li>
+<li><a href="gui_wrapper.html">gui_wrapper</a></li>
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
+<li><a href="manual_utils.html">manual_utils</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
 <li><a href="scanner.html">scanner</a></li>
+<li><a href="setup.html">setup</a></li>
+<li><a href="summarize_utils.html">summarize_utils</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_chunk_utils.html">test_chunk_utils</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
 <li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
+<li><a href="test_explaincode.html">test_explaincode</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_manual_utils.html">test_manual_utils</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -33,10 +43,14 @@
     </div>
     <div class="content">
         <h1>test_html_writer</h1>
-        <p>This module contains tests for functions `write_index` and `write_module_page` from the `html_writer.py` file. The tests use `tmp_path` to create temporary files and verify that the output HTML is correctly generated based on the input data. The tests check for specific HTML elements, attributes, and content to ensure that the documentation is rendered as expected.</p>
+        <p>The module defines functions to generate HTML documentation for projects and modules. It includes:
+
+- `write_index`: Generates an index page listing project summary, links to modules, and summaries of each module.
+- `write_module_page`: Generates a detailed HTML page for a specific module, including its name, summary, classes, methods, and functions.
+- `test_write_index`, `test_write_module_page`, `test_subfunction_rendering`, and `test_subclass_rendering`: Unit tests to verify the correctness of the above functions.</p>
 <h2>Functions</h2>
 <h3 id="test_write_index">test_write_index(tmp_path: Path) -&gt; None</h3>
-<p>The `test_write_index` function tests the `write_index` function from the `html_writer.py` module. It creates a temporary directory, defines links and summaries for modules, and calls `write_index` to generate an HTML index file. The test checks that the generated HTML contains expected elements such as the generation comment, project summary, module links, and summaries. It ensures that special characters in module names are correctly escaped and that only one summary is rendered.</p>
+<p>The function `test_write_index` is a unit test for the `write_index` function. It checks if the generated HTML index file contains the expected content, including project summary, module links, and summaries. The test uses a temporary path to create an index.html file and asserts that it contains specific tags and text, ensuring proper rendering of the documentation structure.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_index</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>, <span style="color: #BA2121">&quot;module1.html&quot;</span>), (<span style="color: #BA2121">&quot;module&amp;2&quot;</span>, <span style="color: #BA2121">&quot;module2.html&quot;</span>)]
     summaries <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;module&lt;1&gt;&quot;</span>: <span style="color: #BA2121">&quot;First module.&quot;</span>, <span style="color: #BA2121">&quot;module&amp;2&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>}
@@ -56,7 +70,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;&lt;h1&gt;Project Documentation&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_write_module_page">test_write_module_page(tmp_path: Path) -&gt; None</h3>
-<p>The `test_write_module_page` function tests the `write_module_page` function from the `html_writer.py` module. It creates a temporary directory, simulates module data including classes and functions, and writes an HTML module page using this data. The test checks that the generated HTML contains expected elements such as project overview link, module summary, class details, method signatures, and function definitions. It also verifies that code snippets are correctly highlighted in `&lt;pre&gt;&lt;code&gt;` tags.</p>
+<p>The function `test_write_module_page` is designed to test the generation of an HTML page for a Python module using the `write_module_page` function. It sets up a temporary directory, defines mock data for a module including its name, summary, classes, and functions, and then calls `write_module_page` with this data. The function asserts that the generated HTML file contains specific elements such as a header, links to other modules, class and method summaries, and code snippets. It checks for the presence of certain strings and ensures that the HTML structure is correct, including the use of Markdown-like syntax for formatting.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_write_module_page</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> [(<span style="color: #BA2121">&quot;OtherModule&quot;</span>, <span style="color: #BA2121">&quot;other.html&quot;</span>)]
     module_data <span style="color: #666666">=</span> {
@@ -103,7 +117,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
 </code></pre>
 <h3 id="test_subfunction_rendering">test_subfunction_rendering(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_subfunction_rendering` tests the rendering of subfunctions in HTML documentation. It creates a mock module data structure with an outer function containing a nested inner function. The function then writes this module page to a temporary directory using the `write_module_page` function and reads the generated HTML file. It asserts that the HTML contains details tags, references to the inner subfunction, and that both the outer and inner functions&#x27; source code are highlighted in `&lt;pre&gt;&lt;code&gt;` blocks.</p>
+<p>The function `test_subfunction_rendering` is designed to test the rendering of subfunctions within a module&#x27;s documentation. It uses a temporary path to create a mock module data structure, which includes a nested function (subfunction) named &quot;inner&quot; inside another function &quot;outer&quot;. The function then writes this module data to an HTML file using `write_module_page`, and reads the generated HTML content. It asserts that the HTML contains `&lt;details&gt;` tags, indicating expandable sections for subfunctions, and checks if the subfunction name is present in the HTML. Additionally, it verifies that both the outer and inner functions&#x27; source code are highlighted in the HTML output, ensuring proper syntax highlighting.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subfunction_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> []
     module_data <span style="color: #666666">=</span> {
@@ -135,7 +149,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">2</span>
 </code></pre>
 <h3 id="test_subclass_rendering">test_subclass_rendering(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_subclass_rendering` tests the rendering of subclass information in HTML documentation. It creates a mock module data structure with a class `A` that has a subclass `B`. The function writes this module data to an HTML file using the `write_module_page` function and then reads the generated HTML content. It asserts that the HTML contains details tags, mentions &quot;Class: B&quot;, includes the method signature &quot;def m(self)&quot;, and highlights one code snippet.</p>
+<p>The function `test_subclass_rendering` tests the rendering of subclass information in HTML documentation. It creates a mock module data structure with a class `A` that has a subclass `B`. The subclass `B` contains a method `m`. The function writes this module data to an HTML file using the `write_module_page` function and then reads the generated HTML file. It asserts that the HTML contains `&lt;details&gt;` tags, indicating expandable sections, &quot;Class: B&quot;, the method signature &quot;def m(self)&quot;, and exactly one code block (`&lt;pre&gt;&lt;code&gt;`) containing the method definition.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subclass_rendering</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     links <span style="color: #666666">=</span> []
     module_data <span style="color: #666666">=</span> {
@@ -173,5 +187,6 @@
     <span style="color: #008000; font-weight: bold">assert</span> html<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;&lt;pre&gt;&lt;code&gt;&quot;</span>) <span style="color: #666666">==</span> <span style="color: #666666">1</span>
 </code></pre>
     </div>
+    <script src="static/toggle.js"></script>
 </body>
 </html>

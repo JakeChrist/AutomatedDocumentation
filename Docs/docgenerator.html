@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
         <ul>
         <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
 <li><a href="cache.html">cache</a></li>
+<li><a href="chunk_utils.html">chunk_utils</a></li>
 <li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="explaincode.html">explaincode</a></li>
+<li><a href="gui_wrapper.html">gui_wrapper</a></li>
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
+<li><a href="manual_utils.html">manual_utils</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
 <li><a href="scanner.html">scanner</a></li>
+<li><a href="setup.html">setup</a></li>
+<li><a href="summarize_utils.html">summarize_utils</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_chunk_utils.html">test_chunk_utils</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
 <li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
+<li><a href="test_explaincode.html">test_explaincode</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_manual_utils.html">test_manual_utils</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -33,22 +43,10 @@
     </div>
     <div class="content">
         <h1>docgenerator</h1>
-        <p>This module implements a command-line interface for generating documentation using DocGen-LM. It scans a source tree for Python and MATLAB files, parses them, requests summaries from a running LLM, and writes HTML documentation. The module includes functions for cleaning the output directory, summarizing text, tokenizing, chunking text, summarizing modules, rewriting docstrings, and recursively summarizing classes and methods.
-
-The `main` function generates HTML documentation using a local language model (LLM). It takes command-line arguments to specify the source directory, output directory, and various options like ignored paths, LLM URL, model name, and maximum context tokens. The function uses an argument parser to handle these inputs.
-
-It initializes an LLM client and checks if the client is reachable. If not, it prints an error message and returns a non-zero exit code.
-
-The function then sets up a tokenizer and calculates chunk token budgets based on the maximum context tokens. It creates the output directory and copies static files into it.
-
-Using the `scan_directory` function, it processes each file in the source directory. For each file, it reads its content and parses it as Python or MATLAB code. If parsing fails due to syntax errors, it skips the file.
-
-For each parsed module, it generates a summary using the LLM client and caches the results. It also handles classes and functions within the modules, summarizing them recursively and updating their docstrings with project context.
-
-Finally, it writes an index page and individual pages for each module in the output directory.</p>
+        <p>This module provides a command-line interface for generating documentation using DocGen-LM. It scans a source tree for Python and MATLAB files, parses them, requests summaries from a running LLM, and writes HTML documentation. The script includes functions for cleaning the output directory, summarizing text chunks, handling module structure, and recursively summarizing classes and methods. This Python script generates HTML documentation using a local Large Language Model (LLM). It accepts command-line arguments to specify the source directory, output directory, and various options such as ignored paths, LLM URL, model name, and maximum context tokens. The script processes files in the source directory, parses them based on their extensions (Python or MATLAB), and generates summaries using the LLM. It handles exceptions for file encoding issues and syntax errors. The script also collects markdown documentation from README.md and any .md files within a &#x27;docs&#x27; subdirectory. After summarizing modules, classes, and functions, it writes HTML index and module pages to the output directory.</p>
 <h2>Functions</h2>
 <h3 id="clean_output_dir">clean_output_dir(output_dir: str) -&gt; None</h3>
-<p>The `clean_output_dir` function takes a string representing the path to an output directory and iterates through all files within that directory. If a file has a `.html` extension, it reads the first line of the file. If the first line contains the string &quot;Generated by DocGen-LM&quot;, indicating that the file was generated by the DocGen-LM tool, it attempts to remove the file. If an error occurs during this process, it prints a warning message with the filename and the exception details.</p>
+<p>The function `clean_output_dir` takes a string representing the path to an output directory and iterates through all files within that directory. If a file has a `.html` extension, it reads the first line of the file. If the first line contains the string &quot;Generated by DocGen-LM&quot;, the file is deleted. If any errors occur during this process, a warning message is printed to the console.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">clean_output_dir</span>(output_dir: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">for</span> filename <span style="color: #AA22FF; font-weight: bold">in</span> os<span style="color: #666666">.</span>listdir(output_dir):
         <span style="color: #008000; font-weight: bold">if</span> filename<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;.html&quot;</span>):
@@ -62,7 +60,7 @@ Finally, it writes an index page and individual pages for each module in the out
                 <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARNING] Could not check </span><span style="color: #A45A77; font-weight: bold">{</span>filename<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">: </span><span style="color: #A45A77; font-weight: bold">{</span>e<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>)
 </code></pre>
 <h3 id="_summarize">_summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str) -&gt; str</h3>
-<p>This function `_summarize` takes an `LLMClient`, a `ResponseCache`, a `key`, some `text`, and a `prompt_type`. It checks if the summary for the given key is already cached. If it is, it returns the cached summary. Otherwise, it uses the `client` to generate a summary of the `text` based on the `prompt_type`, caches this new summary under the given `key`, and then returns it.</p>
+<p>The function `_summarize` takes an `LLMClient`, a `ResponseCache`, a `key`, a `text`, and a `prompt_type` as parameters. It checks if the summary for the given key is already cached. If it is, it returns the cached summary. Otherwise, it uses the `LLMClient` to generate a summary of the provided text based on the prompt type, caches this new summary using the provided key, and then returns the generated summary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize</span>(client: LLMClient, cache: ResponseCache, key: <span style="color: #008000">str</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
     cached <span style="color: #666666">=</span> cache<span style="color: #666666">.</span>get(key)
     <span style="color: #008000; font-weight: bold">if</span> cached <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
@@ -71,45 +69,8 @@ Finally, it writes an index page and individual pages for each module in the out
     cache<span style="color: #666666">.</span>set(key, summary)
     <span style="color: #008000; font-weight: bold">return</span> summary
 </code></pre>
-<h3 id="_get_tokenizer">_get_tokenizer()</h3>
-<p>The `_get_tokenizer` function returns a tokenizer object used for estimating token counts. If the `tiktoken` library is installed, it attempts to use the &quot;cl100k_base&quot; encoding; if not, it falls back to using a simple tokenizer that splits text into words and joins them back together.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_get_tokenizer</span>():
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a tokenizer object used for estimating token counts.&quot;&quot;&quot;</span>
-
-    <span style="color: #008000; font-weight: bold">if</span> tiktoken <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - optional branch</span>
-        <span style="color: #008000; font-weight: bold">try</span>:
-            <span style="color: #008000; font-weight: bold">return</span> tiktoken<span style="color: #666666">.</span>get_encoding(<span style="color: #BA2121">&quot;cl100k_base&quot;</span>)
-        <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - fallback if model unknown</span>
-            <span style="color: #008000; font-weight: bold">return</span> tiktoken<span style="color: #666666">.</span>encoding_for_model(<span style="color: #BA2121">&quot;gpt-3.5-turbo&quot;</span>)
-
-    <span style="color: #008000">print</span>(
-        <span style="color: #BA2121">&quot;[WARNING] tiktoken is not installed; token counts will be approximate.&quot;</span>,
-        file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr,
-    )
-
-    <span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">_Simple</span>:
-        <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">encode</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>):
-            <span style="color: #008000; font-weight: bold">return</span> text<span style="color: #666666">.</span>split()
-
-        <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">decode</span>(<span style="color: #008000">self</span>, tokens):
-            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot; &quot;</span><span style="color: #666666">.</span>join(tokens)
-
-    <span style="color: #008000; font-weight: bold">return</span> _Simple()
-</code></pre>
-<h3 id="chunk_text">chunk_text(text: str, tokenizer, chunk_size_tokens: int)</h3>
-<p>The `chunk_text` function splits a given text into smaller chunks based on the specified token size. It uses a tokenizer to encode the text into tokens, then iterates through these tokens in chunks of the desired size, decoding each chunk back into text before appending it to the result list. This allows for efficient processing and handling of large texts by breaking them down into manageable parts.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">chunk_text</span>(text: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>):
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``text`` into chunks roughly ``chunk_size_tokens`` each.&quot;&quot;&quot;</span>
-
-    tokens <span style="color: #666666">=</span> tokenizer<span style="color: #666666">.</span>encode(text)
-    chunks <span style="color: #666666">=</span> []
-    <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, <span style="color: #008000">len</span>(tokens), chunk_size_tokens):
-        chunk <span style="color: #666666">=</span> tokens[i : i <span style="color: #666666">+</span> chunk_size_tokens]
-        chunks<span style="color: #666666">.</span>append(tokenizer<span style="color: #666666">.</span>decode(chunk))
-    <span style="color: #008000; font-weight: bold">return</span> chunks
-</code></pre>
 <h3 id="_chunk_module_by_structure">_chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int)</h3>
-<p>This function `_chunk_module_by_structure` processes a module&#x27;s parsed structure to create text chunks that do not exceed a specified token size. It starts by adding the module&#x27;s docstring, then iterates through classes and functions within the module, appending their source code or signatures to blocks if they fit within the token limit. If a block exceeds the limit, it is further chunked using another function `chunk_text`. The resulting chunks are returned as a list.</p>
+<p>This function `_chunk_module_by_structure` processes a Python module&#x27;s parsed structure to create text chunks of a specified size. It first extracts the module&#x27;s docstring and adds it to the blocks list if present. Then, it iterates through classes, methods, and functions within the module, adding their source code to the blocks list. The function then processes these blocks into chunks that do not exceed the specified token limit. If a block exceeds the token limit, it is further chunked using another function `chunk_text`. Finally, any remaining blocks are added to the chunks list, which is returned as the result.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_chunk_module_by_structure</span>(module: <span style="color: #008000">dict</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>):
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a list of text chunks for ``module`` using its parsed structure.&quot;&quot;&quot;</span>
 
@@ -160,58 +121,8 @@ Finally, it writes an index page and individual pages for each module in the out
 
     <span style="color: #008000; font-weight: bold">return</span> chunks
 </code></pre>
-<h3 id="_summarize_chunked">_summarize_chunked(client: LLMClient, cache: ResponseCache, key_prefix: str, text: str, prompt_type: str, tokenizer, max_context_tokens: int, chunk_token_budget: int) -&gt; str</h3>
-<p>The `_summarize_chunked` function summarizes a given text by chunking it if necessary. It uses an `LLMClient` for summarization and a `ResponseCache` to store intermediate results. The function first calculates the available tokens based on the maximum context tokens and overhead from prompts. If the text fits within these available tokens, it is summarized directly. Otherwise, the text is chunked into smaller parts, each of which is summarized separately. These partial summaries are then merged into a single technical paragraph using another prompt. The final summary is sanitized before being returned.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize_chunked</span>(
-    client: LLMClient,
-    cache: ResponseCache,
-    key_prefix: <span style="color: #008000">str</span>,
-    text: <span style="color: #008000">str</span>,
-    prompt_type: <span style="color: #008000">str</span>,
-    tokenizer,
-    max_context_tokens: <span style="color: #008000">int</span>,
-    chunk_token_budget: <span style="color: #008000">int</span>,
-) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Summarize ``text`` by chunking if necessary.&quot;&quot;&quot;</span>
-
-    template <span style="color: #666666">=</span> PROMPT_TEMPLATES<span style="color: #666666">.</span>get(prompt_type, PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>])
-    overhead_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(SYSTEM_PROMPT)) <span style="color: #666666">+</span> <span style="color: #008000">len</span>(
-        tokenizer<span style="color: #666666">.</span>encode(template<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>))
-    )
-    available_tokens <span style="color: #666666">=</span> <span style="color: #008000">max</span>(<span style="color: #666666">1</span>, max_context_tokens <span style="color: #666666">-</span> overhead_tokens)
-
-    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(text)) <span style="color: #666666">&lt;=</span> available_tokens:
-        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(key_prefix, text)
-        <span style="color: #008000; font-weight: bold">return</span> _summarize(client, cache, key, text, prompt_type)
-
-    chunk_size_tokens <span style="color: #666666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, available_tokens)
-    parts <span style="color: #666666">=</span> chunk_text(text, tokenizer, chunk_size_tokens)
-    partials <span style="color: #666666">=</span> []
-    <span style="color: #008000; font-weight: bold">for</span> idx, part <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(parts):
-        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:part</span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, part)
-        partials<span style="color: #666666">.</span>append(_summarize(client, cache, key, part, prompt_type))
-
-    merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> partials)
-    merge_prompt <span style="color: #666666">=</span> (
-        <span style="color: #BA2121">&quot;You are a documentation generator.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #BA2121">&quot;Combine the following summaries into a single technical paragraph.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #BA2121">&quot;Do not critique, evaluate, or offer suggestions.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #BA2121">&quot;Do not speculate or use uncertain language.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #BA2121">&quot;Only summarize what the code explicitly defines.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #666666">+</span> merge_text
-    )
-    merge_key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge&quot;</span>, merge_prompt)
-    final_summary <span style="color: #666666">=</span> _summarize(client, cache, merge_key, merge_prompt, <span style="color: #BA2121">&quot;docstring&quot;</span>)
-    <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(final_summary)
-</code></pre>
 <h3 id="_summarize_module_chunked">_summarize_module_chunked(client: LLMClient, cache: ResponseCache, key_prefix: str, module_text: str, module: dict, tokenizer, max_context_tokens: int, chunk_token_budget: int) -&gt; str</h3>
-<p>This function `_summarize_module_chunked` is designed to summarize a module of code using a structure-aware chunking approach. It takes several parameters including an `LLMClient` instance for language model interactions, a `ResponseCache` object for caching summaries, a key prefix, the text of the module, a dictionary representing the module, a tokenizer, and token budget constraints.
-
-The function first calculates the available tokens based on the maximum context tokens and overhead from the system prompt and template. If the encoded length of the module text is less than or equal to these available tokens, it generates a key for caching and calls `_summarize` directly to get the summary.
-
-If the module text exceeds the available tokens, the function chunks the module based on its structure using `_chunk_module_by_structure`. It then iterates over each chunk, generates keys for caching, and calls `_summarize` to get summaries for each part. These partial summaries are combined into a single technical paragraph using a predefined merge prompt.
-
-Finally, it generates a key for caching the merged summary and calls `_summarize` again to combine these parts into a final summary. The resulting summary is sanitized before being returned.</p>
+<p>This function `_summarize_module_chunked` is designed to summarize a Python module using a structure-aware chunking approach. It utilizes an LLMClient for generating summaries and a ResponseCache for caching results. The function first checks if the entire module text can be summarized within the available token budget. If not, it chunks the module based on its structure into smaller parts that fit within the budget. Each part is then summarized individually. After summarizing all parts, the function combines these summaries into a single technical paragraph using a recursive merging process. The merging ensures that the combined summary fits within the maximum context tokens allowed by the tokenizer. If any step fails due to exceptions (e.g., network issues), it falls back to summarizing the entire module or individual parts as a last resort. The function returns the sanitized final summary of the module.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize_module_chunked</span>(
     client: LLMClient,
     cache: ResponseCache,
@@ -235,27 +146,136 @@ Finally, it generates a key for caching the merged summary and calls `_summarize
         <span style="color: #008000; font-weight: bold">return</span> _summarize(client, cache, key, module_text, <span style="color: #BA2121">&quot;module&quot;</span>)
 
     chunk_size_tokens <span style="color: #666666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, available_tokens)
-    parts <span style="color: #666666">=</span> _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
+    <span style="color: #008000; font-weight: bold">try</span>:
+        parts <span style="color: #666666">=</span> _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
+    <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - defensive</span>
+        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Structure-based chunking failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
+        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(key_prefix, module_text)
+        <span style="color: #008000; font-weight: bold">try</span>:
+            <span style="color: #008000; font-weight: bold">return</span> _summarize(client, cache, key, module_text, <span style="color: #BA2121">&quot;module&quot;</span>)
+        <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span>:
+            <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;&quot;</span>)
+
     partials <span style="color: #666666">=</span> []
     <span style="color: #008000; font-weight: bold">for</span> idx, part <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(parts):
         key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:part</span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, part)
-        partials<span style="color: #666666">.</span>append(_summarize(client, cache, key, part, <span style="color: #BA2121">&quot;module&quot;</span>))
+        <span style="color: #008000; font-weight: bold">try</span>:
+            partials<span style="color: #666666">.</span>append(_summarize(client, cache, key, part, <span style="color: #BA2121">&quot;module&quot;</span>))
+        <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - network failure</span>
+            <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Summarization failed for chunk </span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> partials:
+        <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;&quot;</span>)
 
-    merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> partials)
-    merge_prompt <span style="color: #666666">=</span> (
+    instructions <span style="color: #666666">=</span> (
         <span style="color: #BA2121">&quot;You are a documentation generator.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Combine the following summaries into a single technical paragraph.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Do not critique, evaluate, or offer suggestions.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Do not speculate or use uncertain language.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Only summarize what the code explicitly defines.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
-        <span style="color: #666666">+</span> merge_text
     )
-    merge_key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge&quot;</span>, merge_prompt)
-    final_summary <span style="color: #666666">=</span> _summarize(client, cache, merge_key, merge_prompt, <span style="color: #BA2121">&quot;docstring&quot;</span>)
+    instr_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(instructions))
+    merge_budget <span style="color: #666666">=</span> <span style="color: #008000">max</span>(<span style="color: #666666">1</span>, available_tokens <span style="color: #666666">-</span> instr_tokens)
+
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_merge_recursive</span>(items: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items)
+        prompt <span style="color: #666666">=</span> instructions <span style="color: #666666">+</span> merge_text
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(prompt)) <span style="color: #666666">&lt;=</span> available_tokens:
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
+            <span style="color: #008000; font-weight: bold">return</span> _summarize(client, cache, key, prompt, <span style="color: #BA2121">&quot;docstring&quot;</span>)
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666666">==</span> <span style="color: #666666">1</span>:
+            single <span style="color: #666666">=</span> items[<span style="color: #666666">0</span>]
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
+            <span style="color: #008000; font-weight: bold">return</span> _summarize_chunked(
+                client,
+                cache,
+                key,
+                single,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>,
+                max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+                chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
+            )
+        groups: <span style="color: #008000">list</span>[<span style="color: #008000">list</span>[<span style="color: #008000">str</span>]] <span style="color: #666666">=</span> []
+        current: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        current_tokens <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items:
+            bullet <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+            b_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(bullet))
+            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #AA22FF; font-weight: bold">and</span> current_tokens <span style="color: #666666">+</span> b_tokens <span style="color: #666666">&gt;</span> merge_budget:
+                groups<span style="color: #666666">.</span>append(current)
+                current <span style="color: #666666">=</span> [p]
+                current_tokens <span style="color: #666666">=</span> b_tokens
+            <span style="color: #008000; font-weight: bold">else</span>:
+                current<span style="color: #666666">.</span>append(p)
+                current_tokens <span style="color: #666666">+=</span> b_tokens
+        <span style="color: #008000; font-weight: bold">if</span> current:
+            groups<span style="color: #666666">.</span>append(current)
+
+        merged: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
+            merged<span style="color: #666666">.</span>append(_merge_recursive(grp, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>)
+
+    <span style="color: #008000; font-weight: bold">try</span>:
+        final_summary <span style="color: #666666">=</span> _merge_recursive(partials)
+    <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - network failure</span>
+        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Merge failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
+        <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(partials))
     <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(final_summary)
 </code></pre>
+<details>
+<summary>Subfunction: _merge_recursive(items: list[str], depth: int=0) -&gt; str</summary>
+<h4 id="_merge_recursive">_merge_recursive(items: list[str], depth: int=0) -&gt; str</h4>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_merge_recursive</span>(items: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items)
+        prompt <span style="color: #666666">=</span> instructions <span style="color: #666666">+</span> merge_text
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(prompt)) <span style="color: #666666">&lt;=</span> available_tokens:
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
+            <span style="color: #008000; font-weight: bold">return</span> _summarize(client, cache, key, prompt, <span style="color: #BA2121">&quot;docstring&quot;</span>)
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666666">==</span> <span style="color: #666666">1</span>:
+            single <span style="color: #666666">=</span> items[<span style="color: #666666">0</span>]
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
+            <span style="color: #008000; font-weight: bold">return</span> _summarize_chunked(
+                client,
+                cache,
+                key,
+                single,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>,
+                max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+                chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
+            )
+        groups: <span style="color: #008000">list</span>[<span style="color: #008000">list</span>[<span style="color: #008000">str</span>]] <span style="color: #666666">=</span> []
+        current: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        current_tokens <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items:
+            bullet <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+            b_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(bullet))
+            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #AA22FF; font-weight: bold">and</span> current_tokens <span style="color: #666666">+</span> b_tokens <span style="color: #666666">&gt;</span> merge_budget:
+                groups<span style="color: #666666">.</span>append(current)
+                current <span style="color: #666666">=</span> [p]
+                current_tokens <span style="color: #666666">=</span> b_tokens
+            <span style="color: #008000; font-weight: bold">else</span>:
+                current<span style="color: #666666">.</span>append(p)
+                current_tokens <span style="color: #666666">+=</span> b_tokens
+        <span style="color: #008000; font-weight: bold">if</span> current:
+            groups<span style="color: #666666">.</span>append(current)
+
+        merged: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
+            merged<span style="color: #666666">.</span>append(_merge_recursive(grp, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>)
+</code></pre>
+</details>
 <h3 id="_build_function_prompt">_build_function_prompt(source: str, class_name: str | None=None, class_summary: str | None=None, project_summary: str | None=None) -&gt; str</h3>
-<p>This function `_build_function_prompt` constructs a prompt for summarizing a given Python function&#x27;s source code. It enriches the prompt with contextual information such as the class name, class summary, and project summary if provided. The prompt is designed to be used by a documentation generator to produce summaries that are accurate and relevant based on the input context and code.</p>
+<p>This function `_build_function_prompt` constructs a context-enriched prompt for summarizing Python functions. It takes four parameters: `source`, `class_name`, `class_summary`, and `project_summary`. The function returns a string that includes the following:
+
+1. A brief introduction as a documentation generator.
+2. Information about the class to which the function belongs, if provided.
+3. A summary of the class, if provided.
+4. A summary of the project, if provided.
+5. Instructions on how to summarize the function based on its source code.
+6. The actual source code of the function enclosed in a code block.
+
+This prompt is designed to provide sufficient context for a language model to generate an accurate and relevant summary of the function.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_build_function_prompt</span>(
     source: <span style="color: #008000">str</span>,
     class_name: <span style="color: #008000">str</span> <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
@@ -286,7 +306,7 @@ Finally, it generates a key for caching the merged summary and calls `_summarize
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(lines)
 </code></pre>
 <h3 id="_rewrite_docstring">_rewrite_docstring(client: LLMClient, cache: ResponseCache, file_path: str, item: dict[str, str], *, class_name: str | None=None, class_summary: str | None=None, project_summary: str | None=None, tokenizer=None, max_context_tokens: int=4096, chunk_token_budget: int=3072) -&gt; None</h3>
-<p>The `_rewrite_docstring` function rewrites the docstring of a code item using an optional context provided by a language model. It takes parameters including an `LLMClient`, a `ResponseCache`, file path, and item dictionary. The function checks if there is source or docstring data; if not, it prints a warning. If a docstring exists, it constructs a prompt based on the source code and optional context (class name, class summary, project summary). It then generates a key using the file path and item details. Using this key and prompt, it summarizes the chunked content and sanitizes the result before updating the item&#x27;s docstring. If no summary is available, it sets the docstring to &quot;No summary available.&quot;</p>
+<p>This function `_rewrite_docstring` is designed to rewrite the docstring of a code item using an optional context. It takes several parameters including an LLM client, a response cache, file path, and item details. The function checks if there is source code or a docstring for the given item; if not, it prints a warning and returns. If a docstring exists, it constructs a prompt based on whether class or project summaries are provided. It then generates a key using the file path, item name, and relevant content. Using this key, it calls `_summarize_chunked` to generate a new docstring by summarizing the source code and optional context. The resulting summary is sanitized and assigned back to the item&#x27;s docstring field. If no summary can be generated, it defaults to &quot;No summary available.&quot;</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_rewrite_docstring</span>(
     client: LLMClient,
     cache: ResponseCache,
@@ -336,18 +356,13 @@ Finally, it generates a key for caching the merged summary and calls `_summarize
         key,
         prompt,
         <span style="color: #BA2121">&quot;docstring&quot;</span>,
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+        chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
     )
     item[<span style="color: #BA2121">&quot;docstring&quot;</span>] <span style="color: #666666">=</span> sanitize_summary(result) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;No summary available.&quot;</span>
 </code></pre>
 <h3 id="_summarize_methods_recursive">_summarize_methods_recursive(class_data: dict[str, Any], path: str, client: LLMClient, cache: ResponseCache, tokenizer, max_context_tokens: int, chunk_token_budget: int) -&gt; None</h3>
-<p>The function `_summarize_methods_recursive` is designed to recursively summarize the methods of a given class and its subclasses. It takes several parameters including `class_data`, which contains information about the class, `path`, the directory path, `client`, an instance of `LLMClient` for language model interactions, `cache`, an instance of `ResponseCache` for caching responses, `tokenizer`, a tokenizer for text processing, and `max_context_tokens` and `chunk_token_budget` for managing token usage.
-
-The function iterates over each method in the `class_data`. For each method, it constructs a key using the class name and method name to ensure uniqueness. It then calls `_summarize_chunked`, passing the language model client, cache, key, source code (or signature), type (&quot;function&quot;), tokenizer, maximum context tokens, and chunk token budget. The summary generated is stored in both the `summary` and `docstring` fields of the method dictionary.
-
-After processing all methods, the function recursively calls itself for each subclass listed in `class_data`, ensuring that all methods across the entire class hierarchy are summarized.</p>
+<p>This function recursively summarizes methods within a given class and its subclasses. It iterates through each method in the class, constructs a unique key for caching purposes, and then uses a language model client to generate a summary of the method&#x27;s source code or signature. The summary is stored back into the method dictionary under the keys &quot;summary&quot; and &quot;docstring&quot;. For each subclass of the current class, the function calls itself recursively to ensure all methods in the entire inheritance hierarchy are summarized.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize_methods_recursive</span>(
     class_data: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any],
     path: <span style="color: #008000">str</span>,
@@ -370,9 +385,8 @@ After processing all methods, the function recursively calls itself for each sub
             key,
             src,
             <span style="color: #BA2121">&quot;function&quot;</span>,
-            tokenizer,
-            max_context_tokens,
-            chunk_token_budget,
+            max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+            chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
         )
         method[<span style="color: #BA2121">&quot;summary&quot;</span>] <span style="color: #666666">=</span> summary
         method[<span style="color: #BA2121">&quot;docstring&quot;</span>] <span style="color: #666666">=</span> summary
@@ -389,16 +403,18 @@ After processing all methods, the function recursively calls itself for each sub
         )
 </code></pre>
 <h3 id="_summarize_class_recursive">_summarize_class_recursive(class_data: dict[str, Any], path: str, project_summary: str, tokenizer, client: LLMClient, cache: ResponseCache, max_context_tokens: int, chunk_token_budget: int) -&gt; None</h3>
-<p>This function `_summarize_class_recursive` is designed to recursively summarize a class and its methods. It takes several parameters including `class_data`, which contains details about the class, `path`, `project_summary`, `tokenizer`, `client`, `cache`, `max_context_tokens`, and `chunk_token_budget`. The function performs the following tasks:
+<p>This function `_summarize_class_recursive` is designed to recursively summarize a class and its methods within a Python project. It takes several parameters including `class_data`, which contains the class information; `path`, the file path of the class; `project_summary`, a summary of the entire project; `tokenizer`, a tokenizer for text processing; `client`, an instance of `LLMClient` for interacting with a language model; `cache`, an instance of `ResponseCache` for caching responses; and `max_context_tokens` and `chunk_token_budget` for managing token usage.
 
-1. Calls `_summarize_methods_recursive` to summarize all methods within the class.
-2. Constructs a prompt for summarizing the class using the `CLASS_PROMPT` format, which includes the class name, project summary, and method summaries.
-3. Generates a unique key for caching based on the path and class name.
-4. Summarizes the class using `_summarize_chunked`, sanitizes the summary, and updates the class data with the new summary.
-5. Rewrites the docstring of the class if it has changed.
-6. Recursively calls itself for each subclass within the current class.
+The function performs the following tasks:
+1. It recursively summarizes all methods within the class using `_summarize_methods_recursive`.
+2. It constructs a prompt (`class_prompt`) that includes the class name, project summary, and summaries of its methods.
+3. It generates a key (`cls_key`) for caching based on the path and class name.
+4. It uses `_summarize_chunked` to generate a summary for the class&#x27;s docstring, ensuring it does not exceed the specified token budget.
+5. It sanitizes the generated summary and updates the `class_data` with both the new summary and docstring.
+6. If an original docstring exists, it rewrites the docstring using `_rewrite_docstring`.
+7. It recursively calls itself for each subclass of the current class.
 
-The function ensures that all methods and subclasses are summarized recursively, maintaining a consistent structure in the documentation generation process.</p>
+This function is part of a larger system that processes Python files to generate summaries and documentation, utilizing caching and language model interactions to efficiently handle large codebases.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize_class_recursive</span>(
     class_data: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any],
     path: <span style="color: #008000">str</span>,
@@ -440,9 +456,8 @@ The function ensures that all methods and subclasses are summarized recursively,
         cls_key,
         class_prompt,
         <span style="color: #BA2121">&quot;docstring&quot;</span>,
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+        chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
     )
     cls_summary <span style="color: #666666">=</span> sanitize_summary(cls_summary)
     original_doc <span style="color: #666666">=</span> class_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
@@ -487,9 +502,11 @@ The function ensures that all methods and subclasses are summarized recursively,
         )
 </code></pre>
 <h3 id="main">main(argv: list[str] | None=None) -&gt; int</h3>
-<p>The `main` function serves as the entry point for generating HTML documentation using a local Large Language Model (LLM). It accepts command-line arguments to specify the source directory, output location, and optional parameters such as LLM server URL, model name, and maximum context tokens. The function initializes an `LLMClient` instance to interact with the language model, sets up a tokenizer, and creates necessary directories for output.
+<p>The `main` function serves as the entry point for generating HTML documentation using a local language model (LLM). It parses command-line arguments to configure the source directory, output directory, and various options such as ignoring certain paths, specifying the LLM URL, and setting the maximum context tokens. The function initializes an LLM client, sets up tokenization, and prepares the output directory.
 
-It then scans the specified source directory for Python and MATLAB files, parses each file to extract classes and functions, and generates summaries using the LLM. The summaries are cached to avoid redundant requests. After processing all files, it constructs a project outline and summary, which is used to generate class and function summaries with context. Finally, it writes index and module pages to the output directory, presenting the documentation in an expandable section format.</p>
+It then scans the source directory for Python and MATLAB files, parsing each file to extract classes and functions. For each module, it generates a summary using the LLM client, handling exceptions for invalid encoding or malformed files. It also processes methods and standalone functions within the modules, summarizing them recursively and updating their docstrings with context.
+
+The function constructs a project outline and gathers markdown documentation from README files and &#x27;docs&#x27; directories within the source. It then summarizes the project and its components using the LLM client. Finally, it writes the index page and individual module pages to the output directory, ensuring that all summaries are properly formatted and linked.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>(argv: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">int</span>:
     parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser(description<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Generate HTML documentation using a local LLM&quot;</span>)
     parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&quot;source&quot;</span>, help<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Path to the source directory&quot;</span>)
@@ -525,7 +542,7 @@ It then scans the specified source directory for Python and MATLAB files, parses
         <span style="color: #008000">print</span>(<span style="color: #008000">str</span>(exc), file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">1</span>
 
-    tokenizer <span style="color: #666666">=</span> _get_tokenizer()
+    tokenizer <span style="color: #666666">=</span> get_tokenizer()
     max_context_tokens <span style="color: #666666">=</span> args<span style="color: #666666">.</span>max_context_tokens
     chunk_token_budget <span style="color: #666666">=</span> <span style="color: #008000">int</span>(max_context_tokens <span style="color: #666666">*</span> <span style="color: #666666">0.75</span>)
 
@@ -652,9 +669,8 @@ It then scans the specified source directory for Python and MATLAB files, parses
             readme_key,
             md_context,
             <span style="color: #BA2121">&quot;readme&quot;</span>,
-            tokenizer,
-            max_context_tokens,
-            chunk_token_budget,
+            max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+            chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
         )
         readme_summary <span style="color: #666666">=</span> sanitize_summary(readme_summary)
 
@@ -665,9 +681,8 @@ It then scans the specified source directory for Python and MATLAB files, parses
         project_key,
         project_outline,
         <span style="color: #BA2121">&quot;project&quot;</span>,
-        tokenizer,
-        max_context_tokens,
-        chunk_token_budget,
+        max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+        chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
     )
     project_summary <span style="color: #666666">=</span> sanitize_summary(raw_summary)
     <span style="color: #008000; font-weight: bold">if</span> readme_summary:
@@ -698,9 +713,8 @@ It then scans the specified source directory for Python and MATLAB files, parses
                 func_key,
                 prompt,
                 <span style="color: #BA2121">&quot;docstring&quot;</span>,
-                tokenizer,
-                max_context_tokens,
-                chunk_token_budget,
+                max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+                chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
             )
             func[<span style="color: #BA2121">&quot;summary&quot;</span>] <span style="color: #666666">=</span> func_summary
             _rewrite_docstring(
@@ -722,5 +736,6 @@ It then scans the specified source directory for Python and MATLAB files, parses
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">0</span>
 </code></pre>
     </div>
+    <script src="static/toggle.js"></script>
 </body>
 </html>

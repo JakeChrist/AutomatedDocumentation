@@ -296,7 +296,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def build_docgen_cmd(self):
         cmd = [
-            "python",
+            "pythonw",
             "docgenerator.py",
             self.project_edit.text(),
             "--output",
@@ -315,7 +315,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def build_explain_cmd(self):
         cmd = [
-            "python",
+            "pythonw",
             "explaincode.py",
             "--path",
             self.project_edit.text(),

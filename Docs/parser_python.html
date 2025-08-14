@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
         <ul>
         <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
 <li><a href="cache.html">cache</a></li>
+<li><a href="chunk_utils.html">chunk_utils</a></li>
 <li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="explaincode.html">explaincode</a></li>
+<li><a href="gui_wrapper.html">gui_wrapper</a></li>
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
+<li><a href="manual_utils.html">manual_utils</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
 <li><a href="scanner.html">scanner</a></li>
+<li><a href="setup.html">setup</a></li>
+<li><a href="summarize_utils.html">summarize_utils</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_chunk_utils.html">test_chunk_utils</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
 <li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
+<li><a href="test_explaincode.html">test_explaincode</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_manual_utils.html">test_manual_utils</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -33,10 +43,10 @@
     </div>
     <div class="content">
         <h1>parser_python</h1>
-        <p>This Python module provides a parser for Python files used by DocGen-LM. It uses the `ast` module to extract structured information from Python code according to the Software Requirements Specification (SRS). The module includes functions to format function signatures, parse classes and functions, and parse entire Python source files into structured dictionaries.</p>
+        <p>This module provides a parser for Python files using the `ast` module. It extracts structured information according to the Software Requirements Specification (SRS). The parser can handle classes and functions, including their signatures, docstrings, and nested definitions. It also supports asynchronous functions and includes methods to parse entire Python source files into a structured dictionary format.</p>
 <h2>Functions</h2>
 <h3 id="_format_arg">_format_arg(arg: ast.arg) -&gt; str</h3>
-<p>Formats a function argument by appending its type annotation, if available.</p>
+<p>The function `_format_arg` takes an `ast.arg` object as input and returns a string representation of the argument. If the argument has an annotation, it appends the annotation to the argument name in the format `arg: annotation`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arg</span>(arg: ast<span style="color: #666666">.</span>arg) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``arg`` formatted with its annotation if present.&quot;&quot;&quot;</span>
     text <span style="color: #666666">=</span> arg<span style="color: #666666">.</span>arg
@@ -45,7 +55,7 @@
     <span style="color: #008000; font-weight: bold">return</span> text
 </code></pre>
 <h3 id="_format_arguments">_format_arguments(args: ast.arguments) -&gt; str</h3>
-<p>The function `_format_arguments` takes an `ast.arguments` object as input and returns a string representation of the arguments it contains. It processes positional-only arguments, regular arguments, variable positional arguments, keyword-only arguments, and variable keyword arguments, formatting each according to its type and default value if provided.</p>
+<p>This function `_format_arguments` takes an `ast.arguments` object as input and returns a string representation of the arguments. It handles positional-only, regular, variable positional, keyword-only, and variable keyword arguments, formatting them according to Python syntax rules. The function uses helper functions like `_format_arg` and `ast.unparse` to construct the argument strings.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_arguments</span>(args: ast<span style="color: #666666">.</span>arguments) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string representation of ``args``.&quot;&quot;&quot;</span>
 
@@ -93,7 +103,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;, &quot;</span><span style="color: #666666">.</span>join(parts)
 </code></pre>
 <h3 id="_format_signature">_format_signature(func: ast.FunctionDef | ast.AsyncFunctionDef) -&gt; str</h3>
-<p>This function `_format_signature` takes an `ast.FunctionDef` or `ast.AsyncFunctionDef` object as input and returns a string representing the signature of the function. It formats the function&#x27;s name, arguments, and return type using helper functions `_format_arguments` and `ast.unparse`. The resulting string includes the function name followed by its parameters in parentheses, and an arrow indicating the return type if specified.</p>
+<p>This function `_format_signature` takes an `ast.FunctionDef` or `ast.AsyncFunctionDef` object as input and returns a string representing the signature of the function. The signature includes the function name, its parameters formatted by `_format_arguments`, and the return type if specified.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_format_signature</span>(func: ast<span style="color: #666666">.</span>FunctionDef <span style="color: #666666">|</span> ast<span style="color: #666666">.</span>AsyncFunctionDef) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a string signature for ``func``.&quot;&quot;&quot;</span>
 
@@ -104,7 +114,7 @@
     <span style="color: #008000; font-weight: bold">return</span> result
 </code></pre>
 <h3 id="_parse_classes">_parse_classes(nodes: List[ast.AST], source: str) -&gt; List[Dict[str, Any]]</h3>
-<p>The function `_parse_classes` recursively parses all `ClassDef` nodes within a given list of AST nodes. It iterates through each node, checking if it is an instance of `ClassDef`. If so, it calls the `parse_class` function to process the class and adds the result to the `classes` list. If the node is an instance of `FunctionDef` or `AsyncFunctionDef`, it recursively calls `_parse_classes` on the body of the function to search for nested classes. The function returns a list of dictionaries, each representing a parsed class.</p>
+<p>This function recursively parses all `ClassDef` nodes within a list of AST nodes. It iterates through each node, checks if it is an instance of `ClassDef`, and if so, appends the parsed class to a list. If the node is an instance of `FunctionDef` or `AsyncFunctionDef`, it calls itself recursively on the body of that function to parse any nested classes. The function returns a list of dictionaries representing all parsed classes.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_parse_classes</span>(nodes: List[ast<span style="color: #666666">.</span>AST], source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> List[Dict[<span style="color: #008000">str</span>, Any]]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively parse all ``ClassDef`` nodes within ``nodes``.&quot;&quot;&quot;</span>
 
@@ -117,14 +127,14 @@
     <span style="color: #008000; font-weight: bold">return</span> classes
 </code></pre>
 <h3 id="parse_classes">parse_classes(node: ast.AST, source: str) -&gt; List[Dict[str, Any]]</h3>
-<p>This function, `parse_classes`, serves as a public interface for parsing classes from an abstract syntax tree (AST) node. It takes two parameters: `node`, which is an AST node, and `source`, a string representing the source code. The function retrieves the body of the node using `getattr` and passes it along with the source code to the private helper function `_parse_classes`. The result of `_parse_classes` is returned as a list of dictionaries, each containing information about a class parsed from the AST.</p>
+<p>This function `parse_classes` serves as a public interface for parsing classes within a Python abstract syntax tree (AST). It takes two parameters: `node`, which is an AST node, and `source`, a string representing the source code. The function calls a private helper function `_parse_classes`, passing it the body of the `node` (or an empty list if `node.body` does not exist) and the `source` code. The result from `_parse_classes` is returned as a list of dictionaries, each containing details about a class found in the source code.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_classes</span>(node: ast<span style="color: #666666">.</span>AST, source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> List[Dict[<span style="color: #008000">str</span>, Any]]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Public wrapper for ``_parse_classes`` using ``node.body``.&quot;&quot;&quot;</span>
 
     <span style="color: #008000; font-weight: bold">return</span> _parse_classes(<span style="color: #008000">getattr</span>(node, <span style="color: #BA2121">&quot;body&quot;</span>, []), source)
 </code></pre>
 <h3 id="parse_function">parse_function(node: ast.FunctionDef | ast.AsyncFunctionDef, source: str) -&gt; Dict[str, Any]</h3>
-<p>The `parse_function` function takes an AST node representing a function or async function and the source code as input. It returns a dictionary containing information about the function, including its name, signature, return type, docstring, source code segment, subfunctions, and subclasses. The function iterates through the body of the node to identify nested functions and classes, recursively parsing them and adding them to the `subfunctions` and `subclasses` lists in the returned dictionary.</p>
+<p>This function `parse_function` takes an AST node representing a function or async function and the source code as input. It returns a dictionary containing information about the function, including its name, signature, return type, docstring, source code segment, subfunctions, and subclasses. The function iterates through the body of the given node to find nested functions and classes, recursively parsing them and adding their information to the result dictionary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_function</span>(node: ast<span style="color: #666666">.</span>FunctionDef <span style="color: #666666">|</span> ast<span style="color: #666666">.</span>AsyncFunctionDef, source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a dictionary describing ``node`` and any nested definitions.&quot;&quot;&quot;</span>
 
@@ -147,7 +157,13 @@
     <span style="color: #008000; font-weight: bold">return</span> func_info
 </code></pre>
 <h3 id="parse_class">parse_class(node: ast.ClassDef, source: str) -&gt; Dict[str, Any]</h3>
-<p>The `parse_class` function takes an AST node representing a class and the source code as input. It returns a dictionary containing information about the class, including its name, docstring, methods, subclasses, and source code segment. The function iterates through the body of the class to identify and parse any nested functions (methods) using the `parse_function` function. It also recursively parses any nested classes using `_parse_classes`.</p>
+<p>This function `parse_class` takes an AST node representing a class definition and the source code as input. It returns a dictionary containing information about the class, including its name, docstring, methods, subclasses, and source code segment.
+
+- The function initializes a dictionary `cls_info` with keys for the class&#x27;s name, docstring, methods, subclasses, and source code.
+- It extracts the class&#x27;s name and docstring using `ast.get_docstring(node)`.
+- It iterates through the body of the class node to find nested functions (methods) and calls another function `parse_function` to parse each method, appending the result to the &quot;methods&quot; list in `cls_info`.
+- The function also calls `_parse_classes` to recursively parse any subclasses within the current class and appends them to the &quot;subclasses&quot; list in `cls_info`.
+- Finally, it returns the populated `cls_info` dictionary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_class</span>(node: ast<span style="color: #666666">.</span>ClassDef, source: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a dictionary describing ``node`` and any nested classes.&quot;&quot;&quot;</span>
 
@@ -168,7 +184,7 @@
     <span style="color: #008000; font-weight: bold">return</span> cls_info
 </code></pre>
 <h3 id="parse_python_file">parse_python_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The `parse_python_file` function reads a Python source file and extracts structured information. It takes the file path as input and returns a dictionary containing the module docstring, classes, and functions. The function uses the `ast` module to parse the source code and iterates through the nodes to identify and extract class and function definitions. Each class and function is parsed using helper functions (`parse_class` and `parse_function`).</p>
+<p>The `parse_python_file` function reads a Python source file and returns structured information about its contents. It takes the file path as input and uses the `ast` module to parse the source code. The function extracts the module docstring and iterates through the body of the module, identifying classes and functions. For each class, it calls `parse_class`, and for each function (whether synchronous or asynchronous), it calls `parse_function`. The results are stored in a dictionary containing the module docstring, a list of parsed classes, and a list of parsed functions.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_python_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a Python source file and return structured information.</span>
 
@@ -201,5 +217,6 @@
     <span style="color: #008000; font-weight: bold">return</span> parsed
 </code></pre>
     </div>
+    <script src="static/toggle.js"></script>
 </body>
 </html>

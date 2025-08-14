@@ -7,24 +7,34 @@
     <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
+    <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
         <ul>
         <li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>
 <li><a href="cache.html">cache</a></li>
+<li><a href="chunk_utils.html">chunk_utils</a></li>
 <li><a href="docgenerator.html">docgenerator</a></li>
+<li><a href="explaincode.html">explaincode</a></li>
+<li><a href="gui_wrapper.html">gui_wrapper</a></li>
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
+<li><a href="manual_utils.html">manual_utils</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
 <li><a href="scanner.html">scanner</a></li>
+<li><a href="setup.html">setup</a></li>
+<li><a href="summarize_utils.html">summarize_utils</a></li>
 <li><a href="test_cache.html">test_cache</a></li>
+<li><a href="test_chunk_utils.html">test_chunk_utils</a></li>
 <li><a href="test_docgenerator.html">test_docgenerator</a></li>
 <li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li>
+<li><a href="test_explaincode.html">test_explaincode</a></li>
 <li><a href="test_html_writer.html">test_html_writer</a></li>
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
+<li><a href="test_manual_utils.html">test_manual_utils</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -33,27 +43,28 @@
     </div>
     <div class="content">
         <h1>llm_client</h1>
-        <p>This module provides an interface to a local language model (LLM) backend using the LMStudio HTTP API. It includes:
+        <p>This module provides an interface to a local Large Language Model (LLM) backend called LMStudio. It includes:
 
-- A `SYSTEM_PROMPT` for the documentation engine.
-- `_COMMON_RULES` defining guidelines for generating summaries.
-- A `README_PROMPT` for enriching project documentation.
-- `PROMPT_TEMPLATES` for different types of code elements (module, class, function, README, project).
-- A `sanitize_summary` function to clean up generated summaries.
-- An `LLMClient` class with methods:
-- `ping`: Checks if the LMStudio API is reachable.
-- `summarize`: Generates a summary for given text using a specified prompt type.</p>
+- A `SYSTEM_PROMPT` for the documentation model.
+- Common rules for prompt templates.
+- A `README_PROMPT` for enriching project summaries from README files.
+- A dictionary `PROMPT_TEMPLATES` containing different prompt templates for summarizing modules, classes, functions, READMEs, projects, docstrings, and user manuals.
+- A `sanitize_summary` function to remove unwanted commentary from summaries.
+- An `LLMClient` class that:
+- Initializes with a base URL and model name.
+- Includes a `ping` method to check if the API is reachable.
+- Implements a `summarize` method to generate summaries using the LLM, handling retries on failures.</p>
 <h2 id="LLMClient">Class: LLMClient</h2>
-<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API. It includes methods for checking connectivity with the API (`ping`) and generating summaries of text using specified prompt types (`summarize`). The `summarize` method uses a template to format the input text, sends a POST request to the API endpoint, and handles potential errors by retrying up to three times before raising a runtime error.</p>
+<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API, offering methods to ping the API and summarize text using specified prompts. The `ping` method checks if the API is reachable within a given timeout period. The `summarize` method constructs a prompt based on the provided text and prompt type, sends it to the API, and returns a sanitized summary of the response. It retries up to three times in case of failures, handling exceptions and errors gracefully.</p>
 <h3 id="__init__">Method: __init__(self, base_url: str=&#x27;http://localhost:1234&#x27;, model: str=&#x27;local&#x27;) -&gt; None</h3>
-<p>Initializes an object with a base URL and a model. The base URL is stored after removing any trailing slashes, and the endpoint for chat completions is constructed using this base URL. The model type is also set during initialization.</p>
+<p>Initializes an object with a base URL and a model. The base URL is stripped of any trailing slashes, and the endpoint for chat completions is constructed using this base URL. The model type is also set during initialization.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, base_url: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;http://localhost:1234&quot;</span>, model: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;local&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #008000">self</span><span style="color: #666666">.</span>base_url <span style="color: #666666">=</span> base_url<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;/&quot;</span>)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">/v1/chat/completions&quot;</span>
         <span style="color: #008000">self</span><span style="color: #666666">.</span>model <span style="color: #666666">=</span> model
 </code></pre>
 <h3 id="ping">Method: ping(self, timeout: float=2.0) -&gt; bool</h3>
-<p>Function `ping` checks if the API is reachable. It sends a GET request to the base URL with an optional timeout parameter. If the server responds successfully, it returns `True`. If there&#x27;s a connection error or any other exception during the request, it raises a `ConnectionError` indicating that the server cannot be contacted.</p>
+<p>Function `ping` checks if an API is reachable by sending a GET request. It takes an optional `timeout` parameter with a default value of 2.0 seconds. If the server responds successfully, it returns `True`. If there&#x27;s an error during the request or the server cannot be contacted, it raises a `ConnectionError` with a message indicating that LMStudio is not reachable at the specified URL.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ping</span>(<span style="color: #008000">self</span>, timeout: <span style="color: #008000">float</span> <span style="color: #666666">=</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``True`` if the API is reachable.</span>
 
@@ -70,9 +81,11 @@
         <span style="color: #008000; font-weight: bold">except</span> RequestException <span style="color: #008000; font-weight: bold">as</span> exc:
             <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">ConnectionError</span>(<span style="color: #BA2121">f&quot;Unable to reach LMStudio at </span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>) <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">exc</span>
 </code></pre>
-<h3 id="summarize">Method: summarize(self, text: str, prompt_type: str) -&gt; str</h3>
-<p>The function `summarize` takes a string `text` and a string `prompt_type`. It uses the specified `prompt_type` to generate a prompt from a template, constructs a payload with the model settings and the generated prompt, and sends this payload to an endpoint using HTTP POST. The response is parsed for content, which is then sanitized and returned as a summary. If the request fails due to HTTP errors or other exceptions, it retries up to three times before raising a `RuntimeError` with the last error message.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<h3 id="summarize">Method: summarize(self, text: str, prompt_type: str, system_prompt: str=SYSTEM_PROMPT) -&gt; str</h3>
+<p>The function `summarize` takes three parameters: a string `text`, a string `prompt_type`, and an optional string `system_prompt`. It returns a summary of the input text using a specified prompt template. The function uses a loop to attempt up to three times to send a request to an endpoint with a payload containing the model, temperature, system prompt, and user prompt. If successful, it processes the response to extract and sanitize the summary content. If all attempts fail, it raises a `RuntimeError` with an error message.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize</span>(
+        <span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>, system_prompt: <span style="color: #008000">str</span> <span style="color: #666666">=</span> SYSTEM_PROMPT
+    ) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a summary for ``text`` using ``prompt_type`` template.&quot;&quot;&quot;</span>
 
         template <span style="color: #666666">=</span> PROMPT_TEMPLATES<span style="color: #666666">.</span>get(prompt_type, PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>])
@@ -82,7 +95,7 @@
             <span style="color: #BA2121">&quot;model&quot;</span>: <span style="color: #008000">self</span><span style="color: #666666">.</span>model,
             <span style="color: #BA2121">&quot;temperature&quot;</span>: <span style="color: #666666">0.3</span>,
             <span style="color: #BA2121">&quot;messages&quot;</span>: [
-                {<span style="color: #BA2121">&quot;role&quot;</span>: <span style="color: #BA2121">&quot;system&quot;</span>, <span style="color: #BA2121">&quot;content&quot;</span>: SYSTEM_PROMPT},
+                {<span style="color: #BA2121">&quot;role&quot;</span>: <span style="color: #BA2121">&quot;system&quot;</span>, <span style="color: #BA2121">&quot;content&quot;</span>: system_prompt},
                 {<span style="color: #BA2121">&quot;role&quot;</span>: <span style="color: #BA2121">&quot;user&quot;</span>, <span style="color: #BA2121">&quot;content&quot;</span>: prompt},
             ],
         }
@@ -114,7 +127,7 @@
 </code></pre>
 <h2>Functions</h2>
 <h3 id="sanitize_summary">sanitize_summary(text: str) -&gt; str</h3>
-<p>The `sanitize_summary` function processes a given text by removing lines that start with specific phrases considered meta-commentary or redundant. It also filters out lines containing certain keywords related to summaries, outputs, and responses. The function returns the sanitized text after stripping leading and trailing whitespace.</p>
+<p>No summary available.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sanitize_summary</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with meta commentary removed.&quot;&quot;&quot;</span>
 
@@ -162,5 +175,6 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(filtered)<span style="color: #666666">.</span>strip()
 </code></pre>
     </div>
+    <script src="static/toggle.js"></script>
 </body>
 </html>
