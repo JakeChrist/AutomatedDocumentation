@@ -19,7 +19,7 @@ def test_subclass_docs_and_method_summary(tmp_path: Path) -> None:
     with patch("docgenerator.LLMClient") as MockClient:
         instance = MockClient.return_value
         instance.ping.return_value = True
-        instance.summarize.side_effect = lambda text, pt: f"{pt} summary"
+        instance.summarize.side_effect = lambda text, pt, **kwargs: f"{pt} summary"
         ret = main([str(project_dir), "--output", str(output_dir)])
         assert ret == 0
 

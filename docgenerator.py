@@ -25,10 +25,7 @@ from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
 from chunk_utils import get_tokenizer, chunk_text
 from summarize_utils import summarize_chunked
-try:
-    from tqdm import tqdm
-except ImportError:  # pragma: no cover - optional import
-    tqdm = lambda x, **kwargs: x
+from tqdm import tqdm
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from scanner import scan_directory
