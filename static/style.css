@@ -1,6 +1,5 @@
 /* Basic stylesheet for DocGen-LM output as referenced in the SRS. */
 body {
-    display: flex;
     font-family: sans-serif;
 }
 
@@ -13,10 +12,11 @@ body {
     overflow-y: auto; /* scroll if links exceed viewport */
     background: #f0f0f0;
     padding: 1rem;
+    box-sizing: border-box;
 }
 
 .content {
-    margin-left: 220px;
+    margin-left: 220px; /* push main content to the right */
     padding: 1rem;
 }
 
@@ -26,21 +26,7 @@ pre {
     overflow-x: auto;
 }
 
-/* Toggle button hidden by default */
-#sidebar-toggle {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    #sidebar-toggle {
-        display: block;
-        margin: 0.5rem;
-    }
-    .sidebar.hidden {
-        display: none;
-    }
-}
-
+/* Responsive adjustments for narrow screens */
 @media (max-width: 768px) {
     body { display: block; }
     .sidebar {
