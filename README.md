@@ -99,6 +99,12 @@ Specify a custom destination for the summary with `--output`:
 python explaincode.py --path ./my_project --output ./summaries
 ```
 
+Set the manual title with `--title`:
+
+```bash
+python explaincode.py --path ./my_project --title "My Project Manual"
+```
+
 Use `--output-format pdf` to produce a PDF report (requires `reportlab`).
 
 Control how text is split with `--chunking`:
