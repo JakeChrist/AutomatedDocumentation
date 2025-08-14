@@ -25,3 +25,29 @@ pre {
     padding: 0.5rem;
     overflow-x: auto;
 }
+
+/* Toggle button hidden by default */
+#sidebar-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    #sidebar-toggle {
+        display: block;
+        margin: 0.5rem;
+    }
+    .sidebar.hidden {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    body { display: block; }
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+    .content { margin-left: 0; }
+}
