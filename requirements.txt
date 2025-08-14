@@ -6,3 +6,4 @@ tqdm
 markdown
 python-docx
 reportlab
+PyQt5
