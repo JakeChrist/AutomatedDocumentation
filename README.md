@@ -79,7 +79,7 @@ python docgenerator.py ./my_project --output ./docs --llm-url http://localhost:1
 
 ## Running Tests
 
-Install the test requirements (already included in requirements.txt) and run:
+Install the test dependencies (including `pytest`) listed in `requirements.txt` and run:
 
 ```bash
 pytest

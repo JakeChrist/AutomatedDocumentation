@@ -7,3 +7,4 @@ markdown
 python-docx
 reportlab
 PyQt5
+pytest
