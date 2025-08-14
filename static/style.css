@@ -5,13 +5,18 @@ body {
 }
 
 .sidebar {
-    width: 200px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 220px; /* fixed width */
+    height: 100vh;
+    overflow-y: auto; /* scroll if links exceed viewport */
     background: #f0f0f0;
     padding: 1rem;
 }
 
 .content {
-    flex: 1;
+    margin-left: 220px;
     padding: 1rem;
 }
 
