@@ -292,11 +292,14 @@
     <span style="color: #008000; font-weight: bold">return</span> section_map, file_map
 </code></pre>
 <h3 id="rank_code_files">rank_code_files(root: Path, patterns: list[str]) -&gt; list[Path]</h3>
-<p>The function `rank_code_files` ranks Python and MATLAB code files within a specified directory based on their relevance to documentation. It uses a combination of file extensions, directory names, and keyword patterns to assign scores to each file. The ranking is determined by the highest score, with ties broken by lexicographical order of the file paths.</p>
+<p>The function `rank_code_files` ranks Python, MATLAB, C++, C header, and Java code files within a specified directory based on their relevance to documentation. It uses a combination of file extensions, directory names, and keyword patterns to assign scores to each file. The ranking is determined by the highest score, with ties broken by lexicographical order of the file paths.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">rank_code_files</span>(root: Path, patterns: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[Path]:
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return code files under ``root`` ranked by simple heuristics.&quot;&quot;&quot;</span>
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return code files under ``root`` ranked by simple heuristics.
 
-    allowed_exts <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;.py&quot;</span>, <span style="color: #BA2121">&quot;.m&quot;</span>, <span style="color: #BA2121">&quot;.ipynb&quot;</span>}
+    Supports ``.py``, ``.m``, ``.ipynb``, ``.cpp``, ``.h``, and ``.java`` files.
+    &quot;&quot;&quot;</span>
+
+    allowed_exts <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;.py&quot;</span>, <span style="color: #BA2121">&quot;.m&quot;</span>, <span style="color: #BA2121">&quot;.ipynb&quot;</span>, <span style="color: #BA2121">&quot;.cpp&quot;</span>, <span style="color: #BA2121">&quot;.h&quot;</span>, <span style="color: #BA2121">&quot;.java&quot;</span>}
     skip_dirs <span style="color: #666666">=</span> {
         <span style="color: #BA2121">&quot;venv&quot;</span>,
         <span style="color: #BA2121">&quot;.git&quot;</span>,
