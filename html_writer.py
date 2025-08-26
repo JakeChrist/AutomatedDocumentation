@@ -120,6 +120,23 @@ def _render_class(cls: dict[str, Any], language: str, level: int = 2) -> list[st
     if doc:
         parts.append(f"<p>{html.escape(doc)}</p>")
 
+    variables = cls.get("variables", [])
+    if variables:
+        var_section_tag = f"h{min(level + 1, 6)}"
+        parts.append(
+            f'<{var_section_tag} id="{cls_name}-variables">Variables</{var_section_tag}>'
+        )
+        for var in variables:
+            var_tag = f"h{min(level + 2, 6)}"
+            name = var.get("name", "")
+            parts.append(f'<{var_tag} id="{name}">{html.escape(name)}</{var_tag}>')
+            summary = var.get("summary") or var.get("docstring")
+            if summary:
+                parts.append(f"<p>{html.escape(summary)}</p>")
+            src = var.get("source")
+            if src:
+                parts.append(_highlight(src, language))
+
     for method in cls.get("methods", []):
         parts.extend(_render_function(method, language, level + 1, "Method: "))
 
@@ -151,6 +168,19 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: 
 
     for cls in module_data.get("classes", []):
         body_parts.extend(_render_class(cls, language, 2))
+
+    module_vars = module_data.get("variables", [])
+    if module_vars:
+        body_parts.append('<h2 id="variables">Variables</h2>')
+        for var in module_vars:
+            var_name = var.get("name", "")
+            body_parts.append(f'<h3 id="{var_name}">{html.escape(var_name)}</h3>')
+            summary = var.get("summary") or var.get("docstring")
+            if summary:
+                body_parts.append(f"<p>{html.escape(summary)}</p>")
+            src = var.get("source")
+            if src:
+                body_parts.append(_highlight(src, language))
 
     if module_data.get("functions"):
         body_parts.append("<h2>Functions</h2>")

@@ -30,11 +30,25 @@ def test_write_module_page(tmp_path: Path) -> None:
     module_data = {
         "name": "module1",
         "summary": "Module <summary>",
+        "variables": [
+            {
+                "name": "MOD_VAR",
+                "docstring": "Module <var>",
+                "source": "MOD_VAR = 1",
+            }
+        ],
         "classes": [
             {
                 "name": "Bar",
                 "summary": "Class <summary>",
                 "docstring": "Bar docs & stuff",
+                "variables": [
+                    {
+                        "name": "attr",
+                        "docstring": "Attr <docs>",
+                        "source": "attr = 1",
+                    }
+                ],
                 "methods": [
                     {
                         "name": "baz",
@@ -65,10 +79,18 @@ def test_write_module_page(tmp_path: Path) -> None:
     assert "Bar docs &amp; stuff" in html
     assert "Method: def baz(self): pass" in html
     assert "Baz &lt;docs&gt;" in html
+    assert "<h3 id=\"Bar-variables\">Variables</h3>" in html
+    assert "<h4 id=\"attr\">attr</h4>" in html
+    assert "Attr &lt;docs&gt;" in html
+    assert "attr <span" in html
+    assert "<h2 id=\"variables\">Variables</h2>" in html
+    assert "<h3 id=\"MOD_VAR\">MOD_VAR</h3>" in html
+    assert "Module &lt;var&gt;" in html
+    assert "MOD_VAR <span" in html
     assert "Func summary &amp; stuff" in html
     assert "<h2>Functions" in html
     assert "def foo(): pass" in html
-    assert html.count("<pre><code>") == 2
+    assert html.count("<pre><code>") == 4
 
 
 def test_subfunction_rendering(tmp_path: Path) -> None:
