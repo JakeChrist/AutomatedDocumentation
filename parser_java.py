@@ -23,6 +23,9 @@ def _get_preceding_comment(lines: List[str], idx: int) -> str:
             j -= 1
             continue
         if line.endswith("*/"):
+            if "/*" in line:
+                comments.insert(0, line.strip().lstrip("/* ").rstrip("*/ "))
+                break
             block: List[str] = []
             block.insert(0, line)
             j -= 1
@@ -62,11 +65,16 @@ def _parse_class_body(lines: List[str], start: int, end: int) -> Tuple[List[Dict
     while i <= end:
         line = lines[i].strip()
         if line.startswith("public "):
-            if "(" in line and line.rstrip().endswith("{"):
-                sig = line.rstrip("{").strip()
+            if "(" in line and (line.rstrip().endswith("{") or line.rstrip().endswith("{}")):
+                if line.rstrip().endswith("{}"):
+                    sig = line.rstrip("{}").strip()
+                    block = line
+                    end_idx = i
+                else:
+                    sig = line.rstrip("{").strip()
+                    block, end_idx = _extract_block(lines, i)
                 name = sig.split("(")[0].split()[-1]
                 doc = _get_preceding_comment(lines, i)
-                block, end_idx = _extract_block(lines, i)
                 methods.append({"name": name, "signature": sig, "docstring": doc, "source": block})
                 i = end_idx + 1
                 continue
@@ -103,7 +111,7 @@ def parse_java_file(path: str) -> Dict[str, Any]:
         stripped = line.strip()
         if package is None and stripped.startswith("package "):
             package = stripped.split()[1].rstrip(";")
-        if "class " in stripped:
+        if "class " in stripped and not stripped.startswith(("//", "/*", "*")):
             tokens = stripped.split()
             idx = tokens.index("class")
             name = tokens[idx + 1]

@@ -401,3 +401,73 @@ def test_subclass_methods_are_summarized(tmp_path: Path) -> None:
         assert ret == 0
 
     assert any("B:m" in call.args[2] for call in mock_chunk.call_args_list)
+
+
+def test_processes_cpp_file(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.cpp").write_text("int add(int a, int b) { return a + b; }\n")
+
+    output_dir = tmp_path / "docs"
+
+    parsed = {
+        "module_docstring": "",
+        "classes": [
+            {
+                "name": "Foo",
+                "docstring": "",
+                "methods": [],
+                "variables": [{"name": "x", "docstring": "", "source": "int x;"}],
+                "source": "class Foo { int x; };",
+            }
+        ],
+        "functions": [],
+    }
+
+    with patch("docgenerator.parse_cpp_file", return_value=parsed) as mock_parse, patch(
+        "docgenerator.LLMClient"
+    ) as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.return_value = "summary"
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+        mock_parse.assert_called_once()
+
+    assert (output_dir / "mod.html").exists()
+
+
+def test_processes_java_file(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "Mod.java").write_text(
+        "public class Foo { public int x; public void bar() {} }\n"
+    )
+
+    output_dir = tmp_path / "docs"
+
+    parsed = {
+        "module_docstring": "",
+        "classes": [
+            {
+                "name": "Foo",
+                "docstring": "",
+                "methods": [],
+                "variables": [{"name": "x", "docstring": "", "source": "public int x;"}],
+                "source": "public class Foo { public int x; }",
+            }
+        ],
+        "functions": [],
+    }
+
+    with patch("docgenerator.parse_java_file", return_value=parsed) as mock_parse, patch(
+        "docgenerator.LLMClient"
+    ) as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.return_value = "summary"
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+        mock_parse.assert_called_once()
+
+    assert (output_dir / "Mod.html").exists()

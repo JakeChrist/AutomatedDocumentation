@@ -25,6 +25,9 @@ def _get_preceding_comment(lines: List[str], idx: int) -> str:
             j -= 1
             continue
         if line.endswith("*/"):
+            if "/*" in line:
+                comments.insert(0, line.strip().lstrip("/* ").rstrip("*/ "))
+                break
             block: List[str] = []
             block.insert(0, line)
             j -= 1
