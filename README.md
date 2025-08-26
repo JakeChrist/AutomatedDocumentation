@@ -47,6 +47,47 @@ Optional flags:
 
 The LLM must be running and reachable via `llm_client.py`.
 
+### C++ Example
+
+Given a simple C++ file `adder.cpp`:
+
+```cpp
+// Adds two integers
+int add(int a, int b) {
+    return a + b;
+}
+```
+
+Generate documentation with:
+
+```bash
+python docgenerator.py ./cpp_project --output ./docs
+```
+
+DocGen-LM identifies the `add` function and renders it in the HTML output.
+
+### Java Example
+
+For a Java project containing `Calculator.java`:
+
+```java
+/** Utility math routines */
+public class Calculator {
+    // Adds two integers
+    public static int add(int a, int b) {
+        return a + b;
+    }
+}
+```
+
+Run the tool:
+
+```bash
+python docgenerator.py ./java_project --output ./docs
+```
+
+The generated docs list the `Calculator` class along with its public methods.
+
 ## GUI Usage
 
 Install `PyQt5` to enable the graphical interface:
