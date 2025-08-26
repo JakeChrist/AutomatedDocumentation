@@ -346,9 +346,12 @@ def map_evidence_to_sections(
 
 
 def rank_code_files(root: Path, patterns: list[str]) -> list[Path]:
-    """Return code files under ``root`` ranked by simple heuristics."""
+    """Return code files under ``root`` ranked by simple heuristics.
 
-    allowed_exts = {".py", ".m", ".ipynb"}
+    Supports ``.py``, ``.m``, ``.ipynb``, ``.cpp``, ``.h``, and ``.java`` files.
+    """
+
+    allowed_exts = {".py", ".m", ".ipynb", ".cpp", ".h", ".java"}
     skip_dirs = {
         "venv",
         ".git",

@@ -351,6 +351,22 @@ def test_scan_code_categorizes_snippets(
     assert result["How to Run"] == {"c.py": "run the tool"}
 
 
+def test_rank_code_files_supports_cpp_h_java(tmp_path: Path) -> None:
+    files = [
+        tmp_path / "main.py",
+        tmp_path / "lib.cpp",
+        tmp_path / "lib.h",
+        tmp_path / "Main.java",
+        tmp_path / "ignore.txt",
+    ]
+    for f in files:
+        f.write_text("", encoding="utf-8")
+    ranked = explaincode.rank_code_files(tmp_path, [])
+    names = {p.name for p in ranked}
+    assert {"main.py", "lib.cpp", "lib.h", "Main.java"} <= names
+    assert "ignore.txt" not in names
+
+
 def test_llm_fill_placeholders_per_section_logging(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
