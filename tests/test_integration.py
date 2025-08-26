@@ -15,6 +15,22 @@ def test_docgenerator_generates_html(tmp_path: Path) -> None:
     (project_dir / "hello.py").write_text('def hi():\n    """Say hi."""\n    return "hi"\n')
     # simple matlab file
     (project_dir / "util.m").write_text('% util function\nfunction y = util(x)\n y = x;\nend\n')
+    # simple C++ file
+    (project_dir / "math.cpp").write_text(
+        "/** Add numbers */\nint add(int a, int b) {\n    return a + b;\n}\n"
+    )
+    # simple Java file
+    (project_dir / "Greeter.java").write_text(
+        "/** Example package */\n"
+        "package demo;\n\n"
+        "/** Greeter class */\n"
+        "public class Greeter {\n"
+        "    /** say hi */\n"
+        "    public String greet() {\n"
+        "        return \"hi\";\n"
+        "    }\n"
+        "}\n"
+    )
 
     output_dir = tmp_path / "out"
 
@@ -29,9 +45,15 @@ def test_docgenerator_generates_html(tmp_path: Path) -> None:
     assert (output_dir / "index.html").exists()
     assert (output_dir / "hello.html").exists()
     assert (output_dir / "util.html").exists()
+    assert (output_dir / "math.html").exists()
+    assert (output_dir / "Greeter.html").exists()
 
     html = (output_dir / "hello.html").read_text(encoding="utf-8")
     assert "summary" in html
+    cpp_html = (output_dir / "math.html").read_text(encoding="utf-8")
+    java_html = (output_dir / "Greeter.html").read_text(encoding="utf-8")
+    assert "summary" in cpp_html
+    assert "summary" in java_html
 
 
 def test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -> None:

@@ -42,6 +42,7 @@ def test_parse_cpp(tmp_path: Path) -> None:
     func = result["functions"][0]
     assert func["name"] == "add"
     assert func["docstring"] == "Adds numbers"
+    assert "return a + b;" in func["source"]
     assert len(result["classes"]) == 1
     cls = result["classes"][0]
     assert cls["name"] == "Greeter"
@@ -49,6 +50,8 @@ def test_parse_cpp(tmp_path: Path) -> None:
     field = cls["variables"][0]
     assert field["name"] == "name"
     assert field["docstring"] == "name field"
+    assert "std::string name;" in field["source"]
     method = cls["methods"][0]
     assert method["name"] == "greet"
     assert method["docstring"] == "greet someone"
+    assert "std::string greet" in method["source"]

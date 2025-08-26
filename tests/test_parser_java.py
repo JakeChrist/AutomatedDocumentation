@@ -37,6 +37,9 @@ def test_parse_java(tmp_path: Path) -> None:
     field = cls["variables"][0]
     assert field["name"] == "count"
     assert field["docstring"] == "public field"
+    assert field["type"] == "int"
+    assert "public int count;" in field["source"]
     method = cls["methods"][0]
     assert method["name"] == "work"
     assert method["docstring"] == "do work"
+    assert "public void work" in method["source"]
