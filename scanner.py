@@ -20,7 +20,7 @@ def _is_subpath(path: Path, parent: Path) -> bool:
 
 
 def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
-    """Recursively discover ``.py`` and ``.m`` files under *base_path*.
+    """Recursively discover ``.py``, ``.m``, ``.cpp``, ``.h``, and ``.java`` files under *base_path*.
 
     Parameters
     ----------
@@ -47,7 +47,7 @@ def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
         ]
 
         for name in files:
-            if not (name.endswith(".py") or name.endswith(".m")):
+            if not name.endswith((".py", ".m", ".cpp", ".h", ".java")):
                 continue
             file_path = root_path / name
             if any(_is_subpath(file_path, ig) for ig in ignore_paths):

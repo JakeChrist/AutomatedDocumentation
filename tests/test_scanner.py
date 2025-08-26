@@ -76,3 +76,30 @@ def test_scan_directory_skips_git_folder(tmp_path: Path) -> None:
 
     assert str(tmp_path / "good.py") in result
     assert not any(".git" in p for p in result)
+
+
+def test_scan_directory_supports_cpp_h_java(tmp_path: Path) -> None:
+    create_files(
+        tmp_path,
+        [
+            "main.cpp",
+            "header.h",
+            "Program.java",
+            os.path.join("nested", "util.cpp"),
+            os.path.join("nested", "helper.h"),
+            os.path.join("nested", "Example.java"),
+            "skip.txt",
+        ],
+    )
+
+    result = scan_directory(str(tmp_path), [])
+
+    expected = {
+        str(tmp_path / "main.cpp"),
+        str(tmp_path / "header.h"),
+        str(tmp_path / "Program.java"),
+        str(tmp_path / "nested" / "util.cpp"),
+        str(tmp_path / "nested" / "helper.h"),
+        str(tmp_path / "nested" / "Example.java"),
+    }
+    assert set(result) == expected
