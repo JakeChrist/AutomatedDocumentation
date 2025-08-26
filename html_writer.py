@@ -9,7 +9,7 @@ from typing import Any, Iterable, Tuple, Dict
 import html
 
 from pygments import highlight
-from pygments.lexers import PythonLexer, MatlabLexer, TextLexer
+from pygments.lexers import PythonLexer, MatlabLexer, TextLexer, CppLexer, JavaLexer
 from pygments.formatters import HtmlFormatter
 
 _TEMPLATE_PATH = Path(__file__).parent / "templates" / "template.html"
@@ -21,6 +21,10 @@ def _highlight(code: str, language: str) -> str:
         lexer = MatlabLexer()
     elif language.lower() == "python":
         lexer = PythonLexer()
+    elif language.lower() == "cpp":
+        lexer = CppLexer()
+    elif language.lower() == "java":
+        lexer = JavaLexer()
     else:
         lexer = TextLexer()
     formatter = HtmlFormatter(noclasses=True, nowrap=True)

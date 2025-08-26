@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from html_writer import write_index, write_module_page
+from html_writer import write_index, write_module_page, _highlight
 
 
 def test_write_index(tmp_path: Path) -> None:
@@ -137,3 +137,10 @@ def test_subclass_rendering(tmp_path: Path) -> None:
     assert "Class: B" in html
     assert "def m(self)" in html
     assert html.count("<pre><code>") == 1
+
+
+def test_cpp_java_highlighting() -> None:
+    cpp_html = _highlight("int main() { return 0; }", "cpp")
+    java_html = _highlight("class T { int x; }", "java")
+    assert "<span" in cpp_html
+    assert "<span" in java_html
