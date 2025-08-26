@@ -157,12 +157,16 @@ class MainWindow(QtWidgets.QWidget):
         self.docgen_private_cb = QtWidgets.QCheckBox("Include private functions")
         self.lang_py_cb = QtWidgets.QCheckBox("Python")
         self.lang_matlab_cb = QtWidgets.QCheckBox("MATLAB")
+        self.lang_cpp_cb = QtWidgets.QCheckBox("C++")
+        self.lang_java_cb = QtWidgets.QCheckBox("Java")
         docgen_layout = QtWidgets.QVBoxLayout()
         docgen_layout.addWidget(self.docgen_private_cb)
         lang_layout = QtWidgets.QHBoxLayout()
-        lang_layout.addWidget(QtWidgets.QLabel("Languages:"))
+        lang_layout.addWidget(QtWidgets.QLabel("Languages (auto-detected):"))
         lang_layout.addWidget(self.lang_py_cb)
         lang_layout.addWidget(self.lang_matlab_cb)
+        lang_layout.addWidget(self.lang_cpp_cb)
+        lang_layout.addWidget(self.lang_java_cb)
         lang_layout.addStretch()
         docgen_layout.addLayout(lang_layout)
         docgen_box = CollapsibleBox("DocGen Options")
@@ -304,13 +308,8 @@ class MainWindow(QtWidgets.QWidget):
         ]
         if self.docgen_private_cb.isChecked():
             cmd.append("--include-private")
-        langs = []
-        if self.lang_py_cb.isChecked():
-            langs.append("python")
-        if self.lang_matlab_cb.isChecked():
-            langs.append("matlab")
-        if langs:
-            cmd.extend(["--languages", ",".join(langs)])
+        # DocGen-LM now auto-detects supported languages (Python, MATLAB, C++,
+        # and Java), so no explicit --languages flag is required.
         return cmd
 
     def build_explain_cmd(self):

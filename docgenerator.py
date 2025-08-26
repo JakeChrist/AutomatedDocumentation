@@ -1,7 +1,8 @@
 """Command line interface for DocGen-LM.
 
-This script scans a source tree for Python and MATLAB files, parses them,
-requests summaries from a running LLM, and writes HTML documentation.
+This script scans a source tree for Python, MATLAB, C++, and Java files,
+parses them, requests summaries from a running LLM, and writes HTML
+documentation.
 
 Examples
 --------
