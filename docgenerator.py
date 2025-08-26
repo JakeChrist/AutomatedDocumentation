@@ -28,6 +28,8 @@ from summarize_utils import summarize_chunked
 from tqdm import tqdm
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
+from parser_cpp import parse_cpp_file
+from parser_java import parse_java_file
 from scanner import scan_directory
 
 
@@ -68,6 +70,9 @@ def _chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int):
             for method in cls.get("methods", []):
                 m_src = method.get("source", "")
                 blocks.append(m_src)
+            for var in cls.get("variables", []):
+                v_src = var.get("source", var.get("name", ""))
+                blocks.append(v_src)
 
     for func in module.get("functions", []):
         blocks.append(func.get("source", func.get("signature", "")))
@@ -225,6 +230,7 @@ DOC_PROMPT = (
 CLASS_PROMPT = (
     "You are summarizing the class `{class_name}`, which is part of a project that {project_summary}.\n\n"
     "This class defines the following methods:\n{methods}\n\n"
+    "It also defines these public variables:\n{variables}\n\n"
     "Based on this structure, generate a concise summary (1–3 sentences) of what this class does.\n\n"
     "Do not include usage instructions. Do not mention unrelated domains like text-based games. "
     "Stick to the provided methods and context."
@@ -316,7 +322,7 @@ def _rewrite_docstring(
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
 
-def _summarize_methods_recursive(
+def _summarize_members_recursive(
     class_data: dict[str, Any],
     path: str,
     client: LLMClient,
@@ -325,7 +331,7 @@ def _summarize_methods_recursive(
     max_context_tokens: int,
     chunk_token_budget: int,
 ) -> None:
-    """Summarize methods of ``class_data`` and any subclasses."""
+    """Summarize methods and variables of ``class_data`` and any subclasses."""
 
     for method in tqdm(class_data.get("methods", []), desc="methods", leave=False):
         src = method.get("source") or method.get("signature") or method.get("name", "")
@@ -344,8 +350,25 @@ def _summarize_methods_recursive(
         method["summary"] = summary
         method["docstring"] = summary
 
+    for var in tqdm(class_data.get("variables", []), desc="variables", leave=False):
+        src = var.get("source") or var.get("name", "")
+        key = ResponseCache.make_key(
+            f"{path}:{class_data.get('name')}:{var.get('name')}", src
+        )
+        summary = _summarize_chunked(
+            client,
+            cache,
+            key,
+            src,
+            "function",
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
+        )
+        var["summary"] = summary
+        var["docstring"] = summary
+
     for sub in class_data.get("subclasses", []):
-        _summarize_methods_recursive(
+        _summarize_members_recursive(
             sub,
             path,
             client,
@@ -368,7 +391,7 @@ def _summarize_class_recursive(
 ) -> None:
     """Summarize ``class_data`` and rewrite its docstring and methods."""
 
-    _summarize_methods_recursive(
+    _summarize_members_recursive(
         class_data,
         path,
         client,
@@ -385,10 +408,20 @@ def _summarize_class_recursive(
         method_lines.append(f"- {name}: {summary}" if summary else f"- {name}")
 
     methods_text = "\n".join(method_lines) if method_lines else "- (no methods)"
+
+    var_lines = []
+    for var in class_data.get("variables", []):
+        summary = var.get("summary", var.get("docstring", ""))
+        name = var.get("name", "")
+        var_lines.append(f"- {name}: {summary}" if summary else f"- {name}")
+
+    variables_text = "\n".join(var_lines) if var_lines else "- (no variables)"
+
     class_prompt = CLASS_PROMPT.format(
         class_name=class_data.get("name", ""),
         project_summary=project_summary,
         methods=methods_text,
+        variables=variables_text,
     )
     cls_key = ResponseCache.make_key(f"{path}:{class_data.get('name')}", class_prompt)
     cls_summary = _summarize_chunked(
@@ -422,6 +455,20 @@ def _summarize_class_recursive(
             cache,
             path,
             method,
+            class_name=class_data.get("name"),
+            class_summary=cls_summary,
+            project_summary=project_summary,
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
+        )
+
+    for var in class_data.get("variables", []):
+        _rewrite_docstring(
+            client,
+            cache,
+            path,
+            var,
             class_name=class_data.get("name"),
             class_summary=cls_summary,
             project_summary=project_summary,
@@ -504,6 +551,12 @@ def main(argv: list[str] | None = None) -> int:
             if path.endswith(".py"):
                 parsed = parse_python_file(path)
                 language = "python"
+            elif path.endswith((".cpp", ".h")):
+                parsed = parse_cpp_file(path)
+                language = "cpp"
+            elif path.endswith(".java"):
+                parsed = parse_java_file(path)
+                language = "java"
             else:
                 parsed = parse_matlab_file(path)
                 language = "matlab"
@@ -534,7 +587,7 @@ def main(argv: list[str] | None = None) -> int:
 
         # summarize methods now so class summaries can reference them later
         for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
-            _summarize_methods_recursive(
+            _summarize_members_recursive(
                 cls,
                 path,
                 client,
