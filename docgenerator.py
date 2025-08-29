@@ -147,7 +147,9 @@ def _summarize_module_chunked(
             return sanitize_summary("")
 
     partials = []
-    for idx, part in enumerate(parts):
+    for idx, part in enumerate(
+        tqdm(parts, desc="Summarizing chunks", leave=False)
+    ):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
         try:
             partials.append(_summarize(client, cache, key, part, "module"))
