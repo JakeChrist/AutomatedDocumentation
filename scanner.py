@@ -9,6 +9,12 @@ from pathlib import Path
 import os
 from typing import List
 
+try:  # optional dependency
+    from tqdm import tqdm
+except ImportError:  # pragma: no cover - fallback when tqdm is missing
+    def tqdm(iterable, **kwargs):  # type: ignore
+        return iterable
+
 
 def _is_subpath(path: Path, parent: Path) -> bool:
     """Return True if *path* is equal to or inside *parent*."""
@@ -19,7 +25,7 @@ def _is_subpath(path: Path, parent: Path) -> bool:
         return False
 
 
-def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
+def scan_directory(base_path: str, ignore: List[str], show_progress: bool = False) -> List[str]:
     """Recursively discover ``.py``, ``.m``, ``.cpp``, ``.h``, and ``.java`` files under *base_path*.
 
     Parameters
@@ -28,6 +34,8 @@ def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
         Directory to search.
     ignore:
         List of paths (relative to ``base_path``) that should be skipped.
+    show_progress:
+        If True, display a progress bar while scanning.
     Returns
     -------
     list[str]
@@ -37,7 +45,11 @@ def scan_directory(base_path: str, ignore: List[str]) -> List[str]:
     ignore_paths = {(base / p).resolve() for p in ignore}
     results: List[str] = []
 
-    for root, dirs, files in os.walk(base, topdown=True):
+    walker = os.walk(base, topdown=True)
+    if show_progress:
+        walker = tqdm(walker, desc="Scanning sources")
+
+    for root, dirs, files in walker:
         root_path = Path(root)
         # prune ignored directories and internal .git folders
         dirs[:] = [
