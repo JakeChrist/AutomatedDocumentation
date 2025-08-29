@@ -47,10 +47,12 @@
     </div>
     <div class="content">
         <h1>test_parser_matlab</h1>
-        <p>This module contains two test functions to verify the functionality of a MATLAB file parser. The `test_parse_simple_matlab` function checks if the parser correctly extracts the header and a single function from a simple MATLAB file. The `test_parse_multiple_functions` function tests the parser&#x27;s ability to handle multiple functions within a single MATLAB file, ensuring that each function is correctly identified and its arguments are accurately parsed.</p>
+        <p>This module defines two test functions to verify the functionality of a MATLAB file parser. The `test_parse_simple_matlab` function checks if the parser correctly handles a simple MATLAB file with a single function. It asserts that the header is parsed correctly and that the function details are accurately extracted.
+
+The `test_parse_multiple_functions` function tests the parser&#x27;s ability to handle multiple functions within a single MATLAB file. It verifies that both functions are correctly identified, their names and arguments are accurately captured, and that there are no issues with parsing files containing more than one function.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_simple_matlab">test_parse_simple_matlab(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_parse_simple_matlab`, is designed to test the parsing of a simple MATLAB file using the `parse_matlab_file` function. It creates a temporary file with a basic MATLAB script containing a function named `add`. The function then calls `parse_matlab_file` on this temporary file and asserts that the parsed result contains the correct header text and one function definition. The function checks that the name of the function is &quot;add&quot; and that it has two arguments, &quot;x&quot; and &quot;y&quot;.</p>
+<p>The function `test_parse_simple_matlab` is a unit test for parsing simple MATLAB files. It creates a temporary file with MATLAB code, then calls the `parse_matlab_file` function to parse the file. The test asserts that the parsed header matches the expected content and that there is one function defined in the file. It further checks that the function&#x27;s name, arguments, and body are correctly extracted from the source code.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_simple_matlab</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>
@@ -73,7 +75,11 @@
     <span style="color: #008000; font-weight: bold">assert</span> func[<span style="color: #BA2121">&quot;args&quot;</span>] <span style="color: #666666">==</span> [<span style="color: #BA2121">&quot;x&quot;</span>, <span style="color: #BA2121">&quot;y&quot;</span>]
 </code></pre>
 <h3 id="test_parse_multiple_functions">test_parse_multiple_functions(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_parse_multiple_functions` tests the parsing of a MATLAB file containing multiple functions. It creates a temporary file with two MATLAB functions, calls a parser function `parse_matlab_file`, and asserts that the parsed result contains the correct information about the header (empty), the number of functions (two), their names (`compute` and `square`), and their argument lists (`[&quot;a&quot;, &quot;b&quot;]` for `compute` and `[&quot;x&quot;]` for `square`).</p>
+<p>This function, `test_parse_multiple_functions`, tests the parsing of multiple MATLAB functions from a source file. It creates a temporary file with two MATLAB functions: `compute` and `square`. The function then parses this file using `parse_matlab_file` and asserts that:
+1. The header is empty.
+2. There are exactly two functions parsed.
+3. The names of the parsed functions are &quot;compute&quot; and &quot;square&quot;.
+4. The arguments for each function match the expected values: `compute` takes `a` and `b`, while `square` takes `x`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_multiple_functions</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>

@@ -47,10 +47,10 @@
     </div>
     <div class="content">
         <h1>parser_cpp</h1>
-        <p>This Python module provides a simple parser for C++ files, designed to extract namespaces, classes, functions, and public variables. It returns a structured dictionary compatible with `parse_python_file`, containing `module_docstring`, `classes`, and `functions`. Each item in these lists includes its source code snippet and any leading documentation comments. The module uses line-based parsing techniques to identify class bodies, method signatures, variable declarations, and namespace definitions within C++ files.</p>
+        <p>This Python module provides a simple parser for C++ files used by DocGen-LM. It extracts namespaces, classes, functions, and public variables from the source code. The parser returns a structured dictionary containing `module_docstring`, `classes`, and `functions`. Each class and function includes their respective documentation comments, source snippets, and any leading comments. The module uses line-based parsing to identify and extract these elements, making it compatible with Python&#x27;s `parse_python_file` structure.</p>
 <h2>Functions</h2>
 <h3 id="_get_preceding_comment">_get_preceding_comment(lines: List[str], idx: int) -&gt; str</h3>
-<p>Collects contiguous comment lines appearing before a specified index in a list of source code lines. Handles both single-line and multi-line comments, including C-style block comments. Returns the collected comments as a single string.</p>
+<p>Collects contiguous comment lines appearing before a specified index in a list of source code lines.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_get_preceding_comment</span>(lines: List[<span style="color: #008000">str</span>], idx: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Collect contiguous comment lines appearing before ``idx``.&quot;&quot;&quot;</span>
 
@@ -86,7 +86,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(c <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> comments <span style="color: #008000; font-weight: bold">if</span> c)<span style="color: #666666">.</span>strip()
 </code></pre>
 <h3 id="_extract_block">_extract_block(lines: List[str], start: int) -&gt; Tuple[str, int]</h3>
-<p>The function `_extract_block` takes a list of strings `lines` and an integer `start`. It returns a tuple containing the text of a block starting at the index `start` and the ending index of that block. The block is defined by matching braces `{}`. The function iterates through the lines, counting the number of opening and closing braces to determine when the block ends.</p>
+<p>This function extracts a block of code from a list of lines, starting from a given index. It returns the text of the block and the ending index. The block is defined by matching braces `{` and `}`. The function iterates through the lines, adding each line to the block until all opening braces are matched with closing ones.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_extract_block</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">int</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return text and ending index for block starting at ``start``.&quot;&quot;&quot;</span>
 
@@ -101,7 +101,13 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(text_lines), i <span style="color: #666666">-</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="_parse_class_body">_parse_class_body(lines: List[str], start: int, end: int) -&gt; Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]</h3>
-<p>This function `_parse_class_body` parses the body of a class from a list of source code lines. It identifies and extracts public methods and variables within the specified range (`start` to `end`). The function returns two lists: one for methods and another for variables. Each method is represented as a dictionary containing its name, signature, docstring, and source code block. Similarly, each variable is represented as a dictionary with its name, type, docstring, and line of source code. The function also handles access modifiers (`public`, `protected`, `private`) to determine the visibility of members within the class.</p>
+<p>The function `_parse_class_body` parses the body of a class in source code and extracts public methods and variables. It takes three parameters: `lines`, which is a list of strings representing the lines of source code; `start`, which is an integer indicating the starting index of the class body within `lines`; and `end`, which is an integer indicating the ending index of the class body.
+
+The function returns two lists:
+1. A list of dictionaries, where each dictionary represents a public method with keys for the method&#x27;s name, signature, docstring, and source code.
+2. A list of dictionaries, where each dictionary represents a public variable with keys for the variable&#x27;s name, type, docstring, and source line.
+
+The function iterates through the lines from `start` to `end`, identifying access modifiers (`public:`, `protected:`, `private:`) and extracting method signatures and variable declarations based on their syntax. It also retrieves preceding comments as docstrings for methods and variables. The extracted information is then stored in the respective lists and returned at the end of the function.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_parse_class_body</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>, end: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[List[Dict[<span style="color: #008000">str</span>, Any]], List[Dict[<span style="color: #008000">str</span>, Any]]]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse class body and return lists of public methods and variables.&quot;&quot;&quot;</span>
 
@@ -135,7 +141,7 @@
     <span style="color: #008000; font-weight: bold">return</span> methods, variables
 </code></pre>
 <h3 id="parse_cpp_file">parse_cpp_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The function `parse_cpp_file` reads a C++ source file and extracts structured information. It identifies the module-level comment, namespace, classes, and functions within the file. For each class and function, it captures their names, signatures, docstrings, and source code blocks. The function returns a dictionary containing these parsed elements, including optional namespace information if present.</p>
+<p>The function `parse_cpp_file` reads a C++ source file from the specified path and returns structured information about its contents. It processes the file line by line to identify module-level comments, namespaces, classes, structs, and functions. For each class or struct, it extracts methods and variables. Functions are identified based on their signature. The function collects all this information into a dictionary, which includes the module docstring, namespace (if present), classes, and functions. Each class and function is represented as a dictionary containing details such as name, documentation string, source code block, and relevant members for classes.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_cpp_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a C++ source file and return structured information.&quot;&quot;&quot;</span>
 

@@ -50,7 +50,7 @@
         <p>A simple parser for Java files used by DocGen-LM. Extracts package, classes, public methods, and variables using naive line-based parsing. The output mirrors `parse_python_file` with keys `module_docstring`, `classes`, and `functions`. Each entry includes its source code and leading documentation comments (Javadoc or `//`).</p>
 <h2>Functions</h2>
 <h3 id="_get_preceding_comment">_get_preceding_comment(lines: List[str], idx: int) -&gt; str</h3>
-<p>The function `_get_preceding_comment` retrieves the preceding comment(s) for a given line index in a list of source code lines. It iterates backward from the specified index, collecting single-line and multi-line comments until it encounters a non-comment or reaches the beginning of the file. The collected comments are then joined into a single string and returned, stripped of any leading or trailing whitespace.</p>
+<p>The function `_get_preceding_comment` extracts the preceding comment(s) from a list of lines at a specified index. It handles both single-line comments (starting with `//`) and multi-line comments enclosed in `/* */`. The function iterates backward through the lines, collecting comments until it encounters a non-comment line or reaches the beginning of the file. It returns the collected comments as a single string, preserving their order and formatting.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_get_preceding_comment</span>(lines: List[<span style="color: #008000">str</span>], idx: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
     comments: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
     j <span style="color: #666666">=</span> idx <span style="color: #666666">-</span> <span style="color: #666666">1</span>
@@ -84,7 +84,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(c <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> comments <span style="color: #008000; font-weight: bold">if</span> c)<span style="color: #666666">.</span>strip()
 </code></pre>
 <h3 id="_extract_block">_extract_block(lines: List[str], start: int) -&gt; Tuple[str, int]</h3>
-<p>This function extracts a code block from a list of lines starting at a given index. It counts the number of opening and closing braces to determine when the block ends. The extracted block is returned along with the index of the last line included in the block.</p>
+<p>The function `_extract_block` takes a list of strings `lines` and an integer `start` as input. It extracts a block of text starting from the line at index `start`, which is expected to contain an opening brace `{`. The function iterates through subsequent lines, appending them to `text_lines`, until it encounters a closing brace `}` that matches the opening brace in the starting line. It returns the extracted block as a single string and the index of the last line included in the block.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_extract_block</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">int</span>]:
     text_lines <span style="color: #666666">=</span> [lines[start]]
     brace <span style="color: #666666">=</span> lines[start]<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #666666">-</span> lines[start]<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;}&quot;</span>)
@@ -97,7 +97,13 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(text_lines), i <span style="color: #666666">-</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="_parse_class_body">_parse_class_body(lines: List[str], start: int, end: int) -&gt; Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]</h3>
-<p>The function `_parse_class_body` processes a list of source code lines to extract method and variable declarations within a class body. It identifies public methods by looking for lines that start with &quot;public &quot;, contain parentheses, and end with either an opening brace or an empty block. For each identified method, it extracts the signature, docstring, and source code block. Similarly, it identifies public variables by looking for lines that declare variables without parentheses and end with a semicolon. It also extracts the type, name, docstring, and source code line for each variable. The function returns two lists containing dictionaries of methods and variables respectively.</p>
+<p>This function `_parse_class_body` extracts methods and variables from a block of code within a class. It takes three parameters: `lines`, which is a list of strings representing the lines of code; `start`, which is the starting index of the block to parse; and `end`, which is the ending index of the block to parse.
+
+The function initializes two lists, `methods` and `variables`, to store dictionaries containing information about each method and variable found within the specified block. It then iterates through the lines from the start index to the end index.
+
+For each line, it checks if the line starts with &quot;public &quot;. If the line contains a method signature (indicated by parentheses), it extracts the method&#x27;s name, signature, docstring, and source code. If the line declares a variable (indicated by a semicolon and not containing parentheses), it extracts the variable&#x27;s name, type, docstring, and source code.
+
+The function uses helper functions `_extract_block`, `_get_preceding_comment` to extract additional information about methods and variables. It returns two lists: one with method details and another with variable details.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_parse_class_body</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>, end: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[List[Dict[<span style="color: #008000">str</span>, Any]], List[Dict[<span style="color: #008000">str</span>, Any]]]:
     methods: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
     variables: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
@@ -128,16 +134,7 @@
     <span style="color: #008000; font-weight: bold">return</span> methods, variables
 </code></pre>
 <h3 id="parse_java_file">parse_java_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The function `parse_java_file` reads a Java source file from the specified path and parses it to extract information about packages, classes, methods, and variables. It returns a dictionary containing these parsed elements along with any preceding module docstring.
-
-- The function starts by reading the entire content of the Java file into a string.
-- It then splits this content into lines for easier processing.
-- It identifies the first line that contains actual code (ignoring empty lines and comments).
-- Using this starting point, it extracts any preceding comment as the module docstring.
-- It searches through each line to identify package declarations and class definitions.
-- For each class found, it extracts the class name, docstring, methods, and variables within the class.
-- The function constructs a dictionary with keys for the module docstring, classes, functions, and optionally the package name if one is found.
-- Finally, it returns this dictionary containing all parsed information.</p>
+<p>The function `parse_java_file` reads a Java source file from the specified path and extracts relevant information such as the module docstring, package name, classes, and methods. It processes each line of the file to identify class declarations and extract their names, documentation strings, method definitions, and variable declarations. The extracted data is returned in a dictionary format, providing a structured representation of the Java code for further processing or documentation generation.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_java_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
     text <span style="color: #666666">=</span> Path(path)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
     lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>splitlines()

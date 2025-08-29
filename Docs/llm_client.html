@@ -47,28 +47,24 @@
     </div>
     <div class="content">
         <h1>llm_client</h1>
-        <p>This module provides an interface to communicate with a local language model (LMStudio) for generating summaries. It includes:
+        <p>This module provides an interface to a local language model (LLM) backend using the LMStudio HTTP API. It includes:
 
-- A `SYSTEM_PROMPT` defining the behavior of the documentation engine.
-- Common rules for prompt templates.
-- A `README_PROMPT` for enriching project summaries from README files.
-- A dictionary `PROMPT_TEMPLATES` containing different types of prompts for summarizing modules, classes, functions, and more.
-- A `sanitize_summary` function to clean up generated summaries by removing unwanted phrases.
-- An `LLMClient` class that acts as a thin wrapper around the LMStudio HTTP API:
+- A `sanitize_summary` function that removes unwanted phrases from a summary text.
+- An `LLMClient` class that:
 - Initializes with a base URL and model name.
-- Includes a `ping` method to check if the API is reachable.
-- Implements a `summarize` method to generate summaries for given text using specified prompt types, handling retries on failures.</p>
+- Includes a `ping` method to check if the LLM server is reachable.
+- Implements a `summarize` method that sends a request to the LLM API using a specified prompt template, handles retries on failures, and sanitizes the response before returning it.</p>
 <h2 id="LLMClient">Class: LLMClient</h2>
-<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API. It includes methods for checking if the API is reachable with the `ping` method and for generating summaries of text using specified prompt types with the `summarize` method. The `summarize` method handles retries in case of failures and sanitizes the summary content before returning it.</p>
+<p>The `LLMClient` class provides a thin wrapper around the LMStudio HTTP API, enabling interaction with language models. It includes methods for checking connectivity (`ping`) and generating summaries of text using specified prompts (`summarize`). The `summarize` method constructs a prompt based on a template, sends it to the API, and processes the response to return a summary.</p>
 <h3 id="__init__">Method: __init__(self, base_url: str=&#x27;http://localhost:1234&#x27;, model: str=&#x27;local&#x27;) -&gt; None</h3>
-<p>Initializes an object with a base URL and a model. The base URL is stored without trailing slashes, and the endpoint for API requests is constructed by appending &quot;/v1/chat/completions&quot; to it. The model type is also stored.</p>
+<p>Initializes an object with a base URL and model. Strips trailing slashes from the base URL and constructs an endpoint for chat completions. Sets the model attribute to the provided value or &quot;local&quot; if not specified.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, base_url: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;http://localhost:1234&quot;</span>, model: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;local&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #008000">self</span><span style="color: #666666">.</span>base_url <span style="color: #666666">=</span> base_url<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;/&quot;</span>)
         <span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">/v1/chat/completions&quot;</span>
         <span style="color: #008000">self</span><span style="color: #666666">.</span>model <span style="color: #666666">=</span> model
 </code></pre>
 <h3 id="ping">Method: ping(self, timeout: float=2.0) -&gt; bool</h3>
-<p>The function `ping` checks if the API is reachable by sending a GET request to the specified base URL with an optional timeout. It returns `True` if the server responds successfully, otherwise it raises a `ConnectionError` indicating that the server cannot be contacted.</p>
+<p>Function `ping` checks if the API is reachable by sending a GET request to the server. It returns `True` if successful, otherwise raises a `ConnectionError`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">ping</span>(<span style="color: #008000">self</span>, timeout: <span style="color: #008000">float</span> <span style="color: #666666">=</span> <span style="color: #666666">2.0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``True`` if the API is reachable.</span>
 
@@ -86,7 +82,7 @@
             <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">ConnectionError</span>(<span style="color: #BA2121">f&quot;Unable to reach LMStudio at </span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">self</span><span style="color: #666666">.</span>base_url<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>) <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">exc</span>
 </code></pre>
 <h3 id="summarize">Method: summarize(self, text: str, prompt_type: str, system_prompt: str=SYSTEM_PROMPT) -&gt; str</h3>
-<p>The function `summarize` takes a string `text`, a `prompt_type`, and an optional `system_prompt`. It uses the specified prompt type to generate a summary of the text. The function constructs a payload with the model, temperature, and messages (including the system prompt and user prompt). It attempts to send this payload to an endpoint using a POST request. If successful, it parses the response to extract and sanitize the summary content. If any errors occur during the request or response handling, it retries up to three times before raising a `RuntimeError` with the error message.</p>
+<p>The function `summarize` takes a string `text`, a prompt type, and an optional system prompt. It uses the specified prompt template to generate a summary of the text. The function sends this prompt along with a system message to a language model endpoint using HTTP POST. It handles potential errors by retrying up to three times before raising a runtime error if all attempts fail.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize</span>(
         <span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, prompt_type: <span style="color: #008000">str</span>, system_prompt: <span style="color: #008000">str</span> <span style="color: #666666">=</span> SYSTEM_PROMPT
     ) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
@@ -105,12 +101,27 @@
         }
 
         error_message <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;&quot;</span>
+        response <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
         <span style="color: #008000; font-weight: bold">for</span> _ <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">3</span>):
             <span style="color: #008000; font-weight: bold">try</span>:
-                response <span style="color: #666666">=</span> requests<span style="color: #666666">.</span>post(<span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint, json<span style="color: #666666">=</span>payload, timeout<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>)
+                logging<span style="color: #666666">.</span>info(<span style="color: #BA2121">&quot;LLM request started&quot;</span>)
+                response <span style="color: #666666">=</span> requests<span style="color: #666666">.</span>post(
+                    <span style="color: #008000">self</span><span style="color: #666666">.</span>endpoint, json<span style="color: #666666">=</span>payload, timeout<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">None</span>, stream<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>
+                )
+                content_bytes <span style="color: #666666">=</span> <span style="color: #008000">bytearray</span>()
+                last_log <span style="color: #666666">=</span> time<span style="color: #666666">.</span>time()
+                <span style="color: #008000; font-weight: bold">for</span> chunk <span style="color: #AA22FF; font-weight: bold">in</span> response<span style="color: #666666">.</span>iter_content(chunk_size<span style="color: #666666">=8192</span>):
+                    <span style="color: #008000; font-weight: bold">if</span> chunk:
+                        content_bytes<span style="color: #666666">.</span>extend(chunk)
+                        logging<span style="color: #666666">.</span>debug(<span style="color: #BA2121">&quot;Received </span><span style="color: #A45A77; font-weight: bold">%d</span><span style="color: #BA2121"> bytes&quot;</span>, <span style="color: #008000">len</span>(chunk))
+                        last_log <span style="color: #666666">=</span> time<span style="color: #666666">.</span>time()
+                    <span style="color: #008000; font-weight: bold">elif</span> time<span style="color: #666666">.</span>time() <span style="color: #666666">-</span> last_log <span style="color: #666666">&gt;</span> <span style="color: #666666">5</span>:
+                        logging<span style="color: #666666">.</span>debug(<span style="color: #BA2121">&quot;Waiting for LLM response...&quot;</span>)
+                        last_log <span style="color: #666666">=</span> time<span style="color: #666666">.</span>time()
                 response<span style="color: #666666">.</span>raise_for_status()
-                data <span style="color: #666666">=</span> response<span style="color: #666666">.</span>json()
+                data <span style="color: #666666">=</span> json<span style="color: #666666">.</span>loads(content_bytes<span style="color: #666666">.</span>decode())
                 content <span style="color: #666666">=</span> data[<span style="color: #BA2121">&quot;choices&quot;</span>][<span style="color: #666666">0</span>][<span style="color: #BA2121">&quot;message&quot;</span>][<span style="color: #BA2121">&quot;content&quot;</span>]
+                logging<span style="color: #666666">.</span>info(<span style="color: #BA2121">&quot;LLM request completed&quot;</span>)
                 <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(content)
             <span style="color: #008000; font-weight: bold">except</span> HTTPError <span style="color: #008000; font-weight: bold">as</span> exc:
                 resp <span style="color: #666666">=</span> exc<span style="color: #666666">.</span>response <span style="color: #AA22FF; font-weight: bold">or</span> response
@@ -122,16 +133,19 @@
                         error_message <span style="color: #666666">=</span> resp<span style="color: #666666">.</span>text
                 <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">ValueError</span>:
                     error_message <span style="color: #666666">=</span> resp<span style="color: #666666">.</span>text
+                logging<span style="color: #666666">.</span>error(<span style="color: #BA2121">&quot;LLM request failed: </span><span style="color: #A45A77; font-weight: bold">%s</span><span style="color: #BA2121">&quot;</span>, error_message)
                 time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1</span>)
             <span style="color: #008000; font-weight: bold">except</span> RequestException <span style="color: #008000; font-weight: bold">as</span> exc:
                 error_message <span style="color: #666666">=</span> <span style="color: #008000">str</span>(exc)
+                logging<span style="color: #666666">.</span>error(<span style="color: #BA2121">&quot;LLM request failed: </span><span style="color: #A45A77; font-weight: bold">%s</span><span style="color: #BA2121">&quot;</span>, error_message)
                 time<span style="color: #666666">.</span>sleep(<span style="color: #666666">1</span>)
 
+        logging<span style="color: #666666">.</span>error(<span style="color: #BA2121">&quot;LLM request failed: </span><span style="color: #A45A77; font-weight: bold">%s</span><span style="color: #BA2121">&quot;</span>, error_message)
         <span style="color: #008000; font-weight: bold">raise</span> <span style="color: #CB3F38; font-weight: bold">RuntimeError</span>(<span style="color: #BA2121">f&quot;LLM request failed: </span><span style="color: #A45A77; font-weight: bold">{</span>error_message<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>)
 </code></pre>
 <h2>Functions</h2>
 <h3 id="sanitize_summary">sanitize_summary(text: str) -&gt; str</h3>
-<p>The function `sanitize_summary` takes a string `text` as input and returns a sanitized version of the text by removing lines that start with certain phrases or contain specific keywords related to summaries, outputs, responses, and other meta-commentary. It also removes lines that start with &quot;this script&quot;, &quot;this code&quot;, or &quot;this file&quot;. The function uses regular expressions to match these patterns and filters out the unwanted lines before joining the remaining lines back into a single string.</p>
+<p>The function `sanitize_summary` takes a string `text` as input and returns a sanitized version of the text by removing lines that start with certain phrases considered meta commentary or redundant. It also filters out lines containing specific keywords related to summaries, outputs, responses, and descriptions. The function uses regular expressions to match patterns indicating the start of certain types of lines and removes them from the final output.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">sanitize_summary</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with meta commentary removed.&quot;&quot;&quot;</span>
 

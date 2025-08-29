@@ -47,10 +47,16 @@
     </div>
     <div class="content">
         <h1>test_parser_cpp</h1>
-        <p>This module defines a test function `test_parse_cpp` that uses the `parse_cpp_file` function from `parser_cpp.py` to parse a C++ source file. The test checks if the parsed data includes the correct module comment, namespace, functions, and classes, as well as their respective docstrings and source code snippets.</p>
+        <p>This module defines a test function `test_parse_cpp` that uses the `parse_cpp_file` function from `parser_cpp.py` to parse a C++ source file. The test checks if the parsed data includes the expected module comment, namespace, functions, and classes with their respective docstrings and source code snippets.</p>
 <h2>Functions</h2>
 <h3 id="test_parse_cpp">test_parse_cpp(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_parse_cpp` tests the parsing of a C++ source file using the `parse_cpp_file` function. It creates a temporary C++ file with a module comment, namespace, functions, and classes. The test asserts that the parsed results match the expected values for the module docstring, namespace, functions, classes, variables, and methods.</p>
+<p>This function, `test_parse_cpp`, is designed to test the parsing of a C++ source file. It uses a temporary directory and a sample C++ code snippet with comments, a namespace, functions, and classes. The function writes this code to a file named &quot;sample.cpp&quot; in the temporary directory. It then calls `parse_cpp_file` with the path to this file as an argument.
+
+The test asserts that the parsed result contains:
+- A module docstring matching &quot;Module comment&quot;.
+- A namespace named &quot;demo&quot;.
+- One function named &quot;add&quot; with a docstring &quot;Adds numbers&quot; and source code containing &quot;return a + b;&quot;.
+- One class named &quot;Greeter&quot; with a docstring &quot;Greeter class&quot;, one variable named &quot;name&quot; with a docstring &quot;name field&quot; and source code containing &quot;std::string name;&quot;, and one method named &quot;greet&quot; with a docstring &quot;greet someone&quot; and source code starting with &quot;std::string greet&quot;.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_parse_cpp</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     src <span style="color: #666666">=</span> textwrap<span style="color: #666666">.</span>dedent(
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;</span>

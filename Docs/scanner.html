@@ -47,10 +47,10 @@
     </div>
     <div class="content">
         <h1>scanner</h1>
-        <p>The module implements a function to recursively discover source files of specific types (`.py`, `.m`, `.cpp`, `.h`, `.java`) within a given directory. It includes an ignore mechanism based on relative paths, allowing certain directories or files to be excluded from the search. The function returns a sorted list of absolute paths to the discovered source files.</p>
+        <p>This module defines a function `scan_directory` that recursively discovers source files of specific types (`.py`, `.m`, `.cpp`, `.h`, `.java`) within a given directory, while ignoring specified paths. It uses optional progress bar display if enabled and handles an optional dependency on the `tqdm` library for progress tracking. The function returns a sorted list of absolute paths to the discovered files.</p>
 <h2>Functions</h2>
 <h3 id="_is_subpath">_is_subpath(path: Path, parent: Path) -&gt; bool</h3>
-<p>This function checks whether a given `path` is equal to or a subdirectory of another `parent` directory. It uses the `relative_to` method from Python&#x27;s `Path` class, which raises a `ValueError` if `path` is not related to `parent`. The function returns `True` if no exception is raised, indicating that `path` is within `parent`, and `False` otherwise.</p>
+<p>This function checks if a given `path` is either equal to or located within another `parent` path. It uses the `relative_to()` method from Python&#x27;s `Path` class to determine if the `path` can be expressed as a relative path to the `parent`. If successful, it returns `True`, indicating that `path` is a subpath of `parent`; otherwise, it catches the `ValueError` and returns `False`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_is_subpath</span>(path: Path, parent: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return True if *path* is equal to or inside *parent*.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">try</span>:
@@ -59,9 +59,9 @@
     <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">ValueError</span>:
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">False</span>
 </code></pre>
-<h3 id="scan_directory">scan_directory(base_path: str, ignore: List[str]) -&gt; List[str]</h3>
-<p>The function `scan_directory` recursively discovers source files with extensions `.py`, `.m`, `.cpp`, `.h`, and `.java` under a specified base directory. It skips directories listed in the `ignore` parameter and any internal `.git` folders. The function returns a sorted list of absolute paths to these discovered source files.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_directory</span>(base_path: <span style="color: #008000">str</span>, ignore: List[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
+<h3 id="scan_directory">scan_directory(base_path: str, ignore: List[str], show_progress: bool=False) -&gt; List[str]</h3>
+<p>The function `scan_directory` recursively discovers source files of specified types (Python, MATLAB, C++, C++ header, Java) within a given directory. It skips directories and files listed in the `ignore` parameter. If `show_progress` is set to True, it displays a progress bar during the scan. The function returns a sorted list of absolute paths to the discovered source files.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_directory</span>(base_path: <span style="color: #008000">str</span>, ignore: List[<span style="color: #008000">str</span>], show_progress: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively discover ``.py``, ``.m``, ``.cpp``, ``.h``, and ``.java`` files under *base_path*.</span>
 
 <span style="color: #BA2121; font-style: italic">    Parameters</span>
@@ -70,6 +70,8 @@
 <span style="color: #BA2121; font-style: italic">        Directory to search.</span>
 <span style="color: #BA2121; font-style: italic">    ignore:</span>
 <span style="color: #BA2121; font-style: italic">        List of paths (relative to ``base_path``) that should be skipped.</span>
+<span style="color: #BA2121; font-style: italic">    show_progress:</span>
+<span style="color: #BA2121; font-style: italic">        If True, display a progress bar while scanning.</span>
 <span style="color: #BA2121; font-style: italic">    Returns</span>
 <span style="color: #BA2121; font-style: italic">    -------</span>
 <span style="color: #BA2121; font-style: italic">    list[str]</span>
@@ -79,7 +81,11 @@
     ignore_paths <span style="color: #666666">=</span> {(base <span style="color: #666666">/</span> p)<span style="color: #666666">.</span>resolve() <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> ignore}
     results: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
 
-    <span style="color: #008000; font-weight: bold">for</span> root, dirs, files <span style="color: #AA22FF; font-weight: bold">in</span> os<span style="color: #666666">.</span>walk(base, topdown<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>):
+    walker <span style="color: #666666">=</span> os<span style="color: #666666">.</span>walk(base, topdown<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+    <span style="color: #008000; font-weight: bold">if</span> show_progress:
+        walker <span style="color: #666666">=</span> tqdm(walker, desc<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Scanning sources&quot;</span>)
+
+    <span style="color: #008000; font-weight: bold">for</span> root, dirs, files <span style="color: #AA22FF; font-weight: bold">in</span> walker:
         root_path <span style="color: #666666">=</span> Path(root)
         <span style="color: #3D7B7B; font-style: italic"># prune ignored directories and internal .git folders</span>
         dirs[:] <span style="color: #666666">=</span> [

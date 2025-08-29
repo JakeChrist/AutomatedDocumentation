@@ -49,13 +49,11 @@
         <h1>summarize_utils</h1>
         <p>This module provides functions for summarizing text using a language model client and caching responses. It includes:
 
-1. `_summarize`: Summarizes text directly if it fits within the context token limit, otherwise raises an exception.
-2. `summarize_chunked`: Sums up text by breaking it into chunks if necessary, then recursively merges summaries of these chunks into a single technical paragraph.
-
-Both functions utilize a caching mechanism to store and retrieve previously computed summaries, reducing redundant computations.</p>
+1. `_summarize`: A helper function to summarize text directly or retrieve from cache.
+2. `summarize_chunked`: A main function that summarizes large texts by chunking them if necessary, ensuring the context fits within token limits. It handles exceptions during chunking and summarization, using a recursive merging approach to combine summaries into a single paragraph.</p>
 <h2>Functions</h2>
 <h3 id="_summarize">_summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str, *, system_prompt: str) -&gt; str</h3>
-<p>This function `_summarize` takes in an `LLMClient`, a `ResponseCache`, a `key`, `text`, and a `prompt_type`. It attempts to retrieve a cached summary using the provided key. If a cached summary exists, it returns that. Otherwise, it generates a new summary using the LLM client with the given text and prompt type, caches this new summary under the specified key, and then returns it.</p>
+<p>The `_summarize` function takes an LLMClient, a ResponseCache, a key, text, and a prompt type as input. It attempts to retrieve a cached summary using the provided key. If a cached summary exists, it returns that; otherwise, it generates a new summary using the client&#x27;s `summarize` method with the given text, prompt type, and system prompt. The generated summary is then stored in the cache under the specified key before being returned.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize</span>(
     client: LLMClient,
     cache: ResponseCache,
@@ -73,7 +71,11 @@ Both functions utilize a caching mechanism to store and retrieve previously comp
     <span style="color: #008000; font-weight: bold">return</span> summary
 </code></pre>
 <h3 id="summarize_chunked">summarize_chunked(client: LLMClient, cache: ResponseCache, key_prefix: str, text: str, prompt_type: str, *, system_prompt: str=SYSTEM_PROMPT, max_context_tokens: int=4096, chunk_token_budget: int=3072) -&gt; str</h3>
-<p>Summarizes text by chunking if necessary, using an LLM client and response cache. Handles tokenization, overhead calculation, and recursive merging of summaries to fit within context limits.</p>
+<p>This function `summarize_chunked` is designed to summarize text by chunking if necessary. It takes an LLM client, a response cache, a key prefix, the text to be summarized, and various parameters such as prompt type, system prompt, maximum context tokens, and chunk token budget.
+
+The function first calculates the available tokens based on the system prompt and template. If the text can fit within these available tokens, it proceeds to summarize using the `_summarize` function. If not, it chunks the text into smaller parts that fit within the available tokens. Each part is then summarized individually. After summarizing all parts, the function combines them into a single technical paragraph using another recursive function `_merge_recursive`. This process ensures that the summary remains within the token budget and avoids network failures by handling exceptions gracefully.
+
+The final summary is sanitized before being returned.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize_chunked</span>(
     client: LLMClient,
     cache: ResponseCache,

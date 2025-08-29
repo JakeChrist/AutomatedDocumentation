@@ -47,11 +47,11 @@
     </div>
     <div class="content">
         <h1>cache</h1>
-        <p>A simple on-disk cache for LLM responses. Implements methods to initialize the cache from a file, generate deterministic keys based on file paths and content, retrieve cached values, store new values with persistence to disk, and save the current state of the cache to a file.</p>
+        <p>A simple on-disk cache for LLM responses. Implements methods to initialize the cache from a file, generate deterministic keys based on file paths and content, retrieve cached values by key, store new values with associated keys, and persist the cache to disk in JSON format.</p>
 <h2 id="ResponseCache">Class: ResponseCache</h2>
-<p>The `ResponseCache` class provides a mechanism for caching and persisting mappings from stable keys to language model (LLM) responses. It initializes by loading existing data from a specified file path, or creating an empty cache if the file does not exist. The class includes methods for generating deterministic keys based on file paths and content, retrieving cached values by key, and storing new key-value pairs while persisting them to disk.</p>
+<p>The `ResponseCache` class provides a mechanism for persisting and retrieving mappings from stable keys to language model (LLM) responses. It initializes by loading existing data from a specified file path, or creating an empty dictionary if the file does not exist. The class includes methods for generating deterministic keys based on file paths and content, retrieving cached values, setting new key-value pairs, and persisting the cache to disk in JSON format.</p>
 <h3 id="__init__">Method: __init__(self, path: str) -&gt; None</h3>
-<p>Initializes an object with a file path. If the file exists, reads its content as JSON and stores it in `_data`. If the file does not exist or is not valid JSON, initializes `_data` as an empty dictionary.</p>
+<p>Initializes an object with a file path. If the file exists, reads and parses it as JSON; if not, initializes an empty dictionary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #008000">self</span><span style="color: #666666">.</span>file <span style="color: #666666">=</span> Path(path)
         <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>file<span style="color: #666666">.</span>exists():
@@ -63,27 +63,27 @@
             <span style="color: #008000">self</span><span style="color: #666666">.</span>_data <span style="color: #666666">=</span> {}
 </code></pre>
 <h3 id="make_key">Method: make_key(file_path: str, content: str) -&gt; str</h3>
-<p>Function `make_key` takes two parameters: `file_path` (a string) and `content` (a string). It returns a deterministic key by concatenating the file path with the SHA-256 hash of the content, both encoded as UTF-8.</p>
+<p>Function `make_key` takes two parameters: `file_path` (a string representing the path to a file) and `content` (a string representing the content of the file). It returns a deterministic key by hashing the content using SHA-256 and appending the file path to the hash digest.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">make_key</span>(file_path: <span style="color: #008000">str</span>, content: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a deterministic key for *file_path* and *content*.&quot;&quot;&quot;</span>
         digest <span style="color: #666666">=</span> hashlib<span style="color: #666666">.</span>sha256(content<span style="color: #666666">.</span>encode(<span style="color: #BA2121">&quot;utf-8&quot;</span>))<span style="color: #666666">.</span>hexdigest()
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>file_path<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:</span><span style="color: #A45A77; font-weight: bold">{</span>digest<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
 </code></pre>
 <h3 id="get">Method: get(self, key: str) -&gt; Optional[str]</h3>
-<p>Returns the cached value associated with a given key if it exists in the cache. If the key is not found, returns `None`.</p>
+<p>Returns the cached value associated with a given key if it exists in the cache. If the key is not found, returns None.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">get</span>(<span style="color: #008000">self</span>, key: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Optional[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return the cached value for ``key`` if present.&quot;&quot;&quot;</span>
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>_data<span style="color: #666666">.</span>get(key)
 </code></pre>
 <h3 id="set">Method: set(self, key: str, value: str) -&gt; None</h3>
-<p>Stores a value under a specified key in an internal data structure and persists the changes to disk.</p>
+<p>The function `set` takes a string `key` and a string `value` as arguments. It stores the `value` associated with the `key` in an internal data structure `_data`. After storing the value, it calls another method `_save()` to persist the changes to disk.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">set</span>(<span style="color: #008000">self</span>, key: <span style="color: #008000">str</span>, value: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
 <span style="color: #bbbbbb">        </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Store ``value`` under ``key`` and persist to disk.&quot;&quot;&quot;</span>
         <span style="color: #008000">self</span><span style="color: #666666">.</span>_data[key] <span style="color: #666666">=</span> value
         <span style="color: #008000">self</span><span style="color: #666666">.</span>_save()
 </code></pre>
 <h3 id="_save">Method: _save(self) -&gt; None</h3>
-<p>Saves data to a file using JSON format. The data is formatted with an indentation of 2 spaces and sorted keys. The file is written in UTF-8 encoding.</p>
+<p>Saves data to a file using JSON format with indentation and sorted keys.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_save</span>(<span style="color: #008000">self</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #008000">self</span><span style="color: #666666">.</span>file<span style="color: #666666">.</span>write_text(json<span style="color: #666666">.</span>dumps(<span style="color: #008000">self</span><span style="color: #666666">.</span>_data, indent<span style="color: #666666">=2</span>, sort_keys<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>), encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>

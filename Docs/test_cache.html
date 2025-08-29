@@ -47,12 +47,10 @@
     </div>
     <div class="content">
         <h1>test_cache</h1>
-        <p>This module defines two tests for a `ResponseCache` class. The first test, `test_cache_round_trip`, checks that data can be correctly set and retrieved from the cache file. It uses a temporary path to create a cache file, sets a key-value pair in the cache, reads it back, and asserts that the value matches the expected summary.
-
-The second test, `test_cache_get_missing`, verifies that attempting to retrieve a non-existent key from the cache returns `None`. It creates an empty cache file, attempts to get a value for a missing key, and asserts that the result is `None`.</p>
+        <p>This module defines two functions for testing a response cache implementation. The `test_cache_round_trip` function tests setting and retrieving a value from the cache, ensuring that the value persists across cache instances. The `test_cache_get_missing` function tests attempting to retrieve a non-existent key from the cache, expecting a `None` result.</p>
 <h2>Functions</h2>
 <h3 id="test_cache_round_trip">test_cache_round_trip(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the round-trip functionality of a response cache. It creates a temporary file to store the cache and initializes a `ResponseCache` object with this file path. The function then sets a cache entry for a specific key (&quot;file.py&quot;, &quot;content&quot;) with the value &quot;summary&quot;. After saving the cache, it reloads it from the same file and asserts that retrieving the cached value using the same key returns the expected &quot;summary&quot;.</p>
+<p>The function `test_cache_round_trip` tests the caching mechanism by writing a summary to a cache file and then reading it back. It uses a temporary path provided by `tmp_path`, creates a `ResponseCache` object with a JSON file as the backend, stores a key-value pair in the cache, and verifies that the value can be retrieved correctly from the same cache instance after reloading.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_cache_round_trip</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     cache_file <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>
     cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(cache_file))
@@ -63,7 +61,7 @@ The second test, `test_cache_get_missing`, verifies that attempting to retrieve 
     <span style="color: #008000; font-weight: bold">assert</span> new_cache<span style="color: #666666">.</span>get(key) <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;summary&quot;</span>
 </code></pre>
 <h3 id="test_cache_get_missing">test_cache_get_missing(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the `get` method of the `ResponseCache` class. It creates a temporary directory and initializes a `ResponseCache` object with a path to a JSON file in that directory. The test asserts that calling the `get` method with a key (&quot;unknown&quot;) that does not exist in the cache returns `None`.</p>
+<p>The function `test_cache_get_missing` tests the behavior of a response cache when attempting to retrieve an item that does not exist. It creates a temporary directory, initializes a `ResponseCache` object with a path to a JSON file within that directory, and then asserts that calling `get` on the cache with a non-existent key returns `None`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_cache_get_missing</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     cache <span style="color: #666666">=</span> ResponseCache(<span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;cache.json&quot;</span>))
     <span style="color: #008000; font-weight: bold">assert</span> cache<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;unknown&quot;</span>) <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000; font-weight: bold">None</span>

@@ -47,18 +47,10 @@
     </div>
     <div class="content">
         <h1>chunk_utils</h1>
-        <p>The module provides utility functions for tokenization and text chunking. It includes:
-
-1. `get_tokenizer()`: Returns a tokenizer object used for estimating token counts, defaulting to a simple character-based tokenizer if `tiktoken` is not installed or fails.
-
-2. `_split_blocks(text: str) -&gt; List[str]`: Splits Markdown text into paragraphs, headings, and fenced code blocks.
-
-3. `_split_long_block(block: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]`: Fallback splitter that splits a block by approximate character length if it exceeds the specified token size.
-
-4. `chunk_text(text: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]`: Splits text into chunks roughly of the specified token size, honoring natural break points like blank lines, Markdown headings, and fenced code blocks. Falls back to character-based splitting for blocks exceeding the token size.</p>
+        <p>This module provides utility functions for tokenization and text chunking. The `chunk_text` function splits text into chunks roughly of a specified size in tokens, preferring natural break points like blank lines, Markdown headings, and fenced code blocks. If a single block exceeds the token limit, it falls back to splitting by approximate character length. The `get_tokenizer` function returns a tokenizer object for estimating token counts, using `tiktoken` if available or falling back to a simple word-based tokenizer.</p>
 <h2>Functions</h2>
 <h3 id="get_tokenizer">get_tokenizer()</h3>
-<p>The function `get_tokenizer` returns a tokenizer object used for estimating token counts. It first attempts to import and use the `tiktoken` library with the encoding &quot;cl100k_base&quot;. If successful, it returns this tokenizer. If `tiktoken` is not available or fails, it tries to use the encoding for the &quot;gpt-3.5-turbo&quot; model. If both attempts fail, it prints a warning message and returns a simple tokenizer that splits text into tokens by whitespace and joins them back together. This fallback tokenizer provides approximate token counts when precise tokenization is not available.</p>
+<p>The `get_tokenizer` function returns a tokenizer object used for estimating token counts. It first attempts to import and use the `tiktoken` library with the &quot;cl100k_base&quot; encoding. If this fails, it tries to use the &quot;gpt-3.5-turbo&quot; model instead. If both fail, it prints a warning message and returns a simple tokenizer class that splits text into tokens by whitespace and joins them back together.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">get_tokenizer</span>():
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a tokenizer object used for estimating token counts.&quot;&quot;&quot;</span>
 
@@ -86,7 +78,7 @@
     <span style="color: #008000; font-weight: bold">return</span> _Simple()
 </code></pre>
 <h3 id="_split_blocks">_split_blocks(text: str) -&gt; List[str]</h3>
-<p>The function `_split_blocks` takes a string of Markdown text and splits it into paragraphs, headings, and code blocks. It processes the text line by line, identifying and separating different types of content based on specific markers like paragraph breaks, heading prefixes (`#`), and code block fences (```). The resulting list contains non-empty blocks of text, each representing a distinct type of Markdown element.</p>
+<p>The function `_split_blocks` takes a string of Markdown text as input and returns a list of paragraphs, headings, and code blocks. It processes the text line by line, identifying and separating these elements based on specific markers: paragraph breaks (empty lines), heading indicators (`#` at the beginning of a line), and code block delimiters (triple backticks ````). The function handles opening and closing of code blocks, ensuring that they are not split into multiple blocks. It also strips leading and trailing whitespace from each block before returning them as a list.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_split_blocks</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return Markdown ``text`` separated into paragraphs, headings and fences.&quot;&quot;&quot;</span>
 
@@ -135,7 +127,7 @@
     <span style="color: #008000; font-weight: bold">return</span> [b <span style="color: #008000; font-weight: bold">for</span> b <span style="color: #AA22FF; font-weight: bold">in</span> blocks <span style="color: #008000; font-weight: bold">if</span> b]
 </code></pre>
 <h3 id="_split_long_block">_split_long_block(block: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]</h3>
-<p>This function `_split_long_block` takes a string `block`, a tokenizer, and an integer `chunk_size_tokens`. It encodes the block using the tokenizer and checks if the length of the tokens is less than or equal to `chunk_size_tokens`. If so, it returns the original block as a single-element list. Otherwise, it calculates an average character size based on the token count and chunk size, ensuring at least one character per chunk. It then splits the block into chunks of characters up to `max_chars` in length and returns these chunks as a list.</p>
+<p>This function `_split_long_block` takes a string `block`, a tokenizer, and an integer `chunk_size_tokens`. It encodes the block into tokens using the provided tokenizer. If the number of tokens is less than or equal to `chunk_size_tokens`, it returns the original block as a single element list. Otherwise, it calculates an average character length per token and determines a maximum number of characters for each chunk based on this average and `chunk_size_tokens`. The function then splits the block into chunks of approximately `max_chars` characters and returns these chunks as a list.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_split_long_block</span>(block: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Fallback splitter that uses a character based approximation.&quot;&quot;&quot;</span>
 
@@ -148,7 +140,7 @@
     <span style="color: #008000; font-weight: bold">return</span> [block[i : i <span style="color: #666666">+</span> max_chars] <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, <span style="color: #008000">len</span>(block), max_chars)]
 </code></pre>
 <h3 id="chunk_text">chunk_text(text: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]</h3>
-<p>The function `chunk_text` splits a given text into chunks of approximately specified token size. It uses a tokenizer to determine the number of tokens in each block and ensures natural break points such as blank lines, Markdown headings, and fenced code blocks are respected. If a single block exceeds the token limit, it falls back to splitting that block by approximate character length. The function returns a list of chunks.</p>
+<p>The `chunk_text` function splits a given text into chunks of approximately `chunk_size_tokens` each. It uses a tokenizer to determine the number of tokens in each block, ensuring that natural break points like blank lines and Markdown headings are respected. If a single block exceeds the token limit, it is split by character length. The function returns a list of these chunks.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">chunk_text</span>(text: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``text`` into chunks roughly ``chunk_size_tokens`` each.</span>
 
