@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -45,11 +49,13 @@
         <h1>manual_utils</h1>
         <p>This module provides functions for splitting text into chunks and generating summaries using a language model. It includes:
 
-- `_count_tokens`: Counts the number of tokens in a given text.
-- `_split_text`: Splits a text into chunks based on token and character limits.
-- `chunk_docs`: Splits multiple documents into roughly equal-sized chunks.
-- `find_placeholders`: Finds placeholder tokens in a text.
-- `_summarize_manual`: Generates a manual summary for a given text using a specified chunking strategy. It handles both automatic and manual chunking, caching responses to avoid redundant requests.</p>
+1. `_count_tokens`: Counts the number of tokens in a given text.
+2. `_split_text`: Splits text into chunks based on token and character limits.
+3. `chunk_docs`: Splits a list of documents into roughly equal-sized chunks.
+4. `find_placeholders`: Finds placeholder tokens in a given text.
+5. `_summarize_manual`: Generates a summary for a given text using a chunking strategy, utilizing an LLMClient for summarization and a ResponseCache for caching responses.
+
+The module uses concurrent processing with ThreadPoolExecutor to handle multiple chunks simultaneously, improving efficiency when dealing with large texts.</p>
 <h2>Functions</h2>
 <h3 id="_count_tokens">_count_tokens(text: str) -&gt; int</h3>
 <p>This function `_count_tokens` takes a string `text` as input and returns an integer representing the approximate number of tokens in the text. It uses a tokenizer to encode the text, which converts it into a sequence of tokens, and then calculates the length of this sequence to determine the token count.</p>
@@ -58,7 +64,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">len</span>(TOKENIZER<span style="color: #666666">.</span>encode(text))
 </code></pre>
 <h3 id="_split_text">_split_text(text: str, max_tokens: int=2000, max_chars: int=6000) -&gt; list[str]</h3>
-<p>This function `_split_text` splits a given text into chunks while respecting specified maximum token and character limits. It first splits the input text into paragraphs, then iterates through each paragraph to determine if it fits within the token and character constraints. If a paragraph exceeds these limits, it is further chunked using another function `chunk_text`. The resulting chunks are collected in a list and returned.</p>
+<p>Splits input text into chunks based on maximum tokens and characters, preserving paragraphs. Uses regular expressions to identify paragraphs and counts tokens and characters for each chunk. Handles large paragraphs by splitting them further using a tokenizer function. Ensures no single chunk exceeds the specified limits while maintaining paragraph structure.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_split_text</span>(text: <span style="color: #008000">str</span>, max_tokens: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">2000</span>, max_chars: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">6000</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``text`` into chunks respecting ``max_tokens`` and ``max_chars``.&quot;&quot;&quot;</span>
     paragraphs <span style="color: #666666">=</span> re<span style="color: #666666">.</span>split(<span style="color: #BA2121">r&quot;\n{2,}&quot;</span>, text<span style="color: #666666">.</span>strip())
@@ -96,7 +102,7 @@
     <span style="color: #008000; font-weight: bold">return</span> chunks
 </code></pre>
 <h3 id="chunk_docs">chunk_docs(docs: list[str], token_limit: int=2000) -&gt; list[str]</h3>
-<p>The function `chunk_docs` takes a list of strings (`docs`) and an integer (`token_limit`) as input. It joins the non-empty strings in `docs`, separated by double newlines, into a single string. If the resulting string is empty, it returns an empty list. Otherwise, it calls `_split_text` with the joined string, using both `max_tokens` and `max_chars` set to `token_limit`. The function&#x27;s purpose is to split the input text into chunks that do not exceed the specified token limit.</p>
+<p>This function `chunk_docs` takes a list of strings (`docs`) and an integer (`token_limit`) as input. It joins the non-empty strings in the list with double newlines for separation, then splits the resulting text into chunks where each chunk is roughly up to the specified `token_limit`. The splitting considers both token count and character count, with a maximum of three times the token limit for character count per chunk.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">chunk_docs</span>(docs: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>], token_limit: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">2000</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``docs`` into roughly ``token_limit`` sized chunks.&quot;&quot;&quot;</span>
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(d<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> d <span style="color: #AA22FF; font-weight: bold">in</span> docs <span style="color: #008000; font-weight: bold">if</span> d <span style="color: #AA22FF; font-weight: bold">and</span> d<span style="color: #666666">.</span>strip())
@@ -105,13 +111,13 @@
     <span style="color: #008000; font-weight: bold">return</span> _split_text(text, max_tokens<span style="color: #666666">=</span>token_limit, max_chars<span style="color: #666666">=</span>token_limit <span style="color: #666666">*</span> <span style="color: #666666">3</span>)
 </code></pre>
 <h3 id="find_placeholders">find_placeholders(text: str) -&gt; Set[str]</h3>
-<p>The function `find_placeholders` searches for placeholder tokens enclosed in double backticks followed by two square brackets, such as ``[[TOKEN]]``, within a given string `text`. It returns a set of these placeholder tokens found in the text. The placeholders are identified using a regular expression defined in `PLACEHOLDER_RE`.</p>
+<p>This function `find_placeholders` takes a string `text` as input and returns a set of placeholder tokens found within the text. The placeholders are identified using a regular expression defined by `PLACEHOLDER_RE`, which matches tokens enclosed in double square brackets, such as ``[[TOKEN]]``. The function extracts all occurrences of these placeholders from the input text and returns them as a set to ensure uniqueness.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">find_placeholders</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Set[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return placeholder tokens of the form ``[[TOKEN]]`` found in ``text``.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">set</span>(PLACEHOLDER_RE<span style="color: #666666">.</span>findall(text))
 </code></pre>
 <h3 id="_summarize_manual">_summarize_manual(client: LLMClient, cache: ResponseCache, text: str, chunking: str=&#x27;auto&#x27;, source: str=&#x27;combined&#x27;, post_chunk_hook: Callable[[list[str]], list[str]] | None=None) -&gt; str</h3>
-<p>The function `_summarize_manual` generates a manual summary for the provided text using a specified chunking strategy. It interacts with an LLM client to perform summarization and utilizes a response cache to store previously generated summaries for efficiency. The function handles different chunking modes: &quot;manual&quot;, &quot;auto&quot; (with automatic chunking if text exceeds certain limits), and &quot;none&quot; (disabling chunking if text is too large). It also supports a post-chunk hook for additional processing of summarized parts. The function ensures that the final summary does not exceed token or character limits by performing hierarchical merges if necessary.</p>
+<p>This function `_summarize_manual` generates a manual summary for a given text using a specified chunking strategy. It utilizes an LLMClient to interact with a language model and a ResponseCache to store and retrieve cached responses. The function supports automatic or manual chunking based on the input parameters. If chunking is enabled, it splits the text into manageable parts, summarizes each part using the LLM, and then merges the summaries back together. If chunking is disabled or not necessary, it directly summarizes the entire text. The function also includes error handling for chunking failures and network issues, as well as logging for debugging purposes.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize_manual</span>(
     client: LLMClient,
     cache: ResponseCache,

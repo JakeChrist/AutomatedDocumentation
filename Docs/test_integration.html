@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,21 +47,12 @@
     </div>
     <div class="content">
         <h1>test_integration</h1>
-        <p>The module defines two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML files from Python and MATLAB files in a project directory using a mock LLMClient. It asserts that the correct HTML files are created and contains the expected summary text.
+        <p>The module defines two test functions for a documentation generator. The first function, `test_docgenerator_generates_html`, tests the generation of HTML documentation from various file types (Python, MATLAB, C++, Java) within a project directory. It uses a mock LLMClient to simulate API responses and verifies that HTML files are created in the output directory with expected content.
 
-The second function, `test_static_copied_from_any_cwd`, tests the copying of static files (e.g., style.css) to the output directory regardless of the current working directory. It uses a mock LLMClient and asserts that the static file is correctly copied to the output directory.</p>
+The second function, `test_static_copied_from_any_cwd`, tests the copying of static assets (like CSS) from any current working directory to the output documentation directory. It also uses a mock LLMClient and asserts that the static file is present in the output directory.</p>
 <h2>Functions</h2>
 <h3 id="test_docgenerator_generates_html">test_docgenerator_generates_html(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_docgenerator_generates_html`, is designed to test the functionality of a documentation generator tool. It creates a temporary project directory with Python and MATLAB files, simulates interactions with a language model using a mock client, and then verifies that HTML output files are generated correctly.
-
-The function performs the following steps:
-1. Creates a temporary project directory.
-2. Writes a simple Python file (`hello.py`) and a simple MATLAB file (`util.m`) to the project directory.
-3. Sets up a mock client for the language model, which simulates responses to ping and summarize requests.
-4. Calls the `main` function with the project directory path and an output directory path.
-5. Asserts that the return value of the `main` function is 0, indicating successful execution.
-6. Verifies that HTML files for the project, its modules, and functions are created in the output directory.
-7. Reads the content of the generated HTML file for the Python module (`hello.html`) and asserts that it contains a summary string.</p>
+<p>This function `test_docgenerator_generates_html` tests the functionality of a documentation generator tool named DocGen-LM. It sets up a temporary project directory containing files written in Python, MATLAB, C++, and Java. The function then calls the main function of the documentation generator with this project directory as input and an output directory specified by `tmp_path / &quot;out&quot;`. A mock LLM client is used to simulate responses during the test, ensuring that the generator processes each file type correctly. After running the main function, the test verifies that HTML files have been generated for each source file in the project directory and that the summary text is included in these HTML files.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_docgenerator_generates_html</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;project&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -65,6 +60,22 @@ The function performs the following steps:
     (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.py&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&#39;def hi():</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    &quot;&quot;&quot;Say hi.&quot;&quot;&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    return &quot;hi&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span>)
     <span style="color: #3D7B7B; font-style: italic"># simple matlab file</span>
     (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;util.m&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&#39;</span><span style="color: #A45A77; font-weight: bold">% u</span><span style="color: #BA2121">til function</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">function y = util(x)</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121"> y = x;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">end</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&#39;</span>)
+    <span style="color: #3D7B7B; font-style: italic"># simple C++ file</span>
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;math.cpp&quot;</span>)<span style="color: #666666">.</span>write_text(
+        <span style="color: #BA2121">&quot;/** Add numbers */</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">int add(int a, int b) {</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">    return a + b;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+    <span style="color: #3D7B7B; font-style: italic"># simple Java file</span>
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Greeter.java&quot;</span>)<span style="color: #666666">.</span>write_text(
+        <span style="color: #BA2121">&quot;/** Example package */</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;package demo;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;/** Greeter class */</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;public class Greeter {</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    /** say hi */</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    public String greet() {</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;        return </span><span style="color: #AA5D1F; font-weight: bold">\&quot;</span><span style="color: #BA2121">hi</span><span style="color: #AA5D1F; font-weight: bold">\&quot;</span><span style="color: #BA2121">;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;    }</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+        <span style="color: #BA2121">&quot;}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
 
     output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;out&quot;</span>
 
@@ -79,12 +90,18 @@ The function performs the following steps:
     <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>exists()
     <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.html&quot;</span>)<span style="color: #666666">.</span>exists()
     <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;util.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;math.html&quot;</span>)<span style="color: #666666">.</span>exists()
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Greeter.html&quot;</span>)<span style="color: #666666">.</span>exists()
 
     html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;hello.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
+    cpp_html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;math.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    java_html <span style="color: #666666">=</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Greeter.html&quot;</span>)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> cpp_html
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> java_html
 </code></pre>
 <h3 id="test_static_copied_from_any_cwd">test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -&gt; None</h3>
-<p>This function `test_static_copied_from_any_cwd` is designed to test the generation of static HTML documentation for a Python project. It creates a temporary directory structure with a sample Python module, sets up a mock language model client using `monkeypatch`, and then invokes the main documentation generation function `main`. The test asserts that the output directory contains a static CSS file named &quot;style.css&quot;, indicating successful documentation generation.</p>
+<p>The function `test_static_copied_from_any_cwd` is a test case for the `docgenerator` project. It checks if the static files, such as `style.css`, are copied to the output directory when generating documentation from a Python project. The test creates a temporary project directory with a single Python module (`mod.py`) and an output directory. It then patches the `LLMClient` class to simulate successful communication with a local language model and returns a predefined summary. The function changes the current working directory to the temporary project directory, runs the main function of the `docgenerator` tool with the specified project and output directories, and asserts that the return value is 0 (indicating success). Finally, it checks if the `style.css` file exists in the static directory of the output.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_static_copied_from_any_cwd</span>(tmp_path: Path, monkeypatch) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()

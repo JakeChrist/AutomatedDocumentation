@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,12 +47,22 @@
     </div>
     <div class="content">
         <h1>explaincode</h1>
-        <p>This module defines a comprehensive project summary generator from existing documentation and sample files. It includes classes and functions for parsing configuration, collecting relevant files, slugifying text, inserting navigation entries into an index file, extracting plain text from various file types, detecting placeholders, mapping evidence to sections, ranking code files based on heuristics, and more. The module also defines functions to extract relevant code snippets from files, collect these snippets based on sections, and generate a manual using an LLM client. It includes utilities for rendering HTML, parsing text into structured sections, validating references, inferring missing sections, and writing the rendered output as a PDF. Additionally, it provides a `main` function that sets up argument parsing for summarizing project documentation, processes command-line arguments to configure parameters, collects documentation files, extracts text, initializes an LLM client, and generates a manual, handling placeholders and rendering the final output in specified formats.</p>
+        <p>This module defines a `Config` class for holding configuration settings parsed from CLI arguments. It includes functions for collecting documentation and code files from a project directory, as well as utilities for slugifying text, inserting links into an index file, and extracting plain text from various file types. The module also provides logic to detect placeholders in text and map evidence snippets to manual sections.
+
+The core functionality involves:
+1. Extracting relevant code snippets from files using `extract_snippets`, categorizing them by sections with `scan_code`.
+2. Generating a manual from documentation snippets using an LLM client with `llm_generate_manual`.
+3. Filling placeholder tokens in the manual text with code snippets using `llm_fill_placeholders`.
+4. Optionally editing chunks of text in the user&#x27;s editor with `_edit_chunks_in_editor`.
+
+Additionally, this module offers functions for rendering HTML from structured sections of a manual (`render_html`), parsing text into structured sections (`parse_manual`), validating references within those sections (`validate_manual_references`), inferring missing sections (`infer_sections`), and writing the rendered HTML as a PDF using ReportLab with `write_pdf`.
+
+The main function, `main`, serves as the entry point for summarizing project documentation. It processes command-line arguments to create a `Config` object, collects documentation files, extracts text, logs the process, initializes an LLM client, generates a manual, fills placeholders, parses sections, validates references, renders output in HTML or PDF format, inserts links into an index file if requested, and saves evidence data. It handles exceptions gracefully and returns 0 upon successful completion.</p>
 <h2 id="Config">Class: Config</h2>
-<p>The `Config` class represents configuration settings parsed from command-line interface arguments. It includes properties such as file paths, output format, title, and various flags controlling behavior like code scanning, chunking, and limits on file size and number.</p>
+<p>The `Config` class defines a data structure for configuration settings parsed from command-line interface (CLI) arguments. It includes various attributes such as file paths, output formats, and boolean flags to control the behavior of a program based on user input.</p>
 <h2>Functions</h2>
 <h3 id="collect_docs">collect_docs(base: Path) -&gt; list[Path]</h3>
-<p>The function `collect_docs` takes a directory path as input and returns a list of paths to documentation files within that directory. It searches for specific file types (`README.md`, `.md`, `.txt`, `.html`, `.docx`) in the project root and within a subdirectory named &quot;docs&quot;. The function ensures that only unique files are returned by using a set to track seen files.</p>
+<p>The `collect_docs` function takes a base directory path as input and returns a list of paths to documentation files. It searches for specific file types (`.md`, `.txt`, `.html`, `.docx`) in the project root directory and within a subdirectory named &quot;docs&quot;. The function uses glob patterns to match these file types and ensures that each file is only included once in the result by maintaining a set of seen files.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">collect_docs</span>(base: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[Path]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return documentation files under ``base``.</span>
 
@@ -77,7 +91,9 @@
     <span style="color: #008000; font-weight: bold">return</span> unique
 </code></pre>
 <h3 id="collect_files">collect_files(base: Path, extra_patterns: Iterable[str] | None=None) -&gt; Iterable[Path]</h3>
-<p>The `collect_files` function returns a list of file paths from the specified base directory that are relevant for summarization. It starts with predefined patterns for common documentation and text files, then adds any additional patterns provided by the user. The function ensures that only unique files are returned by using a set to track seen files.</p>
+<p>The `collect_files` function returns a list of file paths from the specified base directory that are relevant for summarization. It starts with a predefined set of file patterns, such as README.md, text files, HTML files, and various document formats. The function uses the `rglob` method to recursively search for these patterns within the base directory and its subdirectories. If additional patterns are provided through the `extra_patterns` parameter, they are also included in the search.
+
+The resulting list of file paths is then filtered to remove duplicates, ensuring that each file is only listed once. This is achieved by maintaining a set of seen files and appending unique files to the final list. The function returns this list of unique file paths.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">collect_files</span>(base: Path, extra_patterns: Iterable[<span style="color: #008000">str</span>] <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> Iterable[Path]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return files from *base* relevant for summarisation.&quot;&quot;&quot;</span>
     patterns <span style="color: #666666">=</span> [
@@ -106,14 +122,14 @@
     <span style="color: #008000; font-weight: bold">return</span> unique
 </code></pre>
 <h3 id="slugify">slugify(text: str) -&gt; str</h3>
-<p>The `slugify` function takes a string `text` and returns a filesystem-friendly slug. It removes all characters except lowercase letters and digits, replaces them with underscores, strips leading and trailing underscores, and ensures the result is not empty by defaulting to `&quot;user_manual&quot;` if the input is invalid or empty.</p>
+<p>Converts a given string into a filesystem-friendly slug. It removes all non-alphanumeric characters, converts the string to lowercase, and replaces spaces with underscores. If the resulting slug is empty, it defaults to &quot;user_manual&quot;.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">slugify</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return filesystem-friendly slug from ``text``.&quot;&quot;&quot;</span>
     slug <span style="color: #666666">=</span> re<span style="color: #666666">.</span>sub(<span style="color: #BA2121">r&quot;[^a-z0-9]+&quot;</span>, <span style="color: #BA2121">&quot;_&quot;</span>, text<span style="color: #666666">.</span>strip()<span style="color: #666666">.</span>lower())
     <span style="color: #008000; font-weight: bold">return</span> slug<span style="color: #666666">.</span>strip(<span style="color: #BA2121">&quot;_&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;user_manual&quot;</span>
 </code></pre>
 <h3 id="insert_into_index">insert_into_index(index_path: Path, title: str, filename: str) -&gt; None</h3>
-<p>The function `insert_into_index` appends a navigation entry linking to a specified file into an HTML index file. It reads the existing content of the index file using BeautifulSoup, finds or creates a `&lt;ul&gt;` or `&lt;nav&gt;` container element, and checks if an entry for the given filename already exists. If not, it creates a new anchor tag with the provided title and appends it to the container. Finally, it writes the updated HTML back to the index file.</p>
+<p>The function `insert_into_index` appends a navigation entry linking to a specified file into an HTML index file. It reads the existing content of the index file using BeautifulSoup, which parses HTML and XML documents. The function looks for either a `&lt;ul&gt;` or `&lt;nav&gt;` element within the index file. If such an element is found, it checks if an anchor tag with the same `href` attribute as the filename already exists. If not, it creates a new anchor tag with the provided title and href attributes. Depending on whether the container is a `&lt;ul&gt;` or `&lt;nav&gt;`, it appends the anchor tag either inside a new list item (`&lt;li&gt;`) or directly to the container. Finally, it writes the modified HTML content back to the index file.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">insert_into_index</span>(index_path: Path, title: <span style="color: #008000">str</span>, filename: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Append a navigation entry linking to ``filename`` into ``index_path``.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">try</span>:
@@ -141,7 +157,7 @@
     index_path<span style="color: #666666">.</span>write_text(<span style="color: #008000">str</span>(soup), encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
 <h3 id="inject_user_manual">inject_user_manual(index_path: Path, title: str, filename: str) -&gt; None</h3>
-<p>Inserts a top-level link to a user manual into an HTML file specified by `index_path`. The link is added to the first `&lt;nav&gt;` or `&lt;ul&gt;` element if present; otherwise, it is inserted at the start of the first `&lt;body&gt;` element or the document root.</p>
+<p>Inserts a top-level link to a user manual into an HTML file specified by `index_path`. The link is added to the first `&lt;nav&gt;` or `&lt;ul&gt;` element if present; otherwise, it is inserted at the start of the first element in `&lt;body&gt;` or the document root.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">inject_user_manual</span>(index_path: Path, title: <span style="color: #008000">str</span>, filename: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Insert a top-level link to the manual into ``index_path``.</span>
 
@@ -175,7 +191,7 @@
     index_path<span style="color: #666666">.</span>write_text(<span style="color: #008000">str</span>(soup), encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
 <h3 id="extract_text">extract_text(path: Path) -&gt; str</h3>
-<p>The function `extract_text` reads and processes the content of a file located at the given `path`. It determines the file type based on its suffix (extension) and extracts plain text accordingly. For HTML files, it uses BeautifulSoup to clean and modify the content by replacing headings with Markdown-style headers and code blocks with fenced code blocks. Markdown files are read directly. For `.docx` files, if the `Document` class from the `python-docx` library is available, it reads the document and converts headings to Markdown-style headers while preserving other text. If any exceptions occur during processing, an empty string is returned.</p>
+<p>The function `extract_text` reads and processes the content of a file located at the given `path`. It determines the file type based on its suffix (e.g., `.html`, `.md`, `.docx`). For HTML files, it uses BeautifulSoup to parse the content, replacing headings with Markdown-style headers and code blocks with fenced code blocks. For Markdown files, it simply reads the text. For DOCX files, if the `Document` class is available from the `python-docx` library, it extracts text from paragraphs, converting heading styles into Markdown headers. If any other file type or an error occurs during processing, it returns an empty string.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">extract_text</span>(path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Extract plain text from ``path`` based on its file type.&quot;&quot;&quot;</span>
     suffix <span style="color: #666666">=</span> path<span style="color: #666666">.</span>suffix<span style="color: #666666">.</span>lower()
@@ -218,14 +234,16 @@
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&quot;</span>
 </code></pre>
 <h3 id="detect_placeholders">detect_placeholders(text: str) -&gt; list[str]</h3>
-<p>The function `detect_placeholders` takes a string `text` as input and returns a list of section names that are still marked by placeholder tokens. It uses the helper function `find_placeholders` to identify all placeholders in the text. Then, it filters these placeholders against a predefined dictionary `SECTION_PLACEHOLDERS`, which maps section names to their corresponding placeholder tokens. The function collects and returns the names of sections where the placeholder token is found in the input text.</p>
+<p>The function `detect_placeholders` takes a string `text` as input and returns a list of section names that are still marked by placeholder tokens. It uses the helper function `find_placeholders` to identify all placeholder tokens in the text. Then, it filters these tokens against a dictionary `SECTION_PLACEHOLDERS`, which maps section names to their corresponding placeholder tokens. The result is a list of section names whose placeholders have not been replaced.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">detect_placeholders</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return section names still marked by placeholder tokens.&quot;&quot;&quot;</span>
     tokens <span style="color: #666666">=</span> find_placeholders(text)
     <span style="color: #008000; font-weight: bold">return</span> [name <span style="color: #008000; font-weight: bold">for</span> name, token <span style="color: #AA22FF; font-weight: bold">in</span> SECTION_PLACEHOLDERS<span style="color: #666666">.</span>items() <span style="color: #008000; font-weight: bold">if</span> token <span style="color: #AA22FF; font-weight: bold">in</span> tokens]
 </code></pre>
 <h3 id="map_evidence_to_sections">map_evidence_to_sections(docs: dict[Path, str]) -&gt; tuple[dict[str, list[tuple[Path, str]]], dict[Path, set[str]]]</h3>
-<p>The function `map_evidence_to_sections` processes a dictionary of documentation snippets indexed by file paths and maps them to sections based on predefined keywords. It returns a tuple containing two dictionaries: `section_map`, which maps section names to a list of tuples (file path, snippet), and `file_map`, which maps each file path to the set of sections it contributes to. The function ensures that only the top 10 snippets per section are kept, with an exception for the &quot;Overview&quot; section in excluded directories. It also handles sorting based on priority and snippet length.</p>
+<p>The function `map_evidence_to_sections` processes a dictionary of documentation snippets and maps them to specific sections based on predefined keywords. It returns two dictionaries: `section_map`, which associates each section with the top 10 relevant snippets (by length), and `file_map`, which tracks which files contributed to each section.
+
+The function iterates through each document, checking for section keywords that indicate where a snippet should be categorized. If a keyword is found, it extracts up to a maximum number of lines as a snippet, ensuring the snippet starts with relevant content (not empty, not commented out). The snippets are then sorted within their sections based on priority and length, with the &quot;Overview&quot; section having additional sorting criteria for README files and documentation directories.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">map_evidence_to_sections</span>(
     docs: <span style="color: #008000">dict</span>[Path, <span style="color: #008000">str</span>]
 ) <span style="color: #666666">-&gt;</span> <span style="color: #008000">tuple</span>[<span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, <span style="color: #008000">list</span>[<span style="color: #008000">tuple</span>[Path, <span style="color: #008000">str</span>]]], <span style="color: #008000">dict</span>[Path, <span style="color: #008000">set</span>[<span style="color: #008000">str</span>]]]:
@@ -292,12 +310,12 @@
     <span style="color: #008000; font-weight: bold">return</span> section_map, file_map
 </code></pre>
 <h3 id="rank_code_files">rank_code_files(root: Path, patterns: list[str]) -&gt; list[Path]</h3>
-<p>The function `rank_code_files` ranks Python, MATLAB, C++, C header, and Java code files within a specified directory based on their relevance to documentation. It uses a combination of file extensions, directory names, and keyword patterns to assign scores to each file. The ranking is determined by the highest score, with ties broken by lexicographical order of the file paths.</p>
+<p>The `rank_code_files` function ranks Python code files under a specified root directory based on simple heuristics. It supports various file extensions including `.py`, `.m`, `.ipynb`, `.cpp`, `.h`, and `.java`. The function skips certain directories like `venv`, `.git`, and `tests`. It assigns scores to files containing specific keywords or patterns, such as &quot;run&quot;, &quot;main&quot;, &quot;cli&quot;, etc., and returns a list of paths sorted by score in descending order.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">rank_code_files</span>(root: Path, patterns: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[Path]:
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return code files under ``root`` ranked by simple heuristics.
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return code files under ``root`` ranked by simple heuristics.</span>
 
-    Supports ``.py``, ``.m``, ``.ipynb``, ``.cpp``, ``.h``, and ``.java`` files.
-    &quot;&quot;&quot;</span>
+<span style="color: #BA2121; font-style: italic">    Supports ``.py``, ``.m``, ``.ipynb``, ``.cpp``, ``.h``, and ``.java`` files.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
 
     allowed_exts <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;.py&quot;</span>, <span style="color: #BA2121">&quot;.m&quot;</span>, <span style="color: #BA2121">&quot;.ipynb&quot;</span>, <span style="color: #BA2121">&quot;.cpp&quot;</span>, <span style="color: #BA2121">&quot;.h&quot;</span>, <span style="color: #BA2121">&quot;.java&quot;</span>}
     skip_dirs <span style="color: #666666">=</span> {
@@ -344,14 +362,7 @@
     <span style="color: #008000; font-weight: bold">return</span> [p <span style="color: #008000; font-weight: bold">for</span> _, p <span style="color: #AA22FF; font-weight: bold">in</span> ranked]
 </code></pre>
 <h3 id="extract_snippets">extract_snippets(files: Iterable[Path], *, max_files: int, time_budget: int, max_bytes: int) -&gt; dict[Path, str]</h3>
-<p>The function `extract_snippets` processes a list of Python files to extract relevant code snippets. It filters files based on the number of files processed (`max_files`), time spent processing (`time_budget`), and file size (`max_bytes`). For each file, it reads up to `max_bytes` of text and extracts:
-- Module docstrings
-- Docstrings from classes, functions, and async functions
-- Function signatures containing terms like &quot;path&quot;, &quot;file&quot;, &quot;config&quot;, or &quot;io&quot;
-- Lines related to command-line interface (CLI) parsing
-- The content of the `__main__` block if present
-
-The extracted snippets are stored in a dictionary with file paths as keys.</p>
+<p>The function `extract_snippets` processes a collection of Python files to extract relevant code snippets. It filters files based on a maximum number of files (`max_files`), time budget (`time_budget`), and file size limit (`max_bytes`). For each file, it reads the content up to the specified byte limit and extracts documentation strings from modules, classes, functions, and asynchronous functions. If the file is a Python script, it also identifies potential I/O signatures based on function arguments containing keywords like &quot;path,&quot; &quot;file,&quot; &quot;config,&quot; or &quot;io.&quot; The extracted snippets are stored in a dictionary with file paths as keys and concatenated text as values.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">extract_snippets</span>(
     files: Iterable[Path],
     <span style="color: #666666">*</span>,
@@ -445,15 +456,16 @@ The extracted snippets are stored in a dictionary with file paths as keys.</p>
     <span style="color: #008000; font-weight: bold">return</span> snippets
 </code></pre>
 <h3 id="scan_code">scan_code(base: Path, sections: list[str] | None=None, *, max_files: int=12, time_budget: int=20, max_bytes_per_file: int=200000) -&gt; dict[str, dict[str, str]]</h3>
-<p>The `scan_code` function collects source code snippets from a specified directory (`base`) and groups them by manual section. It searches for keywords associated with given sections (defaulting to all known sections) within the text extracted from source files. The function returns a dictionary mapping section names to another dictionary of relative file paths and their corresponding snippet texts.
+<p>The `scan_code` function collects source code snippets from a specified directory (`base`) grouped by manual sections. It searches for keywords associated with the provided sections (or all known sections if none are specified) and returns a dictionary mapping section names to another dictionary of relative file paths and their corresponding snippet text.
 
-Key steps include:
-1. Collecting patterns from documentation using `collect_docs` and extracting text.
-2. Ranking code files based on these patterns using `rank_code_files`.
-3. Extracting snippets from the ranked files within specified limits (`max_files`, `time_budget`, `max_bytes_per_file`).
-4. Categorizing collected snippets by section, filtering out unwanted sections if provided.
+The function performs the following steps:
+1. Collects patterns from source files using `collect_docs` and `extract_text`.
+2. Ranks code files based on these patterns.
+3. Extracts snippets from ranked files within specified limits (number of files, time budget, maximum bytes per file).
+4. Categorizes collected snippets by the specified sections or all known sections.
+5. Returns a dictionary with categorized snippets.
 
-The function uses regular expressions to identify relevant patterns and tqdm for progress tracking during snippet collection.</p>
+The function uses regular expressions to identify relevant patterns and filters out unwanted matches. It also handles exceptions during text extraction and ensures that only files with specific extensions (like `.py`) are considered.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_code</span>(
     base: Path,
     sections: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
@@ -500,22 +512,7 @@ The function uses regular expressions to identify relevant patterns and tqdm for
     <span style="color: #008000; font-weight: bold">return</span> {k: v <span style="color: #008000; font-weight: bold">for</span> k, v <span style="color: #AA22FF; font-weight: bold">in</span> categorized<span style="color: #666666">.</span>items() <span style="color: #008000; font-weight: bold">if</span> v}
 </code></pre>
 <h3 id="llm_generate_manual">llm_generate_manual(docs: dict[Path, str], client: LLMClient, cache: ResponseCache, chunking: str=&#x27;auto&#x27;) -&gt; tuple[str, dict[Path, set[str]], dict[str, dict[str, object]]]</h3>
-<p>The function `llm_generate_manual` generates a user manual from provided documentation snippets by interacting with a language model (LLM). It maps the snippets to manual sections, performs LLM calls per section, and assembles the final manual text. The function returns the manual text, a mapping of source files to the sections they contributed, and an evidence map capturing the snippets used for each section.
-
-The process involves:
-1. Mapping documentation snippets to manual sections using `map_evidence_to_sections`.
-2. Iterating over required sections, collecting entries from the snippet map.
-3. For each section, checking if entries are inferred or provided.
-4. Creating a context string from the collected snippets.
-5. Generating a prompt and system prompt for the LLM call.
-6. Handling chunking of the prompt if it exceeds token limits using `summarize_chunked`.
-7. Caching results to avoid redundant calls to the LLM.
-8. Parsing the LLM response to extract the section text.
-9. Replacing placeholders with actual content if necessary.
-10. Logging information about each section&#x27;s generation process.
-11. Assembling the final manual text from the generated sections.
-
-The function returns a tuple containing the manual text, a file map, and an evidence map.</p>
+<p>The function `llm_generate_manual` processes documentation snippets to generate a user manual. It maps these snippets to manual sections, performs LLM calls for each section, and assembles the final manual text. The function returns the manual text, a mapping of source files to sections, and an evidence map capturing used snippets.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">llm_generate_manual</span>(
     docs: <span style="color: #008000">dict</span>[Path, <span style="color: #008000">str</span>],
     client: LLMClient,
@@ -616,17 +613,7 @@ The function returns a tuple containing the manual text, a file map, and an evid
     <span style="color: #008000; font-weight: bold">return</span> manual_text, file_map, evidence_map
 </code></pre>
 <h3 id="llm_fill_placeholders">llm_fill_placeholders(manual_text: str, code_snippets: dict[str, dict[str, str]], client: LLMClient, cache: ResponseCache, *, max_context_tokens: int=4096, chunk_token_budget: int | None=None) -&gt; str</h3>
-<p>The function `llm_fill_placeholders` processes a manual text by filling placeholders with relevant code snippets. It uses an LLM client to interact with a language model and a response cache for efficient reuse of responses. The function handles the following steps:
-
-1. **Tokenization**: It initializes a tokenizer to measure token usage.
-2. **Chunk Token Budget Calculation**: If not provided, it calculates a chunk token budget as 75% of the maximum context tokens.
-3. **Iterate Over Sections**: For each section in `code_snippets`, it constructs a snippet text by joining code snippets from different files.
-4. **Token Usage Check and Summarization**: It checks if the combined length of the manual text and snippet text exceeds the maximum context tokens. If so, it summarizes the snippet text to fit within the token limit.
-5. **Prompt Construction**: It constructs a prompt that includes the manual text, section title, and code snippets.
-6. **Update Manual**: It updates the manual by replacing placeholders with information from the code snippets using the LLM client and response cache.
-7. **Logging**: It logs which section was updated and which files were used.
-
-The function returns the updated manual text after processing all sections.</p>
+<p>The function `llm_fill_placeholders` processes a manual text by filling placeholders with relevant code snippets. It uses an LLM client and a response cache to manage API calls and avoid redundant requests. The function handles large code snippets by summarizing them before sending them to the model, ensuring that prompts fit within the model&#x27;s context window. It iterates over sections of code snippets, constructs a prompt combining manual text and code snippets, and updates the manual by replacing placeholders with summarized information from the code. The process is logged for tracking which sections were updated using which files.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">llm_fill_placeholders</span>(
     manual_text: <span style="color: #008000">str</span>,
     code_snippets: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>]],
@@ -695,7 +682,7 @@ The function returns the updated manual text after processing all sections.</p>
     <span style="color: #008000; font-weight: bold">return</span> manual_text
 </code></pre>
 <h3 id="_edit_chunks_in_editor">_edit_chunks_in_editor(chunks: list[str]) -&gt; list[str]</h3>
-<p>The function `_edit_chunks_in_editor` takes a list of code chunks as input, joins them into a single string with separators, writes the string to a temporary file, opens the file in the user&#x27;s default editor for modification, reads the edited content back from the file, and returns the modified chunks. Empty chunks are discarded.</p>
+<p>The function `_edit_chunks_in_editor` takes a list of strings (`chunks`) as input, where each chunk is separated by lines containing `---`. It opens these chunks in the user&#x27;s default editor (determined by environment variables `EDITOR` or `VISUAL`, falling back to &quot;vi&quot; if neither are set). After editing, it reads the modified content from a temporary file, splits it back into chunks based on the separator, and returns a list of non-empty edited chunks.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_edit_chunks_in_editor</span>(chunks: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Open ``chunks`` in user&#39;s editor for optional modification.</span>
 
@@ -717,7 +704,7 @@ The function returns the updated manual text after processing all sections.</p>
     <span style="color: #008000; font-weight: bold">return</span> [p<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> parts <span style="color: #008000; font-weight: bold">if</span> p<span style="color: #666666">.</span>strip()]
 </code></pre>
 <h3 id="render_html">render_html(sections: Dict[str, str], title: str, evidence_map: dict[str, dict[str, object]] | None=None) -&gt; str</h3>
-<p>The function `render_html` generates HTML documentation from a dictionary of sections, a title, and an optional evidence map. It slugifies section titles for navigation links, constructs navigation items, and processes content to include evidence snippets when available. The function supports rendering Markdown content and includes styles for the output.</p>
+<p>The `render_html` function generates an HTML document from a dictionary of sections, each containing content and optionally supporting evidence. It constructs the HTML by iterating over the sections, creating navigation links for each section title and rendering the content. If a section is empty or lacks information, it substitutes available evidence snippets instead. The function includes styling for the HTML document, such as font families and colors, to improve readability.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">render_html</span>(
     sections: Dict[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>],
     title: <span style="color: #008000">str</span>,
@@ -808,7 +795,7 @@ The function returns the updated manual text after processing all sections.</p>
 </code></pre>
 </details>
 <h3 id="parse_manual">parse_manual(text: str, client: &#x27;LLMClient | None&#x27;=None, infer_missing: bool=True) -&gt; Dict[str, str]</h3>
-<p>The function `parse_manual` takes a string of text, an optional language model client, and a boolean flag to infer missing sections. It parses the input text into structured sections based on lines containing a colon. If required sections are missing and inference is enabled, it uses the provided language model client to generate summaries for these sections and marks them as inferred in the output. The function returns a dictionary where keys are section titles and values are their corresponding content.</p>
+<p>The `parse_manual` function takes a string of text and an optional LLM client, along with a boolean flag to infer missing sections. It parses the input text into structured sections based on lines containing a colon (`Section: content`). If `infer_missing` is true and any required sections are absent, it uses the provided LLM client to generate summaries for these sections and marks them as inferred. The function returns a dictionary where keys are section titles and values are their corresponding contents.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_manual</span>(
     text: <span style="color: #008000">str</span>,
     client: <span style="color: #BA2121">&quot;LLMClient | None&quot;</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
@@ -857,7 +844,7 @@ The function returns the updated manual text after processing all sections.</p>
     <span style="color: #008000; font-weight: bold">return</span> sections
 </code></pre>
 <h3 id="validate_manual_references">validate_manual_references(sections: Dict[str, str], project_root: Path, evidence_map: dict[str, dict[str, object]] | None=None) -&gt; None</h3>
-<p>This function `validate_manual_references` checks for missing file references in documentation sections. It scans each section&#x27;s text for substrings that resemble file paths or module names and flags those that cannot be found under the specified project root directory. If a reference is missing, it appends &quot;[missing]&quot; to the reference in the section text. Additionally, if an `evidence_map` is provided, it records the missing references under the corresponding section in a list called `missing_references`. The function modifies the `sections` dictionary in place.</p>
+<p>This function `validate_manual_references` checks for missing file references in documentation sections. It scans the text of each section for substrings that resemble file paths or module names. If a referenced file is not found under the specified project root, it annotates the reference with `[missing]` in the section text. When an evidence map is provided, it records the missing references under the corresponding section in a `missing_references` list. The function modifies the input sections dictionary in place.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">validate_manual_references</span>(
     sections: Dict[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>],
     project_root: Path,
@@ -904,7 +891,7 @@ The function returns the updated manual text after processing all sections.</p>
             )<span style="color: #666666">.</span>extend(missing)
 </code></pre>
 <h3 id="infer_sections">infer_sections(text: str) -&gt; Dict[str, str]</h3>
-<p>The function `infer_sections` takes a string `text` as input and returns a dictionary where keys are section names and values are the content of those sections. If the input text is non-empty, it places the entire text under an &quot;Overview&quot; section and generates placeholder content for other required sections labeled &quot;(inferred)&quot;. If the input text is empty, it initializes all required sections with a default message indicating no information is available.</p>
+<p>The function `infer_sections` takes a string `text` as input and returns a dictionary mapping section names to their corresponding content. If the input text is non-empty, it places the entire text under an &quot;Overview&quot; section and generates placeholder content for any other required sections labeled &quot;(inferred)&quot;. If the input text is empty, it initializes all required sections with a default message indicating no information is available.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">infer_sections</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Infer manual sections heuristically from plain ``text``.</span>
 
@@ -927,7 +914,7 @@ The function returns the updated manual text after processing all sections.</p>
     <span style="color: #008000; font-weight: bold">return</span> sections
 </code></pre>
 <h3 id="write_pdf">write_pdf(html: str, path: Path) -&gt; bool</h3>
-<p>The function `write_pdf` takes an HTML string and a file path as input. It checks if the `canvas` module is available; if not, it returns `False`. Otherwise, it converts the HTML to plain text, creates a PDF canvas, writes the text to the PDF, saves the PDF to the specified path, and returns `True` on success.</p>
+<p>The function `write_pdf` takes an HTML string and a file path as input. It attempts to write the HTML content as a PDF file at the specified path. If successful, it returns `True`; otherwise, it returns `False`. The function uses BeautifulSoup to extract text from the HTML, then creates a PDF using ReportLab&#x27;s canvas module, adding each line of text to the document before saving and closing the file.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">write_pdf</span>(html: <span style="color: #008000">str</span>, path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Write ``html`` to ``path`` as a PDF. Returns ``True`` on success.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">if</span> canvas <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000; font-weight: bold">None</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - optional branch</span>
@@ -942,18 +929,21 @@ The function returns the updated manual text after processing all sections.</p>
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">True</span>
 </code></pre>
 <h3 id="main">main(argv: list[str] | None=None) -&gt; int</h3>
-<p>The `main` function serves as the entry point for generating project documentation. It parses command-line arguments to configure settings such as the target project directory, output format, and various options related to code scanning and chunking. The function initializes a configuration object based on these arguments and proceeds with the following steps:
+<p>The `main` function serves as the entry point for generating project documentation. It parses command-line arguments to configure settings such as project path, output format, and chunking mode. The function initializes a configuration object based on these arguments and proceeds with several steps:
 
-1. Collects documentation files from the specified path.
-2. Reads and processes the text content of these files.
-3. Initializes logging based on the chunking mode.
-4. Generates an initial summary using a language model client, handling exceptions if summarization fails.
-5. If placeholders are detected in the initial response, it optionally scans project code to fill these placeholders.
-6. Renders the final HTML or PDF output based on the configured format.
-7. Optionally inserts a link to the generated manual into an index file.
-8. Saves evidence data related to the documentation process.
+1. Collects document files from the specified project directory.
+2. Reads text content from these files.
+3. Initializes an LLM client for generating summaries.
+4. Caches responses to avoid redundant requests.
+5. Generates an initial manual summary using the LLM.
+6. Detects any placeholders in the generated summary that need further processing.
+7. Optionally scans project code to fill in missing sections based on configuration settings.
+8. Validates and refines the manual sections.
+9. Renders the final HTML or PDF document.
+10. Inserts a link to the generated documentation into an index file if specified.
+11. Saves evidence data associated with the documentation process.
 
-The function returns an integer status code indicating success (0) or failure (non-zero).</p>
+The function handles exceptions gracefully, falling back to manual section inference if LLM summarization fails. It returns 0 upon successful completion.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>(argv: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">int</span>:
     parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser(description<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Summarise project documentation&quot;</span>)
     parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&quot;--path&quot;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&quot;.&quot;</span>, help<span style="color: #666666">=</span><span style="color: #BA2121">&quot;target project directory&quot;</span>)

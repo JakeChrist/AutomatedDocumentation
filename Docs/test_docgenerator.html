@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,27 +47,10 @@
     </div>
     <div class="content">
         <h1>test_docgenerator</h1>
-        <p>This module contains unit tests for a Python script that generates documentation from source code using an LLM (Large Language Model). The tests cover various scenarios, including:
-
-1. Skipping invalid Python files.
-2. Generating summaries for classes and functions.
-3. Handling non-UTF8 encoded files.
-4. Summarizing modules without docstrings.
-5. Sanitizing project summaries.
-6. Using README content as a summary.
-7. Cleaning the output directory before generating new documentation.
-8. Splitting long texts into chunks to fit within context token limits.
-9. Recursively chunking text when prompt overhead exceeds available tokens.
-10. Keeping functions atomic during structured chunking.
-11. Splitting large classes by method during structured chunking.
-12. Summarizing methods in subclasses.
-
-The tests use the `unittest.mock` library to patch dependencies and verify that the main function (`docgenerator.main`) behaves as expected under different conditions.</p>
+        <p>The module contains unit tests for a code documentation generator. It uses the `unittest.mock` library to patch dependencies and test various scenarios, such as handling invalid Python files, generating summaries for classes and functions, skipping non-UTF8 files, and processing different programming languages like C++, Java, and Python. The tests ensure that the generator correctly identifies and processes different types of code elements while skipping or sanitizing problematic files.</p>
 <h2>Functions</h2>
 <h3 id="test_skips_invalid_python_file">test_skips_invalid_python_file(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_skips_invalid_python_file` is designed to test the behavior of a documentation generation tool when encountering an invalid Python file. It sets up a temporary project directory with a single Python file that contains invalid syntax due to a leading zero in an integer literal (`x = 08`). The function then calls the `main` function of the documentation generator, passing the path to the project directory and specifying an output directory for the generated documentation.
-
-The test uses a mock object for the language model client (`LLMClient`) to simulate responses. It asserts that the main function returns successfully (exit code 0) and checks that only the index page is generated in the output directory, while no HTML file is created for the invalid Python file.</p>
+<p>The function `test_skips_invalid_python_file` tests the behavior of a documentation generation tool when encountering an invalid Python file. It creates a temporary project directory with an invalid Python file (`bad.py`) that contains a syntax error due to a leading zero in a numeric literal. The function then runs the main documentation generation command, mocking an LLM client to return a summary for valid files and asserting that the process completes successfully (return code 0). After execution, it verifies that only the index page is generated in the output directory, while the invalid file&#x27;s documentation is not created.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_invalid_python_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -84,7 +71,7 @@ The test uses a mock object for the language model client (`LLMClient`) to simul
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
 </code></pre>
 <h3 id="test_generates_class_and_function_summaries">test_generates_class_and_function_summaries(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_generates_class_and_function_summaries` is designed to test the generation of summaries for classes and functions within a Python project. It creates a temporary directory structure with a Python module containing a class and a function, then invokes the main documentation generation process using a mock language model client. The test asserts that the output HTML files contain the expected summaries for the class and function, as well as the module level summary.</p>
+<p>This function `test_generates_class_and_function_summaries` tests the generation of class and function summaries using a mock LLM client. It creates a temporary project directory with a Python module containing a class and a function, then invokes the main function with specified output directory. The mock client is configured to return predefined summaries for different components. After running the main function, it asserts that the correct summaries are generated and written to HTML files in the output directory.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_generates_class_and_function_summaries</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -115,7 +102,7 @@ The test uses a mock object for the language model client (`LLMClient`) to simul
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;module summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> index_html
 </code></pre>
 <h3 id="test_skips_non_utf8_file">test_skips_non_utf8_file(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_skips_non_utf8_file` tests the behavior of a documentation generation tool when encountering non-UTF-8 encoded files. It creates a temporary project directory with a file that contains non-UTF-8 bytes, mocks an LLM client to simulate successful responses, and then runs the main documentation generation function. The test asserts that the non-UTF-8 file is skipped during processing and that only valid UTF-8 files are included in the output directory.</p>
+<p>The function `test_skips_non_utf8_file` tests the behavior of a documentation generation tool when encountering non-UTF-8 encoded files. It creates a temporary project directory with a file that contains non-UTF-8 bytes, then runs the main function of the documentation generator with this project directory and an output directory specified. The test uses a mock LLM client to simulate successful ping and summary responses. After running the main function, it asserts that the tool skips generating documentation for the non-UTF-8 file and successfully generates documentation for other files in the project, creating an `index.html` file but not a `bad.html` file.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_skips_non_utf8_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -134,30 +121,7 @@ The test uses a mock object for the language model client (`LLMClient`) to simul
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;bad.html&quot;</span>)<span style="color: #666666">.</span>exists()
 </code></pre>
 <h3 id="test_handles_class_without_docstring">test_handles_class_without_docstring(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_handles_class_without_docstring` is a unit test for a documentation generation tool. It checks if the tool correctly handles Python classes without docstrings by verifying that the generated HTML output includes a summary for the class.
-
-Here&#x27;s a breakdown of what the function does:
-
-1. **Setup**:
-- Creates a temporary project directory (`tmp_path / &quot;proj&quot;`) and a module file (`mod.py`) within it.
-- The module contains a simple Python class `Foo` without any docstring.
-
-2. **Output Directory**:
-- Specifies an output directory (`tmp_path / &quot;docs&quot;`).
-
-3. **Mocking Language Model Client**:
-- Uses the `patch` decorator to mock the `LLMClient` from the `docgenerator` module.
-- Configures the mock client to return a successful ping and predefined summaries for different parts of the project.
-
-4. **Running the Main Function**:
-- Calls the `main` function with the path to the project directory and the output directory as arguments.
-- Asserts that the main function returns 0, indicating success.
-
-5. **Verification**:
-- Reads the generated HTML file (`mod.html`) from the output directory.
-- Asserts that the summary for the class `Foo` is present in the HTML content.
-
-This test ensures that the documentation generation tool can handle Python classes without docstrings and correctly include summaries in the generated documentation.</p>
+<p>The function `test_handles_class_without_docstring` tests the handling of a Python class without a docstring by creating a temporary project directory, writing a Python file with an empty class definition, and then running the main function with the project directory as input. It uses a mock LLMClient to simulate responses for summarizing the module, project, and class. The test asserts that the return value of the main function is 0 and that the generated HTML file contains the class summary.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_handles_class_without_docstring</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -180,7 +144,7 @@ This test ensures that the documentation generation tool can handle Python class
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #BA2121">&quot;class summary&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> html
 </code></pre>
 <h3 id="test_project_summary_is_sanitized">test_project_summary_is_sanitized(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_project_summary_is_sanitized`, tests the process of generating a project summary using the DocGen-LM tool. It creates a temporary project directory with a Python module and an output directory for documentation. The function uses a mock language model client to simulate responses for summarizing modules, projects, functions, and improving function documentation. After running the main function with the specified project and output directories, it checks that the generated HTML file does not contain certain phrases (&quot;You can run this&quot; and &quot;It prints.&quot;) and that the language model was called with the correct arguments for summarizing a project.</p>
+<p>The function `test_project_summary_is_sanitized` is a unit test that verifies the sanitization of project summaries generated by the DocGen-LM tool. It creates a temporary project directory with a Python module, invokes the main function with this project directory and an output directory, and asserts that the generated HTML does not contain certain unwanted strings while ensuring that the LLMClient&#x27;s `summarize` method is called appropriately for different entities in the project (module, project, function).</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_project_summary_is_sanitized</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -206,9 +170,7 @@ This test ensures that the documentation generation tool can handle Python class
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(call<span style="color: #666666">.</span>args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;project&quot;</span> <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list)
 </code></pre>
 <h3 id="test_readme_summary_used">test_readme_summary_used(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_readme_summary_used` is designed to test the functionality of a documentation generation tool, specifically focusing on how it handles README files. It creates a temporary project directory with a Python module and a README file, then simulates the execution of the main documentation generation script using a mock language model client.
-
-The function sets up a mock environment where the language model client is configured to return a summary for any text input, specifically targeting the &quot;readme&quot; type. It then runs the main documentation generation function with the project directory and an output directory specified.</p>
+<p>The function `test_readme_summary_used` tests the generation of documentation for a project that includes a README file. It creates a temporary project directory with a Python module and a README file, then uses a mock LLM client to simulate summarization of the README content. The function asserts that the main command returns 0 (indicating success) and checks if the generated HTML output contains a summary of the README.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_readme_summary_used</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -229,9 +191,7 @@ The function sets up a mock environment where the language model client is confi
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(call<span style="color: #666666">.</span>args[<span style="color: #666666">1</span>] <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;readme&quot;</span> <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>call_args_list)
 </code></pre>
 <h3 id="test_clean_output_dir">test_clean_output_dir(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_clean_output_dir` is designed to test the behavior of a hypothetical `clean_output_dir` function from the `docgenerator` module. It creates a temporary directory structure with files and subdirectories, simulating an output directory for documentation generation. The function then calls `clean_output_dir` on this temporary path.
-
-The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` correctly removes files that are considered &quot;generated&quot; by the tool (in this case, files containing a specific comment) while preserving other files. After calling `clean_output_dir`, it asserts that the generated file has been deleted (`generated.exists()` returns `False`), but the custom and asset files still exist (`custom.exists()` and `asset.exists()` return `True`). This test helps verify that the function behaves as expected in managing the output directory for documentation generation.</p>
+<p>The function `test_clean_output_dir` tests the `clean_output_dir` function from the `docgenerator` module. It creates a temporary directory, generates an HTML file with a specific comment, and another HTML file without any comment. A CSS file is also created. The `clean_output_dir` function is then called with the path to the temporary directory as an argument. After the function call, it asserts that the generated HTML file no longer exists, while the custom HTML file and the CSS file still exist.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_clean_output_dir</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     out <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
     out<span style="color: #666666">.</span>mkdir()
@@ -251,7 +211,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
     <span style="color: #008000; font-weight: bold">assert</span> asset<span style="color: #666666">.</span>exists()
 </code></pre>
 <h3 id="test_summarize_chunked_splits_long_text">test_summarize_chunked_splits_long_text(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_summarize_chunked_splits_long_text` tests the `summarize_chunked` function by mocking its behavior to return a summary. It uses a tokenizer, a cache, and patches the `_summarize` method to ensure it is called multiple times during the execution of the test. The test checks if the `_summarize` method is called more than once, indicating that the long text has been successfully chunked and summarized.</p>
+<p>This function tests the `summarize_chunked` utility by mocking the `_summarize` method to return a fixed summary. It uses a tokenizer, a cache, and a temporary path for caching responses. The test ensures that the `summarize_chunked` function is called multiple times when processing a long text, demonstrating its ability to handle chunking based on token limits.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_summarize_chunked_splits_long_text</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">chunk_utils</span> <span style="color: #008000; font-weight: bold">import</span> get_tokenizer
@@ -274,7 +234,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
         <span style="color: #008000; font-weight: bold">assert</span> mock_sum<span style="color: #666666">.</span>call_count <span style="color: #666666">&gt;</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="test_chunking_accounts_for_prompt_overhead">test_chunking_accounts_for_prompt_overhead(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the `summarize_chunked` utility by simulating a scenario where the system is prompted to summarize text. It uses a mock object for summarization and calculates the token overhead for the system prompt and template. The function asserts that the summarization method was called more than once, indicating that the text was chunked appropriately to account for the prompt overhead.</p>
+<p>The function `test_chunking_accounts_for_prompt_overhead` tests the chunking functionality of code summaries by ensuring that the system prompt and template overhead is accounted for when determining the maximum context tokens. It uses a mock to verify that the `_summarize` function is called more than once, indicating that the text has been successfully chunked.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunking_accounts_for_prompt_overhead</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">chunk_utils</span> <span style="color: #008000; font-weight: bold">import</span> get_tokenizer
@@ -301,7 +261,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
         <span style="color: #008000; font-weight: bold">assert</span> mock_sum<span style="color: #666666">.</span>call_count <span style="color: #666666">&gt;</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="test_merge_recurses_when_prompt_too_long">test_merge_recurses_when_prompt_too_long(tmp_path: Path) -&gt; None</h3>
-<p>This function `test_merge_recurses_when_prompt_too_long` tests the behavior of merging and recursing during documentation generation when the prompt exceeds a certain length. It uses mocks to simulate the summarization process, ensuring that the system handles long prompts by breaking them into smaller chunks and recursively processing each chunk. The test checks if the merging logic is invoked multiple times for docstring prompts, indicating successful handling of large input sizes.</p>
+<p>The function `test_merge_recurses_when_prompt_too_long` tests the behavior of merging recursive summaries when the prompt exceeds a certain length. It uses a fake summarization function to simulate responses and asserts that the merge calls are made multiple times for docstrings. The test ensures that the system can handle long prompts by recursively breaking them down into manageable chunks.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_merge_recurses_when_prompt_too_long</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">chunk_utils</span> <span style="color: #008000; font-weight: bold">import</span> get_tokenizer
@@ -357,7 +317,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
 </code></pre>
 </details>
 <h3 id="test_single_long_partial_is_recursively_chunked">test_single_long_partial_is_recursively_chunked(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_single_long_partial_is_recursively_chunked` tests the recursive chunking of a long text into smaller parts suitable for summarization. It uses a mock function to simulate the behavior of the actual summarization process, ensuring that the text is split correctly based on token budget and prompt type. The test checks if the number of calls made with the &quot;docstring&quot; prompt type is greater than one, indicating successful recursive chunking.</p>
+<p>This function tests the recursive chunking of a single long partial text using a local language model (LLM). It sets up a fake summarization function to simulate responses from the LLM and then calls `summarize_chunked` with specific parameters. The test asserts that the number of calls made to the fake summarization function for docstring prompts is greater than one, indicating successful recursive chunking.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_single_long_partial_is_recursively_chunked</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">chunk_utils</span> <span style="color: #008000; font-weight: bold">import</span> get_tokenizer
@@ -411,7 +371,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
 </code></pre>
 </details>
 <h3 id="test_structured_chunker_keeps_functions_atomic">test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -&gt; None</h3>
-<p>This function, `test_structured_chunker_keeps_functions_atomic`, tests the functionality of a structured chunker that processes Python functions. It ensures that each function is treated as an atomic unit during chunking. The test involves creating a temporary file with two functions, parsing it using a Python parser, and then simulating the chunking process with a mock summarization function. The assertions verify that the chunking results in separate chunks for each function, maintaining their atomicity.</p>
+<p>This function tests the `test_structured_chunker_keeps_functions_atomic` method, which ensures that functions are kept atomic during chunking. It uses a temporary path to create a Python file with two functions, parses it using the `parse_python_file` function from the `parser_python` module, and then chunks the text using the `_summarize_module_chunked` function from the `docgenerator` module. The test asserts that the number of chunks is equal to the number of functions and that each chunk contains a unique function source code.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_structured_chunker_keeps_functions_atomic</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">parser_python</span> <span style="color: #008000; font-weight: bold">import</span> parse_python_file
@@ -457,7 +417,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
         <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(chunks) <span style="color: #666666">==</span> func_sources
 </code></pre>
 <h3 id="test_structured_chunker_splits_large_class_by_method">test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -&gt; None</h3>
-<p>This function tests the `test_structured_chunker_splits_large_class_by_method` function. It creates a Python class with two methods, writes it to a temporary file, and parses it using the `parse_python_file` function from the `parser_python` module. The function then uses a tokenizer and a response cache to simulate summarizing the class methods. It asserts that the number of chunks generated matches the number of methods in the class and that each chunk corresponds to one of the method sources.</p>
+<p>This function tests the `test_structured_chunker_splits_large_class_by_method` from a project that generates and summarizes documentation from source code. It uses a temporary path to create a Python file with a class containing two methods. The function parses this file, sets up a tokenizer and cache, and then simulates calling `_summarize_module_chunked` with a mock client. It asserts that the number of chunks created matches the number of methods in the class and that each chunk corresponds to one method&#x27;s source code.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_structured_chunker_splits_large_class_by_method</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">cache</span> <span style="color: #008000; font-weight: bold">import</span> ResponseCache
     <span style="color: #008000; font-weight: bold">from</span> <span style="color: #0000FF; font-weight: bold">parser_python</span> <span style="color: #008000; font-weight: bold">import</span> parse_python_file
@@ -505,7 +465,7 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
         <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(chunks) <span style="color: #666666">==</span> method_sources
 </code></pre>
 <h3 id="test_subclass_methods_are_summarized">test_subclass_methods_are_summarized(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_subclass_methods_are_summarized` is designed to test the documentation generation process, specifically focusing on subclass methods. It creates a temporary project directory with a nested class structure and uses mocks to simulate interactions with an LLM client and summarization functions. The function asserts that the method of a subclass is included in the calls made to the chunked summarization function during the documentation generation process.</p>
+<p>This function tests that subclass methods are summarized correctly. It creates a temporary project directory with a nested class structure and a method within the subclass. The function then patches the LLMClient to simulate successful pinging and returns predefined summaries for summarization functions. Finally, it asserts that the method name &quot;B:m&quot; is called during the chunked summarization process.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_subclass_methods_are_summarized</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -528,6 +488,78 @@ The purpose of `test_clean_output_dir` is to ensure that `clean_output_dir` corr
         <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
 
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">any</span>(<span style="color: #BA2121">&quot;B:m&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> call<span style="color: #666666">.</span>args[<span style="color: #666666">2</span>] <span style="color: #008000; font-weight: bold">for</span> call <span style="color: #AA22FF; font-weight: bold">in</span> mock_chunk<span style="color: #666666">.</span>call_args_list)
+</code></pre>
+<h3 id="test_processes_cpp_file">test_processes_cpp_file(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_processes_cpp_file` is designed to test the processing of a C++ file using the DocGen-LM project. It creates a temporary directory, simulates the presence of a C++ source file within it, and sets up mock objects for parsing the file and interacting with an LLM client. The function then calls the `main` function with the specified project directory and output location, asserting that the return value is 0 (indicating success) and that the mock parse function was called exactly once. Finally, it checks that an HTML file has been created in the output directory.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_processes_cpp_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.cpp&quot;</span>)<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;int add(int a, int b) { return a + b; }</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>)
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    parsed <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;module_docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;Foo&quot;</span>,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+                <span style="color: #BA2121">&quot;methods&quot;</span>: [],
+                <span style="color: #BA2121">&quot;variables&quot;</span>: [{<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;x&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;int x;&quot;</span>}],
+                <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;class Foo { int x; };&quot;</span>,
+            }
+        ],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [],
+    }
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.parse_cpp_file&quot;</span>, return_value<span style="color: #666666">=</span>parsed) <span style="color: #008000; font-weight: bold">as</span> mock_parse, patch(
+        <span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>
+    ) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+        mock_parse<span style="color: #666666">.</span>assert_called_once()
+
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;mod.html&quot;</span>)<span style="color: #666666">.</span>exists()
+</code></pre>
+<h3 id="test_processes_java_file">test_processes_java_file(tmp_path: Path) -&gt; None</h3>
+<p>This function `test_processes_java_file` tests the process of generating documentation for a Java file using the DocGen-LM tool. It sets up a temporary project directory with a single Java file named `Mod.java`. The function then mocks the parsing and LLM summarization processes, asserting that the `main` function returns 0 upon successful execution. Finally, it checks if the output HTML file for the Java class exists in the specified output directory.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_processes_java_file</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
+    project_dir<span style="color: #666666">.</span>mkdir()
+    (project_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Mod.java&quot;</span>)<span style="color: #666666">.</span>write_text(
+        <span style="color: #BA2121">&quot;public class Foo { public int x; public void bar() </span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121"> }</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+    )
+
+    output_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;docs&quot;</span>
+
+    parsed <span style="color: #666666">=</span> {
+        <span style="color: #BA2121">&quot;module_docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+        <span style="color: #BA2121">&quot;classes&quot;</span>: [
+            {
+                <span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;Foo&quot;</span>,
+                <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>,
+                <span style="color: #BA2121">&quot;methods&quot;</span>: [],
+                <span style="color: #BA2121">&quot;variables&quot;</span>: [{<span style="color: #BA2121">&quot;name&quot;</span>: <span style="color: #BA2121">&quot;x&quot;</span>, <span style="color: #BA2121">&quot;docstring&quot;</span>: <span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;public int x;&quot;</span>}],
+                <span style="color: #BA2121">&quot;source&quot;</span>: <span style="color: #BA2121">&quot;public class Foo { public int x; }&quot;</span>,
+            }
+        ],
+        <span style="color: #BA2121">&quot;functions&quot;</span>: [],
+    }
+
+    <span style="color: #008000; font-weight: bold">with</span> patch(<span style="color: #BA2121">&quot;docgenerator.parse_java_file&quot;</span>, return_value<span style="color: #666666">=</span>parsed) <span style="color: #008000; font-weight: bold">as</span> mock_parse, patch(
+        <span style="color: #BA2121">&quot;docgenerator.LLMClient&quot;</span>
+    ) <span style="color: #008000; font-weight: bold">as</span> MockClient:
+        instance <span style="color: #666666">=</span> MockClient<span style="color: #666666">.</span>return_value
+        instance<span style="color: #666666">.</span>ping<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+        instance<span style="color: #666666">.</span>summarize<span style="color: #666666">.</span>return_value <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;summary&quot;</span>
+        ret <span style="color: #666666">=</span> main([<span style="color: #008000">str</span>(project_dir), <span style="color: #BA2121">&quot;--output&quot;</span>, <span style="color: #008000">str</span>(output_dir)])
+        <span style="color: #008000; font-weight: bold">assert</span> ret <span style="color: #666666">==</span> <span style="color: #666666">0</span>
+        mock_parse<span style="color: #666666">.</span>assert_called_once()
+
+    <span style="color: #008000; font-weight: bold">assert</span> (output_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Mod.html&quot;</span>)<span style="color: #666666">.</span>exists()
 </code></pre>
     </div>
     <script src="static/toggle.js"></script>

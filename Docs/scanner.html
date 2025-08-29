@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,10 +47,10 @@
     </div>
     <div class="content">
         <h1>scanner</h1>
-        <p>This module provides a function to recursively discover Python (``.py``) and Objective-C (``.m``) source files within a specified directory. It includes an ignore mechanism based on relative paths, allowing certain directories or files to be excluded from the search. The function returns a list of absolute paths to the discovered source files, sorted alphabetically.</p>
+        <p>The module implements a function to recursively discover source files of specific types (`.py`, `.m`, `.cpp`, `.h`, `.java`) within a given directory. It includes an ignore mechanism based on relative paths, allowing certain directories or files to be excluded from the search. The function returns a sorted list of absolute paths to the discovered source files.</p>
 <h2>Functions</h2>
 <h3 id="_is_subpath">_is_subpath(path: Path, parent: Path) -&gt; bool</h3>
-<p>This function checks whether a given `path` is either the same as or a subdirectory of another `parent` directory. It uses Python&#x27;s `Path` object to perform this check by attempting to compute the relative path from `parent` to `path`. If successful, it returns `True`, indicating that `path` is indeed a subpath of `parent`. If a `ValueError` is raised during this process, it means that `path` is not within `parent`, and the function returns `False`.</p>
+<p>This function checks whether a given `path` is equal to or a subdirectory of another `parent` directory. It uses the `relative_to` method from Python&#x27;s `Path` class, which raises a `ValueError` if `path` is not related to `parent`. The function returns `True` if no exception is raised, indicating that `path` is within `parent`, and `False` otherwise.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_is_subpath</span>(path: Path, parent: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000">bool</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return True if *path* is equal to or inside *parent*.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">try</span>:
@@ -56,9 +60,9 @@
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">False</span>
 </code></pre>
 <h3 id="scan_directory">scan_directory(base_path: str, ignore: List[str]) -&gt; List[str]</h3>
-<p>The `scan_directory` function recursively discovers Python (``.py``) and MATLAB (``.m``) files within a specified directory. It skips directories listed in the `ignore` parameter. The function returns a list of absolute paths to discovered source files, ensuring that ignored paths are not included in the results.</p>
+<p>The function `scan_directory` recursively discovers source files with extensions `.py`, `.m`, `.cpp`, `.h`, and `.java` under a specified base directory. It skips directories listed in the `ignore` parameter and any internal `.git` folders. The function returns a sorted list of absolute paths to these discovered source files.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">scan_directory</span>(base_path: <span style="color: #008000">str</span>, ignore: List[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively discover ``.py`` and ``.m`` files under *base_path*.</span>
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively discover ``.py``, ``.m``, ``.cpp``, ``.h``, and ``.java`` files under *base_path*.</span>
 
 <span style="color: #BA2121; font-style: italic">    Parameters</span>
 <span style="color: #BA2121; font-style: italic">    ----------</span>
@@ -85,7 +89,7 @@
         ]
 
         <span style="color: #008000; font-weight: bold">for</span> name <span style="color: #AA22FF; font-weight: bold">in</span> files:
-            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> (name<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;.py&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> name<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;.m&quot;</span>)):
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> name<span style="color: #666666">.</span>endswith((<span style="color: #BA2121">&quot;.py&quot;</span>, <span style="color: #BA2121">&quot;.m&quot;</span>, <span style="color: #BA2121">&quot;.cpp&quot;</span>, <span style="color: #BA2121">&quot;.h&quot;</span>, <span style="color: #BA2121">&quot;.java&quot;</span>)):
                 <span style="color: #008000; font-weight: bold">continue</span>
             file_path <span style="color: #666666">=</span> root_path <span style="color: #666666">/</span> name
             <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">any</span>(_is_subpath(file_path, ig) <span style="color: #008000; font-weight: bold">for</span> ig <span style="color: #AA22FF; font-weight: bold">in</span> ignore_paths):

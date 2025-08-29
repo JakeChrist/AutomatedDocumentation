@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,16 +47,20 @@
     </div>
     <div class="content">
         <h1>html_writer</h1>
-        <p>This module provides utilities for rendering documentation pages using simple template substitution. It includes functions to highlight code snippets and render HTML content based on project summaries and module data. The module supports Python and MATLAB languages. It can generate `index.html` and individual module documentation pages, complete with navigation links and highlighted source code.</p>
+        <p>This module provides utilities for rendering documentation pages using simple template substitution. It includes functions for highlighting code snippets in various programming languages and for generating HTML content based on structured data representing project summaries, modules, classes, methods, and variables. The module also includes functions to write index and module-specific documentation pages to an output directory.</p>
 <h2>Functions</h2>
 <h3 id="_highlight">_highlight(code: str, language: str) -&gt; str</h3>
-<p>The `_highlight` function takes a string of code and a language identifier as input. It uses the Pygments library to highlight the code based on the specified language. If the language is MATLAB or Python, it selects the appropriate lexer (MatlabLexer or PythonLexer). For other languages, it defaults to using the TextLexer. The highlighted code is then formatted with HTML, wrapped in `&lt;pre&gt;&lt;code&gt;` tags, and returned as a string.</p>
+<p>The function `_highlight` takes a string `code` and a string `language` as input. It returns the code highlighted for the specified language using Pygments. The function selects an appropriate lexer based on the language (Matlab, Python, C++, Java) or defaults to `TextLexer` if the language is not recognized. It then uses an HTML formatter to format the highlighted code and wraps it in `&lt;pre&gt;&lt;code&gt;` tags for display.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_highlight</span>(code: <span style="color: #008000">str</span>, language: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``code`` highlighted for ``language`` using pygments.&quot;&quot;&quot;</span>
     <span style="color: #008000; font-weight: bold">if</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;matlab&quot;</span>:
         lexer <span style="color: #666666">=</span> MatlabLexer()
     <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;python&quot;</span>:
         lexer <span style="color: #666666">=</span> PythonLexer()
+    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;cpp&quot;</span>:
+        lexer <span style="color: #666666">=</span> CppLexer()
+    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;java&quot;</span>:
+        lexer <span style="color: #666666">=</span> JavaLexer()
     <span style="color: #008000; font-weight: bold">else</span>:
         lexer <span style="color: #666666">=</span> TextLexer()
     formatter <span style="color: #666666">=</span> HtmlFormatter(noclasses<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>, nowrap<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
@@ -60,7 +68,7 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">f&quot;&lt;pre&gt;&lt;code&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>highlighted<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/code&gt;&lt;/pre&gt;&quot;</span>
 </code></pre>
 <h3 id="_render_html">_render_html(title: str, header: str, body: str, nav_html: str) -&gt; str</h3>
-<p>The function `_render_html` takes four parameters: `title`, `header`, `body`, and `nav_html`. It reads a template file located at `_TEMPLATE_PATH`, which is expected to contain placeholders for the title, header, body, navigation, and static path. The function then formats these placeholders with the provided values and returns the resulting HTML string, prefixed with a comment indicating that it was generated by DocGen-LM.</p>
+<p>The function `_render_html` takes four parameters: `title`, `header`, `body`, and `nav_html`. It reads a template file specified by `_TEMPLATE_PATH`, which is assumed to be a path object. The template is expected to contain placeholders for the title, header, body, navigation HTML, and static path. These placeholders are replaced with the provided values using Python&#x27;s string formatting method. The function then returns a string that represents the rendered HTML content, prefixed with a comment indicating it was generated by DocGen-LM.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_html</span>(title: <span style="color: #008000">str</span>, header: <span style="color: #008000">str</span>, body: <span style="color: #008000">str</span>, nav_html: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
     template <span style="color: #666666">=</span> _TEMPLATE_PATH<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
     content <span style="color: #666666">=</span> template<span style="color: #666666">.</span>format(
@@ -73,13 +81,9 @@
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;!-- Generated by DocGen-LM --&gt;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">+</span> content
 </code></pre>
 <h3 id="write_index">write_index(output_dir: str, project_summary: str, page_links: Iterable[Tuple[str, str]], module_summaries: Dict[str, str] | None=None) -&gt; None</h3>
-<p>The `write_index` function generates the content for an `index.html` file in a specified output directory. It takes three required parameters: `output_dir`, `project_summary`, and `page_links`. Optionally, it accepts a dictionary `module_summaries`.
+<p>This function `write_index` generates an HTML file named `index.html` in the specified output directory. It takes three required parameters: `output_dir`, `project_summary`, and `page_links`. The optional parameter `module_summaries` provides additional summaries for modules.
 
-The function creates the destination directory if it doesn&#x27;t exist. It constructs navigation links from the provided `page_links` and escapes any HTML content to prevent injection attacks.
-
-It then builds the body of the HTML document by combining the project summary, a horizontal rule, and a list of modules with their summaries (if available). Each module is linked to its respective page.
-
-Finally, it uses a helper function `_render_html` to format these elements into a complete HTML structure and writes this content to `index.html` in the specified output directory.</p>
+The function creates a directory if it doesn&#x27;t exist, constructs navigation links from `page_links`, and includes a project summary and module summaries in the HTML body. It then uses `_render_html` to create the final HTML content and writes it to `index.html`.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">write_index</span>(
     output_dir: <span style="color: #008000">str</span>,
     project_summary: <span style="color: #008000">str</span>,
@@ -119,15 +123,11 @@ Finally, it uses a helper function `_render_html` to format these elements into 
     (dest_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>write_text(html_out, encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
 <h3 id="_render_function">_render_function(func: dict[str, Any], language: str, level: int=3, prefix: str=&#x27;&#x27;) -&gt; list[str]</h3>
-<p>This function `_render_function` generates HTML parts for a given Python or MATLAB function and its nested subfunctions. It takes a dictionary representing the function, the programming language (either &quot;python&quot; or &quot;matlab&quot;), an optional heading level (default is 3), and an optional prefix string.
+<p>This function `_render_function` takes a dictionary representing a function (`func`), a programming `language`, an optional `level` for HTML headings (default is 3), and an optional `prefix`. It returns a list of HTML strings that represent the function and any nested subfunctions.
 
-The function constructs HTML elements based on the provided function data:
-1. It creates an HTML header tag (`&lt;h1&gt;` to `&lt;h6&gt;`) with the function&#x27;s signature or name, using the specified level.
-2. If a summary or docstring is available, it adds a paragraph element containing the escaped text.
-3. If source code is present, it calls `_highlight` to syntax-highlight the code and appends the result.
-4. For each nested subfunction, it creates a `&lt;details&gt;` element with a `&lt;summary&gt;` for the subfunction&#x27;s signature or name, then recursively renders the subfunction using the same parameters.
+The function constructs an HTML heading based on the function&#x27;s signature or name, using the specified level. If a summary or docstring is available, it adds a paragraph with the escaped content. If source code is provided, it calls another function `_highlight` to highlight the code according to the given language.
 
-The function returns a list of HTML string parts that can be joined to form the complete HTML representation of the function and its subfunctions.</p>
+For each subfunction nested within the current function, it creates a `&lt;details&gt;` element with a `&lt;summary&gt;` for the subfunction&#x27;s signature or name. It then recursively calls itself to render the HTML for the subfunction, increasing the heading level by 1. Finally, it appends all parts together and returns them as a list of HTML strings.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_function</span>(func: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">3</span>, prefix: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``func`` and any nested subfunctions.&quot;&quot;&quot;</span>
 
@@ -154,7 +154,13 @@ The function returns a list of HTML string parts that can be joined to form the 
     <span style="color: #008000; font-weight: bold">return</span> parts
 </code></pre>
 <h3 id="_render_class">_render_class(cls: dict[str, Any], language: str, level: int=2) -&gt; list[str]</h3>
-<p>This function `_render_class` takes a dictionary representing a class, a programming language string, and an optional level integer (defaulting to 2). It returns a list of HTML strings that represent the class and its subclasses. The function uses recursion to handle nested subclasses. It generates HTML tags for the class name and documentation, and it iterates over methods and subclasses within the class, rendering them using helper functions `_render_function` and `_render_class`, respectively.</p>
+<p>This function `_render_class` generates HTML parts for a class and its subclasses. It takes a dictionary representing the class, a programming language string, and an optional level parameter (default is 2). The function returns a list of HTML strings.
+
+- It starts by creating an HTML heading tag (`&lt;hX&gt;`) with the class name.
+- If the class has a docstring or summary, it adds a paragraph with the escaped text.
+- It then processes variables within the class, adding headings and descriptions for each variable.
+- For each method in the class, it calls `_render_function` to generate HTML parts.
+- Finally, it recursively processes subclasses, wrapping them in `&lt;details&gt;` tags for expandable sections.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_class</span>(<span style="color: #008000">cls</span>: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">2</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``cls`` and any subclasses.&quot;&quot;&quot;</span>
 
@@ -165,6 +171,23 @@ The function returns a list of HTML string parts that can be joined to form the 
     doc <span style="color: #666666">=</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>)
     <span style="color: #008000; font-weight: bold">if</span> doc:
         parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(doc)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+
+    variables <span style="color: #666666">=</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
+    <span style="color: #008000; font-weight: bold">if</span> variables:
+        var_section_tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #bbbbbb"> </span><span style="color: #666666">+</span><span style="color: #bbbbbb"> </span><span style="color: #666666">1</span>,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+        parts<span style="color: #666666">.</span>append(
+            <span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>var_section_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>cls_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">-variables&quot;&gt;Variables&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>var_section_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>
+        )
+        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #AA22FF; font-weight: bold">in</span> variables:
+            var_tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #bbbbbb"> </span><span style="color: #666666">+</span><span style="color: #bbbbbb"> </span><span style="color: #666666">2</span>,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+            name <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+            parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
+            summary <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
+            <span style="color: #008000; font-weight: bold">if</span> summary:
+                parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+            src <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
+            <span style="color: #008000; font-weight: bold">if</span> src:
+                parts<span style="color: #666666">.</span>append(_highlight(src, language))
 
     <span style="color: #008000; font-weight: bold">for</span> method <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;methods&quot;</span>, []):
         parts<span style="color: #666666">.</span>extend(_render_function(method, language, level <span style="color: #666666">+</span> <span style="color: #666666">1</span>, <span style="color: #BA2121">&quot;Method: &quot;</span>))
@@ -178,11 +201,7 @@ The function returns a list of HTML string parts that can be joined to form the 
     <span style="color: #008000; font-weight: bold">return</span> parts
 </code></pre>
 <h3 id="write_module_page">write_module_page(output_dir: str, module_data: dict[str, Any], page_links: Iterable[Tuple[str, str]]) -&gt; None</h3>
-<p>This function `write_module_page` generates an HTML documentation page for a Python or MATLAB module. It takes three parameters: `output_dir`, which is the directory where the output HTML file will be saved; `module_data`, a dictionary containing information about the module, including its name, summary, classes, and functions; and `page_links`, an iterable of tuples representing navigation links.
-
-The function first constructs the destination directory for the HTML file and ensures it exists. It then extracts the module&#x27;s name and language from `module_data`. Navigation items are created for the project overview and any additional page links provided.
-
-The body of the HTML page is built by concatenating sections for the module summary, classes, and functions. Each class and function is rendered using helper functions `_render_class` and `_render_function`, respectively. The final HTML content is generated by combining the navigation and body parts, and then written to a file named after the module in the specified output directory.</p>
+<p>This function `write_module_page` generates an HTML documentation page for a module. It takes three parameters: `output_dir`, `module_data`, and `page_links`. The function creates the output directory if it doesn&#x27;t exist. It constructs navigation items based on provided links and renders the body of the HTML page using data from `module_data`. The body includes summaries, classes, variables, and functions, each rendered with appropriate HTML tags and syntax highlighting where applicable. Finally, it writes the generated HTML content to a file named after the module in the output directory.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">write_module_page</span>(output_dir: <span style="color: #008000">str</span>, module_data: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], page_links: Iterable[Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>]]) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Render a module documentation page using ``module_data``.&quot;&quot;&quot;</span>
     dest_dir <span style="color: #666666">=</span> Path(output_dir)
@@ -202,6 +221,19 @@ The body of the HTML page is built by concatenating sections for the module summ
 
     <span style="color: #008000; font-weight: bold">for</span> <span style="color: #008000">cls</span> <span style="color: #AA22FF; font-weight: bold">in</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;classes&quot;</span>, []):
         body_parts<span style="color: #666666">.</span>extend(_render_class(<span style="color: #008000">cls</span>, language, <span style="color: #666666">2</span>))
+
+    module_vars <span style="color: #666666">=</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
+    <span style="color: #008000; font-weight: bold">if</span> module_vars:
+        body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&#39;&lt;h2 id=&quot;variables&quot;&gt;Variables&lt;/h2&gt;&#39;</span>)
+        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #AA22FF; font-weight: bold">in</span> module_vars:
+            var_name <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+            body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;h3 id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>var_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(var_name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/h3&gt;&#39;</span>)
+            summary <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
+            <span style="color: #008000; font-weight: bold">if</span> summary:
+                body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+            src <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
+            <span style="color: #008000; font-weight: bold">if</span> src:
+                body_parts<span style="color: #666666">.</span>append(_highlight(src, language))
 
     <span style="color: #008000; font-weight: bold">if</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;functions&quot;</span>):
         body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;h2&gt;Functions&lt;/h2&gt;&quot;</span>)

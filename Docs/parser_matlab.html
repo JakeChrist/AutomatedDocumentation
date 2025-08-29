@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,10 +47,10 @@
     </div>
     <div class="content">
         <h1>parser_matlab</h1>
-        <p>This module provides a function `parse_matlab_file` that parses MATLAB `.m` files and extracts basic structure. It reads the file content, identifies leading comment lines as the file header, and uses regular expressions to find and extract function declarations along with their arguments. The result is returned as a dictionary containing the file header comments and a list of functions, each represented by its name and arguments.</p>
+        <p>This module provides a function `parse_matlab_file` that parses MATLAB `.m` files and extracts basic structure. It reads the file content, identifies leading comment lines as the file header, and uses a regular expression to find and extract function declarations along with their arguments. The result is returned as a dictionary containing the file header and a list of functions, each represented by its name and argument list.</p>
 <h2>Functions</h2>
 <h3 id="parse_matlab_file">parse_matlab_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract basic structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found. Each function entry includes the function name and a list of arguments. The function handles leading comment lines as the file header, identifies function declarations using regular expressions, and organizes them into a structured dictionary format for further processing or documentation generation.</p>
+<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract its basic structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found within the file. Each function entry includes the function name and a list of arguments. The function uses regular expressions to identify and parse function declarations, handling both comma-separated and semicolon-separated argument lists.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
 

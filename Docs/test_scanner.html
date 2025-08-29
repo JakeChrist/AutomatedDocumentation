@@ -20,6 +20,8 @@
 <li><a href="html_writer.html">html_writer</a></li>
 <li><a href="llm_client.html">llm_client</a></li>
 <li><a href="manual_utils.html">manual_utils</a></li>
+<li><a href="parser_cpp.html">parser_cpp</a></li>
+<li><a href="parser_java.html">parser_java</a></li>
 <li><a href="parser_matlab.html">parser_matlab</a></li>
 <li><a href="parser_python.html">parser_python</a></li>
 <li><a href="reviewer.html">reviewer</a></li>
@@ -35,6 +37,8 @@
 <li><a href="test_integration.html">test_integration</a></li>
 <li><a href="test_llm_client.html">test_llm_client</a></li>
 <li><a href="test_manual_utils.html">test_manual_utils</a></li>
+<li><a href="test_parser_cpp.html">test_parser_cpp</a></li>
+<li><a href="test_parser_java.html">test_parser_java</a></li>
 <li><a href="test_parser_matlab.html">test_parser_matlab</a></li>
 <li><a href="test_parser_python.html">test_parser_python</a></li>
 <li><a href="test_reviewer.html">test_reviewer</a></li>
@@ -43,16 +47,15 @@
     </div>
     <div class="content">
         <h1>test_scanner</h1>
-        <p>The module defines a test suite for the `scan_directory` function from the `scanner` module. It includes three tests:
+        <p>The module defines a test suite for the `scan_directory` function from the `scanner` module. It includes tests to verify that:
 
-1. **test_scan_directory_ignore_folder**: Creates a directory structure with files and a subdirectory named &quot;ignore_me&quot;. Calls `scan_directory` with this path and a list containing &quot;ignore_me&quot; to ignore it. Asserts that only non-ignored files are returned.
-
-2. **test_scan_directory_mixed_file_types**: Creates a directory structure with various file types (Python, Objective-C, text). Calls `scan_directory` without ignoring any folders. Asserts that all non-hidden files of supported types are returned.
-
-3. **test_scan_directory_skips_git_folder**: Creates a directory structure including a hidden `.git` folder and its contents. Calls `scan_directory` without ignoring any folders. Asserts that the `.git` folder and its contents are not included in the result.</p>
+1. The function correctly ignores specified folders.
+2. The function returns all files of various types (Python, Objective-C, text).
+3. The function skips the `.git` folder by default.
+4. The function supports additional file extensions like C++, C headers, and Java.</p>
 <h2>Functions</h2>
 <h3 id="create_files">create_files(base: Path, files: list[str]) -&gt; None</h3>
-<p>The function `create_files` takes a base directory and a list of relative file paths. It iterates over the list, creating any necessary parent directories for each file using `path.parent.mkdir(parents=True, exist_ok=True)`, and then writes an empty string to each file using `path.write_text(&quot;&quot;)`.</p>
+<p>This function `create_files` takes a directory path (`base`) and a list of file paths relative to that directory (`files`). It iterates over each relative file path, constructs the full path by joining it with the base directory, creates any necessary parent directories (if they don&#x27;t already exist), and then writes an empty string to the file.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">create_files</span>(base: Path, files: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     <span style="color: #008000; font-weight: bold">for</span> rel <span style="color: #AA22FF; font-weight: bold">in</span> files:
         path <span style="color: #666666">=</span> base <span style="color: #666666">/</span> rel
@@ -60,7 +63,7 @@
         path<span style="color: #666666">.</span>write_text(<span style="color: #BA2121">&quot;&quot;</span>)
 </code></pre>
 <h3 id="test_scan_directory_ignore_folder">test_scan_directory_ignore_folder(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_scan_directory_ignore_folder` is designed to test the functionality of scanning a directory while ignoring specified subdirectories. It creates a temporary directory with various files and subdirectories, including some that should be ignored. The function then calls `scan_directory` with the path of the temporary directory and a list of directories to ignore. The result is compared against an expected set of file paths, ensuring that only the non-ignored files are included in the output.</p>
+<p>The function `test_scan_directory_ignore_folder` tests the `scan_directory` function to ensure it correctly ignores specified folders when scanning a directory. It creates a temporary directory with various files and subdirectories, including an ignored folder named &quot;ignore_me&quot;. The function then calls `scan_directory` with the path of the temporary directory and a list containing the name of the folder to ignore. The result is compared to an expected set of file paths, which excludes any files within the ignored folder.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_scan_directory_ignore_folder</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     create_files(
         tmp_path,
@@ -83,7 +86,9 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(result) <span style="color: #666666">==</span> expected
 </code></pre>
 <h3 id="test_scan_directory_mixed_file_types">test_scan_directory_mixed_file_types(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_scan_directory_mixed_file_types` tests the functionality of scanning a directory for files with mixed file types. It creates a temporary directory using `tmp_path`, populates it with various files including Python, MATLAB, and text files, and nested directories containing different file types. The function then calls `scan_directory` with the path to this temporary directory and an empty list as arguments. The expected result is a set of file paths for all Python and MATLAB files found in the directory and its subdirectories. The test asserts that the actual result matches the expected set of file paths, ensuring that the directory scanning works correctly for mixed file types.</p>
+<p>This function, `test_scan_directory_mixed_file_types`, is designed to test the functionality of a directory scanning utility. It creates a temporary directory with files of various types (Python, MATLAB, text) and nested subdirectories containing additional files. The function then calls `scan_directory` with the path of this temporary directory and an empty list as arguments.
+
+The expected result is a set of file paths representing all Python and MATLAB files in the directory and its subdirectory, excluding non-programming files like `.txt` and Markdown files. The test asserts that the actual result matches this expected set of file paths.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_scan_directory_mixed_file_types</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     create_files(
         tmp_path,
@@ -108,7 +113,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(result) <span style="color: #666666">==</span> expected
 </code></pre>
 <h3 id="test_scan_directory_skips_git_folder">test_scan_directory_skips_git_folder(tmp_path: Path) -&gt; None</h3>
-<p>The function `test_scan_directory_skips_git_folder` tests the behavior of a directory scanning utility, ensuring that it skips files and directories within the `.git` folder. It creates a temporary directory with specified files, including those inside a `.git` subdirectory, then scans the directory using the `scan_directory` function. The test asserts that the path to the file outside the `.git` directory is included in the scan results, while no paths containing `.git` are present.</p>
+<p>This function tests the `scan_directory` function to ensure it skips files and directories within a `.git` folder. It creates a temporary directory with a mix of files, including those inside a `.git` subdirectory. The function then scans the directory and asserts that only non-`.git` files are included in the result.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_scan_directory_skips_git_folder</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     create_files(
         tmp_path,
@@ -123,6 +128,34 @@
 
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;good.py&quot;</span>) <span style="color: #AA22FF; font-weight: bold">in</span> result
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000">any</span>(<span style="color: #BA2121">&quot;.git&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> p <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> result)
+</code></pre>
+<h3 id="test_scan_directory_supports_cpp_h_java">test_scan_directory_supports_cpp_h_java(tmp_path: Path) -&gt; None</h3>
+<p>The function `test_scan_directory_supports_cpp_h_java` tests the `scan_directory` function to ensure it correctly identifies and includes all supported file types (C++, C++ header, Java, and Java nested files) within a specified directory. It uses a temporary path created by `tmp_path`, populates it with various files including nested directories, and then asserts that the `scan_directory` function returns a set of file paths matching those expected for the given file types.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_scan_directory_supports_cpp_h_java</span>(tmp_path: Path) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+    create_files(
+        tmp_path,
+        [
+            <span style="color: #BA2121">&quot;main.cpp&quot;</span>,
+            <span style="color: #BA2121">&quot;header.h&quot;</span>,
+            <span style="color: #BA2121">&quot;Program.java&quot;</span>,
+            os<span style="color: #666666">.</span>path<span style="color: #666666">.</span>join(<span style="color: #BA2121">&quot;nested&quot;</span>, <span style="color: #BA2121">&quot;util.cpp&quot;</span>),
+            os<span style="color: #666666">.</span>path<span style="color: #666666">.</span>join(<span style="color: #BA2121">&quot;nested&quot;</span>, <span style="color: #BA2121">&quot;helper.h&quot;</span>),
+            os<span style="color: #666666">.</span>path<span style="color: #666666">.</span>join(<span style="color: #BA2121">&quot;nested&quot;</span>, <span style="color: #BA2121">&quot;Example.java&quot;</span>),
+            <span style="color: #BA2121">&quot;skip.txt&quot;</span>,
+        ],
+    )
+
+    result <span style="color: #666666">=</span> scan_directory(<span style="color: #008000">str</span>(tmp_path), [])
+
+    expected <span style="color: #666666">=</span> {
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;main.cpp&quot;</span>),
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;header.h&quot;</span>),
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Program.java&quot;</span>),
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;nested&quot;</span> <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;util.cpp&quot;</span>),
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;nested&quot;</span> <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;helper.h&quot;</span>),
+        <span style="color: #008000">str</span>(tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;nested&quot;</span> <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;Example.java&quot;</span>),
+    }
+    <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">set</span>(result) <span style="color: #666666">==</span> expected
 </code></pre>
     </div>
     <script src="static/toggle.js"></script>
