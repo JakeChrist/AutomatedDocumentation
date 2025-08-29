@@ -5,6 +5,8 @@ Handles communication with LMStudio to obtain summaries.
 
 from __future__ import annotations
 
+import json
+import logging
 import re
 import time
 from typing import Any, Dict
@@ -159,12 +161,27 @@ class LLMClient:
         }
 
         error_message = ""
+        response = None
         for _ in range(3):
             try:
-                response = requests.post(self.endpoint, json=payload, timeout=None)
+                logging.info("LLM request started")
+                response = requests.post(
+                    self.endpoint, json=payload, timeout=None, stream=True
+                )
+                content_bytes = bytearray()
+                last_log = time.time()
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        content_bytes.extend(chunk)
+                        logging.debug("Received %d bytes", len(chunk))
+                        last_log = time.time()
+                    elif time.time() - last_log > 5:
+                        logging.debug("Waiting for LLM response...")
+                        last_log = time.time()
                 response.raise_for_status()
-                data = response.json()
+                data = json.loads(content_bytes.decode())
                 content = data["choices"][0]["message"]["content"]
+                logging.info("LLM request completed")
                 return sanitize_summary(content)
             except HTTPError as exc:
                 resp = exc.response or response
@@ -176,11 +193,14 @@ class LLMClient:
                         error_message = resp.text
                 except ValueError:
                     error_message = resp.text
+                logging.error("LLM request failed: %s", error_message)
                 time.sleep(1)
             except RequestException as exc:
                 error_message = str(exc)
+                logging.error("LLM request failed: %s", error_message)
                 time.sleep(1)
 
+        logging.error("LLM request failed: %s", error_message)
         raise RuntimeError(f"LLM request failed: {error_message}")
 
 
