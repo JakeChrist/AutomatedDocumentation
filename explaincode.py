@@ -407,7 +407,9 @@ def extract_snippets(
 
     snippets: dict[Path, str] = {}
     start = time.perf_counter()
-    for idx, path in enumerate(tqdm(list(files), desc="Scanning code files")):
+    for idx, path in enumerate(
+        tqdm(files, desc="Scanning code files", total=len(files))
+    ):
         elapsed = time.perf_counter() - start
         logging.info("Considering %s (elapsed %.2fs)", path, elapsed)
         if idx >= max_files:
