@@ -31,7 +31,7 @@ from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from parser_cpp import parse_cpp_file
 from parser_java import parse_java_file
-from scanner import scan_directory
+from scanner import scan_directory, _is_subpath
 
 
 def clean_output_dir(output_dir: str) -> None:
@@ -633,14 +633,45 @@ def main(argv: list[str] | None = None) -> int:
     project_outline = "\n".join(project_lines)
 
     # gather markdown documentation
-    md_files = []
+    md_files: list[Path] = []
     readme = Path(args.source) / "README.md"
     if readme.exists():
         md_files.append(readme)
-    for p in Path(args.source).rglob('*'):
-        if p.is_dir() and p.name.lower() == 'docs':
-            for md in p.rglob('*.md'):
-                md_files.append(md)
+
+    base = Path(args.source).resolve()
+    ignore_paths = {(base / p).resolve() for p in args.ignore}
+
+    for root, dirs, _files in os.walk(base, topdown=True, followlinks=False):
+        root_path = Path(root)
+
+        # prune symlinks and ignored directories
+        pruned: list[str] = []
+        for d in dirs:
+            dir_path = root_path / d
+            if dir_path.is_symlink():
+                continue
+            if any(_is_subpath((dir_path).resolve(), ig) for ig in ignore_paths):
+                continue
+            pruned.append(d)
+        dirs[:] = pruned
+
+        docs_dirs = [d for d in dirs if d.lower() == "docs"]
+        for d in docs_dirs:
+            docs_path = root_path / d
+            for r, d2, f2 in os.walk(docs_path, topdown=True, followlinks=False):
+                r_path = Path(r)
+                d2[:] = [
+                    dd
+                    for dd in d2
+                    if not (r_path / dd).is_symlink()
+                    and not any(_is_subpath((r_path / dd).resolve(), ig) for ig in ignore_paths)
+                ]
+                for name in f2:
+                    if name.endswith(".md"):
+                        md_files.append(Path(r_path) / name)
+
+        # prevent os.walk from recursing into docs directories again
+        dirs[:] = [d for d in dirs if d.lower() != "docs"]
 
     md_parts = []
     for md_file in md_files:
