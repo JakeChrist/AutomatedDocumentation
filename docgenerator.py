@@ -767,7 +767,7 @@ def main(argv: list[str] | None = None) -> int:
     write_index(str(output_dir), project_summary, page_links, module_summaries)
     for module in modules:
         write_module_page(str(output_dir), module, page_links)
-        cache.mark_done(module.get("path", ""), module)
+        cache.set_progress_entry(module.get("path", ""), module)
         processed_paths.add(module.get("path", ""))
 
     if args.clear_progress or len(processed_paths) == len(files):

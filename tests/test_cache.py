@@ -27,7 +27,7 @@ def test_progress_tracking(tmp_path: Path) -> None:
     cache_file = tmp_path / "cache.json"
     cache = ResponseCache(str(cache_file))
     module_data = {"path": "mod.py", "summary": "s"}
-    cache.mark_done("mod.py", module_data)
+    cache.set_progress_entry("mod.py", module_data)
 
     new_cache = ResponseCache(str(cache_file))
     assert new_cache.get_progress() == {"mod.py": module_data}
