@@ -48,7 +48,7 @@ class ResponseCache:
         # return a shallow copy to prevent accidental mutation
         return dict(progress)
 
-    def mark_done(self, path: str, module_data: Dict[str, Any]) -> None:
+    def set_progress_entry(self, path: str, module_data: Dict[str, Any]) -> None:
         """Record ``module_data`` for ``path`` in the progress map."""
         progress = self._data.setdefault("__progress__", {})
         progress[path] = module_data
