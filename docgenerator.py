@@ -519,6 +519,11 @@ def main(argv: list[str] | None = None) -> int:
         default=4096,
         help="Maximum token context window for the LLM",
     )
+    parser.add_argument(
+        "--clear-progress",
+        action="store_true",
+        help="Clear saved progress after a successful run",
+    )
     args = parser.parse_args(argv)
 
     client = LLMClient(base_url=args.llm_url, model=args.model)
@@ -540,10 +545,15 @@ def main(argv: list[str] | None = None) -> int:
     shutil.copytree(static_dir, output_dir / "static", dirs_exist_ok=True)
 
     cache = ResponseCache(str(output_dir / "cache.json"))
+    progress = cache.get_progress()
+    processed_paths = set(progress.keys())
 
     files = scan_directory(args.source, args.ignore)
     modules = []
     for path in tqdm(files, desc="Processing modules"):
+        if path in processed_paths:
+            modules.append(progress[path])
+            continue
         try:
             text = Path(path).read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:  # skip files with invalid encoding
@@ -715,6 +725,8 @@ def main(argv: list[str] | None = None) -> int:
     # and rewrite method/function docstrings with context.
     for module in modules:
         path = module.get("path", "")
+        if path in processed_paths:
+            continue
         for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
             _summarize_class_recursive(
                 cls,
@@ -755,6 +767,11 @@ def main(argv: list[str] | None = None) -> int:
     write_index(str(output_dir), project_summary, page_links, module_summaries)
     for module in modules:
         write_module_page(str(output_dir), module, page_links)
+        cache.mark_done(module.get("path", ""), module)
+        processed_paths.add(module.get("path", ""))
+
+    if args.clear_progress or len(processed_paths) == len(files):
+        cache.clear_progress()
 
     return 0
 
