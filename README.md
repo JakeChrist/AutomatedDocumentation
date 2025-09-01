@@ -44,8 +44,34 @@ Optional flags:
 | `--llm-url`   | Base URL of the LLM server       |
 | `--model`     | Model name to use                |
 | `--max-context-tokens` | Override the model's context window |
+| `--resume`    | Continue from cached progress    |
+| `--clear-progress` | Remove saved progress after a run |
 
 The LLM must be running and reachable via `llm_client.py`.
+
+### Automatic Progress Saving
+
+DocGen-LM stores intermediate results in a `cache.json` file inside the
+output directory. If the generator stops partway through, rerun it with
+`--resume` to continue from the last saved point. Use `--clear-progress`
+to remove the saved state after a successful run.
+
+Example of resuming an interrupted run:
+
+```bash
+python docgenerator.py ./my_project --output ./docs
+# ... interrupted ...
+python docgenerator.py ./my_project --output ./docs --resume
+```
+
+To rebuild from scratch, run with `--clear-progress` or delete
+`cache.json` manually:
+
+```bash
+python docgenerator.py ./my_project --output ./docs --clear-progress
+# or
+rm docs/cache.json
+```
 
 ### C++ Example
 
