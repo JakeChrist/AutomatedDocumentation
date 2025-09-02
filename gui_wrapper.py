@@ -207,14 +207,17 @@ class MainWindow(QtWidgets.QWidget):
 
         # Buttons
         self.docgen_btn = QtWidgets.QPushButton("Run DocGen")
+        self.resume_btn = QtWidgets.QPushButton("Resume DocGen")
         self.explain_btn = QtWidgets.QPushButton("Run ExplainCode")
         self.both_btn = QtWidgets.QPushButton("Run Both")
         self.docgen_btn.clicked.connect(self.run_docgen)
+        self.resume_btn.clicked.connect(self.run_docgen_resume)
         self.explain_btn.clicked.connect(self.run_explain)
         self.both_btn.clicked.connect(self.run_both)
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch()
         button_layout.addWidget(self.docgen_btn)
+        button_layout.addWidget(self.resume_btn)
         button_layout.addWidget(self.explain_btn)
         button_layout.addWidget(self.both_btn)
 
@@ -281,7 +284,7 @@ class MainWindow(QtWidgets.QWidget):
         sb.setValue(sb.maximum())
 
     def set_running(self, running):
-        for btn in (self.docgen_btn, self.explain_btn, self.both_btn):
+        for btn in (self.docgen_btn, self.resume_btn, self.explain_btn, self.both_btn):
             btn.setEnabled(not running)
 
     def run_commands(self, cmds):
@@ -298,7 +301,7 @@ class MainWindow(QtWidgets.QWidget):
         self.append_log(f"Process finished with exit code {code}\n")
         self.set_running(False)
 
-    def build_docgen_cmd(self):
+    def build_docgen_cmd(self, resume=False):
         cmd = [
             "pythonw",
             "docgenerator.py",
@@ -306,6 +309,8 @@ class MainWindow(QtWidgets.QWidget):
             "--output",
             self.output_edit.text(),
         ]
+        if resume:
+            cmd.append("--resume")
         if self.docgen_private_cb.isChecked():
             cmd.append("--include-private")
         # DocGen-LM now auto-detects supported languages (Python, MATLAB, C++,
@@ -330,6 +335,10 @@ class MainWindow(QtWidgets.QWidget):
     def run_docgen(self):
         self.log.clear()
         self.run_commands([self.build_docgen_cmd()])
+
+    def run_docgen_resume(self):
+        self.log.clear()
+        self.run_commands([self.build_docgen_cmd(resume=True)])
 
     def run_explain(self):
         self.log.clear()

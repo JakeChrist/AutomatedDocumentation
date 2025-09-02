@@ -56,6 +56,7 @@ output directory. Cached progress is cleared at startup unless `--resume`
 is supplied. If the generator stops partway through, rerun it with
 `--resume` to continue from the last saved point. Use `--clear-progress`
 to remove the saved state after a successful run when resuming.
+In the GUI, click **Resume DocGen** to continue using the cached progress.
 
 Example of resuming an interrupted run:
 
@@ -132,6 +133,7 @@ The interface provides:
 
 - Project and output directory selectors
 - DocGen options such as including private functions and choosing languages (Python, MATLAB, C++, Java)
+- A **Resume DocGen** button to continue generating documentation from cached progress
 - ExplainCode options for selecting the output format and adding an optional data file
 
 DocGen-LM auto-detects supported languages, so selecting them in the GUI is optional and provided for clarity.
