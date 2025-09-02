@@ -520,6 +520,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Maximum token context window for the LLM",
     )
     parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from previously saved progress",
+    )
+    parser.add_argument(
         "--clear-progress",
         action="store_true",
         help="Clear saved progress after a successful run",
@@ -545,6 +550,8 @@ def main(argv: list[str] | None = None) -> int:
     shutil.copytree(static_dir, output_dir / "static", dirs_exist_ok=True)
 
     cache = ResponseCache(str(output_dir / "cache.json"))
+    if not args.resume:
+        cache.clear_progress()
     progress = cache.get_progress()
     processed_paths = set(progress.keys())
 
@@ -770,7 +777,11 @@ def main(argv: list[str] | None = None) -> int:
         cache.set_progress_entry(module.get("path", ""), module)
         processed_paths.add(module.get("path", ""))
 
-    if args.clear_progress or len(processed_paths) == len(files):
+    if (
+        not args.resume
+        or args.clear_progress
+        or len(processed_paths) == len(files)
+    ):
         cache.clear_progress()
 
     return 0
