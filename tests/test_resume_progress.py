@@ -52,7 +52,7 @@ def test_resume_progress(tmp_path, monkeypatch):
     monkeypatch.setattr(ResponseCache, "set_progress_entry", original_set_progress)
     module_calls.clear()
 
-    ret = docgenerator.main(["--output", str(out_dir), str(project_dir)])
+    ret = docgenerator.main(["--output", str(out_dir), str(project_dir), "--resume"])
     assert ret == 0
 
     assert [Path(p).name for p in module_calls] == ["mod2.py"]
