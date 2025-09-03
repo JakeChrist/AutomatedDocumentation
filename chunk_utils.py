@@ -37,10 +37,15 @@ def get_tokenizer():
 
     class _Simple:
         def encode(self, text: str):
-            return text.split()
+            # Approximate tokenization by splitting text into 4-character chunks.
+            # This avoids under-counting tokens for long strings without
+            # whitespace, which could otherwise produce extremely large
+            # chunks and stall the LLM.
+            step = 4
+            return [text[i : i + step] for i in range(0, len(text), step)]
 
         def decode(self, tokens):
-            return " ".join(tokens)
+            return "".join(tokens)
 
     return _Simple()
 
@@ -100,6 +105,11 @@ def _split_long_block(block: str, tokenizer, chunk_size_tokens: int) -> List[str
     if len(tokens) <= chunk_size_tokens:
         return [block]
 
+    # Preserve fenced code blocks even if they exceed the token budget.
+    stripped = block.strip()
+    if stripped.startswith("```") and stripped.endswith("```"):
+        return [block]
+
     avg_chars = max(len(block) // len(tokens), 1)
     max_chars = max(chunk_size_tokens * avg_chars, 1)
     return [block[i : i + max_chars] for i in range(0, len(block), max_chars)]
@@ -118,20 +128,23 @@ def chunk_text(text: str, tokenizer, chunk_size_tokens: int) -> List[str]:
     chunks: List[str] = []
     current: List[str] = []
     token_count = 0
+    sep_tokens = len(tokenizer.encode("\n\n"))
 
     for block in blocks:
         block_tokens = len(tokenizer.encode(block))
-        if token_count + block_tokens > chunk_size_tokens and current:
+        additional = block_tokens if not current else block_tokens + sep_tokens
+        if token_count + additional > chunk_size_tokens and current:
             chunks.append("\n\n".join(current))
             current = []
             token_count = 0
+            additional = block_tokens  # recompute for new chunk without separator
 
         if block_tokens > chunk_size_tokens:
             chunks.extend(_split_long_block(block, tokenizer, chunk_size_tokens))
             continue
 
         current.append(block)
-        token_count += block_tokens
+        token_count += additional
 
     if current:
         chunks.append("\n\n".join(current))
