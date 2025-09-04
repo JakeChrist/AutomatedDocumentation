@@ -9,7 +9,9 @@ split.  This keeps paragraphs and code fences intact which is important when
 sending chunks to a language model for processing.
 """
 
+import os
 import sys
+import warnings
 from typing import List
 
 try:  # optional dependency used for token counting
@@ -30,19 +32,37 @@ def get_tokenizer():
             except Exception:
                 pass
 
-    print(
-        "[WARNING] tiktoken is not installed or could not be loaded; token counts will be approximate.",
-        file=sys.stderr,
+    msg = (
+        "tiktoken is not installed or could not be loaded; token counts will be "
+        "approximate. Install `tiktoken` for accurate token counting."
     )
+
+    if os.environ.get("DOCUTILS_STRICT_TOKENS"):
+        raise RuntimeError(msg)
+
+    warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     class _Simple:
         def encode(self, text: str):
-            # Approximate tokenization by splitting text into 4-character chunks.
-            # This avoids under-counting tokens for long strings without
-            # whitespace, which could otherwise produce extremely large
-            # chunks and stall the LLM.
-            step = 4
-            return [text[i : i + step] for i in range(0, len(text), step)]
+            """Rudimentary tokenizer that overestimates token counts.
+
+            The tokenizer splits text into one or two character pieces, treating
+            whitespace and punctuation as individual tokens.  This conservative
+            approach intentionally overcounts tokens which is safer than
+            under-counting when ``tiktoken`` is unavailable.
+            """
+
+            tokens = []
+            i = 0
+            while i < len(text):
+                ch = text[i]
+                if ch.isspace() or not ch.isalnum():
+                    tokens.append(ch)
+                    i += 1
+                else:
+                    tokens.append(text[i : i + 2])
+                    i += 2
+            return tokens
 
         def decode(self, tokens):
             return "".join(tokens)
