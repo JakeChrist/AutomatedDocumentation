@@ -79,6 +79,14 @@ def sanitize_summary(text: str) -> str:
     if text.strip() == "project summary":
         return "It prints."
 
+    # Remove FIM special tokens that some models may emit.  The
+    # ``tiktoken`` tokenizer refuses to encode these reserved tokens and
+    # raises ``DisallowedToken`` errors if they appear in the prompt.  A
+    # stray token can therefore crash later merging steps when we attempt
+    # to re-tokenize model output.  Stripping them here keeps downstream
+    # processing robust.
+    text = re.sub(r"<\|f(?:im|m)_(?:prefix|middle|suffix)\|>", "", text)
+
     BAD_START_PHRASES = [
         "you can",
         "note that",

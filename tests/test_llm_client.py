@@ -67,6 +67,12 @@ def test_sanitize_summary_filters_phrases() -> None:
     assert sanitize_summary(text) == "Defines a class.\nIt prints output."
 
 
+def test_sanitize_summary_removes_fim_tokens() -> None:
+    """FIM reserved tokens should be stripped to avoid tokenizer errors."""
+    text = "Defines <|fim_middle|>a class."
+    assert sanitize_summary(text) == "Defines a class."
+
+
 def test_prompt_varies_by_type() -> None:
     client = LLMClient("http://fake")
     mock_response = Mock()
