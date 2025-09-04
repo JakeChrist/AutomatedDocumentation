@@ -5,7 +5,15 @@ from typing import List
 
 from cache import ResponseCache
 from chunk_utils import chunk_text, get_tokenizer
-from llm_client import LLMClient, PROMPT_TEMPLATES, SYSTEM_PROMPT, sanitize_summary
+from llm_client import (
+    LLMClient,
+    PROMPT_TEMPLATES,
+    SYSTEM_PROMPT,
+    sanitize_summary,
+)
+
+
+MAX_CHUNK_TOKENS = 4096
 
 
 def _summarize(
@@ -39,6 +47,8 @@ def summarize_chunked(
     """Summarize ``text`` by chunking if necessary."""
 
     tokenizer = get_tokenizer()
+    max_context_tokens = min(max_context_tokens, MAX_CHUNK_TOKENS)
+    chunk_token_budget = min(chunk_token_budget, MAX_CHUNK_TOKENS)
     template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
     overhead_tokens = len(tokenizer.encode(system_prompt)) + len(
         tokenizer.encode(template.format(text=""))
@@ -51,7 +61,7 @@ def summarize_chunked(
             client, cache, key, text, prompt_type, system_prompt=system_prompt
         )
 
-    chunk_size_tokens = min(chunk_token_budget, available_tokens)
+    chunk_size_tokens = min(chunk_token_budget, available_tokens, MAX_CHUNK_TOKENS)
     try:
         parts = chunk_text(text, tokenizer, chunk_size_tokens)
     except Exception as exc:  # pragma: no cover - defensive
