@@ -8,7 +8,7 @@ from typing import Callable, Set
 
 from cache import ResponseCache
 from chunk_utils import chunk_text, get_tokenizer
-from llm_client import LLMClient
+from llm_client import LLMClient, sanitize_summary
 
 
 TOKENIZER = get_tokenizer()
@@ -48,7 +48,7 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
         pchars = len(para)
         if ptokens > max_tokens or pchars > max_chars:
             if current:
-                chunks.append("\n\n".join(current).strip())
+                chunks.append("\n".join(current).strip())
                 current = []
                 token_count = 0
                 char_count = 0
@@ -57,7 +57,7 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
             continue
         if token_count + ptokens > max_tokens or char_count + pchars > max_chars:
             if current:
-                chunks.append("\n\n".join(current).strip())
+                chunks.append("\n".join(current).strip())
             current = [para]
             token_count = ptokens
             char_count = pchars
@@ -66,7 +66,7 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
             token_count += ptokens
             char_count += pchars
     if current:
-        chunks.append("\n\n".join(current).strip())
+        chunks.append("\n".join(current).strip())
     return chunks
 
 
@@ -125,6 +125,9 @@ def _summarize_manual(
             key = ResponseCache.make_key(f"{source}:chunk{idx}", part)
             cached = cache.get(key)
             if cached is not None:
+                # Cached responses may predate sanitization; clean them to
+                # avoid reserved-token issues downstream.
+                cached = sanitize_summary(cached)
                 partials[idx] = cached
                 logging.debug(
                     "LLM response %s/%s length: %s characters",
@@ -209,7 +212,7 @@ def _summarize_manual(
                 )
                 cached = cache.get(key)
                 if cached is not None:
-                    resp = cached
+                    resp = sanitize_summary(cached)
                 else:
                     try:
                         resp = client.summarize(
@@ -231,7 +234,7 @@ def _summarize_manual(
         key = ResponseCache.make_key(f"{source}:final", merge_input)
         cached = cache.get(key)
         if cached is not None:
-            final_resp = cached
+            final_resp = sanitize_summary(cached)
         else:
             try:
                 final_resp = client.summarize(
@@ -242,7 +245,7 @@ def _summarize_manual(
                 print(f"[WARN] Merge failed: {exc}", file=sys.stderr)
                 return merge_input
         logging.debug("Merged LLM response length: %s characters", len(final_resp))
-        return final_resp
+        return sanitize_summary(final_resp)
 
     if chunking == "none" and not within_limits:
         print(
@@ -252,7 +255,7 @@ def _summarize_manual(
     key = ResponseCache.make_key(f"{source}:full", text)
     cached = cache.get(key)
     if cached is not None:
-        return cached
+        return sanitize_summary(cached)
     resp = client.summarize(text, "user_manual", system_prompt=MERGE_SYSTEM_PROMPT)
     cache.set(key, resp)
-    return resp
+    return sanitize_summary(resp)

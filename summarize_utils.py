@@ -27,7 +27,9 @@ def _summarize(
 ) -> str:
     cached = cache.get(key)
     if cached is not None:
-        return cached
+        # Old cache entries might contain reserved tokens; sanitize to keep
+        # later tokenization safe.
+        return sanitize_summary(cached)
     summary = client.summarize(text, prompt_type, system_prompt=system_prompt)
     cache.set(key, summary)
     return summary

@@ -49,7 +49,9 @@ def clean_output_dir(output_dir: str) -> None:
 def _summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str) -> str:
     cached = cache.get(key)
     if cached is not None:
-        return cached
+        # Cache may contain unsanitized text from earlier runs; clean it to
+        # avoid tokenizer errors on reserved tokens.
+        return sanitize_summary(cached)
     summary = client.summarize(text, prompt_type)
     cache.set(key, summary)
     return summary
