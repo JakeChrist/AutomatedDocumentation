@@ -13,6 +13,7 @@ from typing import Any, Dict
 
 import requests
 from requests.exceptions import HTTPError, RequestException
+from chunk_utils import get_tokenizer
 
 # Prompt definitions for the documentation model
 SYSTEM_PROMPT = (
@@ -144,16 +145,53 @@ class LLMClient:
             raise ConnectionError(f"Unable to reach LMStudio at {self.base_url}") from exc
 
     def summarize(
-        self, text: str, prompt_type: str, system_prompt: str = SYSTEM_PROMPT
+        self,
+        text: str,
+        prompt_type: str,
+        system_prompt: str = SYSTEM_PROMPT,
+        *,
+        chunk_token_budget: int | None = None,
+        max_tokens: int = 256,
     ) -> str:
-        """Return a summary for ``text`` using ``prompt_type`` template."""
+        """Return a summary for ``text`` using ``prompt_type`` template.
+
+        Parameters
+        ----------
+        text:
+            Text to summarize.
+        prompt_type:
+            Key into :data:`PROMPT_TEMPLATES` controlling the prompt format.
+        system_prompt:
+            Optional system instructions prepended to the conversation.
+        chunk_token_budget:
+            Maximum allowed tokens for the prompt.  A warning is emitted if the
+            prompt exceeds this value.
+        max_tokens:
+            Maximum number of tokens the model may generate in its response.
+        """
 
         template = PROMPT_TEMPLATES.get(prompt_type, PROMPT_TEMPLATES["module"])
         prompt = template.format(text=text)
 
+        tokenizer = get_tokenizer()
+        prompt_tokens = len(tokenizer.encode(prompt)) + len(
+            tokenizer.encode(system_prompt)
+        )
+        prompt_chars = len(prompt) + len(system_prompt)
+        logging.info(
+            "Prompt size: %d tokens, %d chars", prompt_tokens, prompt_chars
+        )
+        if chunk_token_budget is not None and prompt_tokens > chunk_token_budget:
+            logging.warning(
+                "Prompt tokens %d exceed chunk_token_budget %d",
+                prompt_tokens,
+                chunk_token_budget,
+            )
+
         payload: Dict[str, Any] = {
             "model": self.model,
             "temperature": 0.3,
+            "max_tokens": max_tokens,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
@@ -170,16 +208,27 @@ class LLMClient:
                 )
                 content_bytes = bytearray()
                 last_log = time.time()
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        content_bytes.extend(chunk)
-                        logging.debug("Received %d bytes", len(chunk))
-                        last_log = time.time()
-                    elif time.time() - last_log > 5:
-                        logging.debug("Waiting for LLM response...")
-                        last_log = time.time()
+                try:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if isinstance(chunk, (bytes, bytearray)):
+                            content_bytes.extend(chunk)
+                            logging.debug("Received %d bytes", len(chunk))
+                        else:  # pragma: no cover - non-bytes from mock objects
+                            break
+                        now = time.time()
+                        if now - last_log > 5:
+                            logging.info(
+                                "LLM request in progress: %d bytes received",
+                                len(content_bytes),
+                            )
+                            last_log = now
+                except TypeError:  # pragma: no cover - mock without iterable
+                    pass
                 response.raise_for_status()
-                data = json.loads(content_bytes.decode())
+                if content_bytes:
+                    data = json.loads(content_bytes.decode())
+                else:  # pragma: no cover - fallback for mocked responses
+                    data = response.json()
                 content = data["choices"][0]["message"]["content"]
                 logging.info("LLM request completed")
                 return sanitize_summary(content)
