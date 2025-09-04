@@ -25,7 +25,7 @@ from cache import ResponseCache
 from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
 from chunk_utils import get_tokenizer, chunk_text
-from summarize_utils import summarize_chunked
+from summarize_utils import summarize_chunked, MAX_CHUNK_TOKENS
 from tqdm import tqdm
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
@@ -135,7 +135,7 @@ def _summarize_module_chunked(
         key = ResponseCache.make_key(key_prefix, module_text)
         return _summarize(client, cache, key, module_text, "module")
 
-    chunk_size_tokens = min(chunk_token_budget, available_tokens)
+    chunk_size_tokens = min(chunk_token_budget, available_tokens, MAX_CHUNK_TOKENS)
     try:
         parts = _chunk_module_by_structure(module, tokenizer, chunk_size_tokens)
     except Exception as exc:  # pragma: no cover - defensive
@@ -540,7 +540,17 @@ def main(argv: list[str] | None = None) -> int:
 
     tokenizer = get_tokenizer()
     max_context_tokens = args.max_context_tokens
+    if max_context_tokens > MAX_CHUNK_TOKENS:
+        print(
+            (
+                f"[WARN] --max-context-tokens {max_context_tokens} exceeds "
+                f"cap of {MAX_CHUNK_TOKENS}; extra context is ignored"
+            ),
+            file=sys.stderr,
+        )
+    max_context_tokens = min(max_context_tokens, MAX_CHUNK_TOKENS)
     chunk_token_budget = int(max_context_tokens * 0.75)
+    chunk_token_budget = min(chunk_token_budget, MAX_CHUNK_TOKENS)
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
