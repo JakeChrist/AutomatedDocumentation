@@ -59,6 +59,8 @@ def test_sanitize_summary_filters_phrases() -> None:
     text = (
         "You can run this.\n"
         "Note that it is simple.\n"
+        "Summarize the following function.\n"
+        "You are a documentation engine.\n"
         "Defines a class.\n"
         "This summary does not include disclaimers.\n"
         "This script does nothing.\n"

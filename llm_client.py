@@ -88,6 +88,8 @@ def sanitize_summary(text: str) -> str:
     text = re.sub(r"<\|f(?:im|m)_(?:prefix|middle|suffix)\|>", "", text)
 
     BAD_START_PHRASES = [
+        "summarize",
+        "you are",
         "you can",
         "note that",
         "the code above",
@@ -108,6 +110,8 @@ def sanitize_summary(text: str) -> str:
     ]
 
     BAD_CONTAINS = [
+        "documentation engine",
+        "summarize the following",
         "as an ai language model",
         "as a language model",
         "as an ai model",
