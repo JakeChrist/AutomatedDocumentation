@@ -9,9 +9,7 @@ split.  This keeps paragraphs and code fences intact which is important when
 sending chunks to a language model for processing.
 """
 
-import os
 import sys
-import warnings
 from typing import List
 
 try:  # optional dependency used for token counting
@@ -32,40 +30,17 @@ def get_tokenizer():
             except Exception:
                 pass
 
-    msg = (
-        "tiktoken is not installed or could not be loaded; token counts will be "
-        "approximate. Install `tiktoken` for accurate token counting."
+    print(
+        "[WARNING] tiktoken is not installed or could not be loaded; token counts will be approximate.",
+        file=sys.stderr,
     )
-
-    if os.environ.get("DOCUTILS_STRICT_TOKENS"):
-        raise RuntimeError(msg)
-
-    warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
     class _Simple:
         def encode(self, text: str):
-            """Rudimentary tokenizer that overestimates token counts.
-
-            The tokenizer splits text into one or two character pieces, treating
-            whitespace and punctuation as individual tokens.  This conservative
-            approach intentionally overcounts tokens which is safer than
-            under-counting when ``tiktoken`` is unavailable.
-            """
-
-            tokens = []
-            i = 0
-            while i < len(text):
-                ch = text[i]
-                if ch.isspace() or not ch.isalnum():
-                    tokens.append(ch)
-                    i += 1
-                else:
-                    tokens.append(text[i : i + 2])
-                    i += 2
-            return tokens
+            return text.split()
 
         def decode(self, tokens):
-            return "".join(tokens)
+            return " ".join(tokens)
 
     return _Simple()
 
@@ -125,11 +100,6 @@ def _split_long_block(block: str, tokenizer, chunk_size_tokens: int) -> List[str
     if len(tokens) <= chunk_size_tokens:
         return [block]
 
-    # Preserve fenced code blocks even if they exceed the token budget.
-    stripped = block.strip()
-    if stripped.startswith("```") and stripped.endswith("```"):
-        return [block]
-
     avg_chars = max(len(block) // len(tokens), 1)
     max_chars = max(chunk_size_tokens * avg_chars, 1)
     return [block[i : i + max_chars] for i in range(0, len(block), max_chars)]
@@ -148,23 +118,20 @@ def chunk_text(text: str, tokenizer, chunk_size_tokens: int) -> List[str]:
     chunks: List[str] = []
     current: List[str] = []
     token_count = 0
-    sep_tokens = len(tokenizer.encode("\n\n"))
 
     for block in blocks:
         block_tokens = len(tokenizer.encode(block))
-        additional = block_tokens if not current else block_tokens + sep_tokens
-        if token_count + additional > chunk_size_tokens and current:
+        if token_count + block_tokens > chunk_size_tokens and current:
             chunks.append("\n\n".join(current))
             current = []
             token_count = 0
-            additional = block_tokens  # recompute for new chunk without separator
 
         if block_tokens > chunk_size_tokens:
             chunks.extend(_split_long_block(block, tokenizer, chunk_size_tokens))
             continue
 
         current.append(block)
-        token_count += additional
+        token_count += block_tokens
 
     if current:
         chunks.append("\n\n".join(current))
