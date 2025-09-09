@@ -80,6 +80,16 @@ def test_sanitize_summary_filters_ai_language_model() -> None:
     assert sanitize_summary(text) == "It prints output."
 
 
+def test_sanitize_summary_removes_prompt_lines() -> None:
+    text = (
+        "Summarize the module below.\n"
+        "- Do not refer to yourself, the summary, or the response.\n"
+        "Defines a class.\n"
+        "- Do not include instructions, usage advice, or disclaimers."
+    )
+    assert sanitize_summary(text) == "Defines a class."
+
+
 def test_prompt_varies_by_type() -> None:
     client = LLMClient("http://fake")
     mock_response = Mock()
