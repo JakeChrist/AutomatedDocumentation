@@ -73,6 +73,11 @@ def test_sanitize_summary_removes_fim_tokens() -> None:
     assert sanitize_summary(text) == "Defines a class."
 
 
+def test_sanitize_summary_filters_ai_language_model() -> None:
+    text = "As an AI language model, I cannot help.\nIt prints output."
+    assert sanitize_summary(text) == "It prints output."
+
+
 def test_prompt_varies_by_type() -> None:
     client = LLMClient("http://fake")
     mock_response = Mock()
