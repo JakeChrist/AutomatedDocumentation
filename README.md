@@ -159,6 +159,17 @@ Install the test dependencies (including `pytest`) listed in `requirements.txt` 
 pytest
 ```
 
+## Sanitizing Existing Documentation
+
+If assistant-style phrases slip into generated HTML files, clean them with:
+
+```bash
+python sanitize_docs.py ./docs
+```
+
+The command rewrites every `.html` file in the directory using the same filtering
+applied during generation.
+
 ## Project Summary Utility
 
 Generate a lightweight overview of an existing project and its documentation:

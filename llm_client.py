@@ -107,11 +107,21 @@ def sanitize_summary(text: str) -> str:
         "this response",
     ]
 
+    BAD_CONTAINS = [
+        "as an ai language model",
+        "as a language model",
+        "as an ai model",
+        "i am an ai",
+        "i'm an ai",
+    ]
+
     lines = text.strip().splitlines()
     filtered = []
     for line in lines:
         line_lower = line.strip().lower()
         if any(line_lower.startswith(p) for p in BAD_START_PHRASES):
+            continue
+        if any(p in line_lower for p in BAD_CONTAINS):
             continue
         if (
             "this summary" in line_lower
