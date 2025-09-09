@@ -37,10 +37,20 @@ def get_tokenizer():
 
     class _Simple:
         def encode(self, text: str):
-            return text.split()
+            import re
+
+            return re.findall(r"\S+|\n", text)
 
         def decode(self, tokens):
-            return " ".join(tokens)
+            parts = []
+            for i, t in enumerate(tokens):
+                if t == "\n":
+                    parts.append("\n")
+                else:
+                    parts.append(t)
+                    if i + 1 < len(tokens) and tokens[i + 1] != "\n":
+                        parts.append(" ")
+            return "".join(parts)
 
     return _Simple()
 
@@ -94,7 +104,13 @@ def _split_blocks(text: str) -> List[str]:
 
 
 def _split_long_block(block: str, tokenizer, chunk_size_tokens: int) -> List[str]:
-    """Fallback splitter that uses a character based approximation."""
+    """Fallback splitter that uses a character based approximation.
+
+    When splitting a fenced code block the fences are replicated for every
+    produced chunk so that each piece remains a valid fenced block.  This
+    prevents prompt leakage where a truncated fence could cause the language
+    model to treat subsequent text as instructions instead of code.
+    """
 
     tokens = tokenizer.encode(block)
     if len(tokens) <= chunk_size_tokens:
@@ -102,6 +118,26 @@ def _split_long_block(block: str, tokenizer, chunk_size_tokens: int) -> List[str
 
     avg_chars = max(len(block) // len(tokens), 1)
     max_chars = max(chunk_size_tokens * avg_chars, 1)
+
+    # Special handling for fenced code blocks – ensure each chunk has fences.
+    if block.startswith("```") and block.rstrip().endswith("```"):
+        lines = block.splitlines()
+        fence = lines[0]
+        code_lines = lines[1:-1]
+        pieces: List[str] = []
+        current: List[str] = []
+        length = 0
+        for line in code_lines:
+            current.append(line)
+            length += len(line)
+            if length >= max_chars:
+                pieces.append("\n".join(current))
+                current = []
+                length = 0
+        if current:
+            pieces.append("\n".join(current))
+        return [f"{fence}\n{piece}\n```" for piece in pieces]
+
     return [block[i : i + max_chars] for i in range(0, len(block), max_chars)]
 
 

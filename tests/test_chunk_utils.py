@@ -34,3 +34,15 @@ def test_chunk_text_preserves_code_blocks() -> None:
     assert any("```python\nprint('hi')\n```" in chunk for chunk in chunks)
     for chunk in chunks:
         assert chunk.count("```") in (0, 2)
+
+
+def test_chunk_text_splits_long_code_block_with_fences() -> None:
+    tokenizer = get_tokenizer()
+    code = "print('hi')\n" * 100
+    text = f"```python\n{code}```"
+    chunks = chunk_text(text, tokenizer, 20)
+    assert len(chunks) > 1
+    for chunk in chunks:
+        assert chunk.startswith("```python")
+        assert chunk.strip().endswith("```")
+        assert chunk.count("```") == 2
