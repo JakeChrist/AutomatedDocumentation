@@ -72,6 +72,17 @@ PROMPT_TEMPLATES: Dict[str, str] = {
     ),
 }
 
+# Precompute lines from prompts for sanitization to avoid prompt leakage
+PROMPT_LINE_SET = {
+    line.strip().lower()
+    for template in PROMPT_TEMPLATES.values()
+    for line in template.format(text="").splitlines()
+    if line.strip()
+}
+SYSTEM_PROMPT_LINES = {
+    line.strip().lower() for line in SYSTEM_PROMPT.splitlines() if line.strip()
+}
+
 
 def sanitize_summary(text: str) -> str:
     """Return ``text`` with meta commentary removed."""
@@ -122,7 +133,12 @@ def sanitize_summary(text: str) -> str:
     lines = text.strip().splitlines()
     filtered = []
     for line in lines:
-        line_lower = line.strip().lower()
+        stripped = line.strip()
+        line_lower = stripped.lower()
+        if line_lower in PROMPT_LINE_SET or line_lower in SYSTEM_PROMPT_LINES:
+            continue
+        if stripped.startswith("-") or stripped.startswith("*"):
+            continue
         if any(line_lower.startswith(p) for p in BAD_START_PHRASES):
             continue
         if any(p in line_lower for p in BAD_CONTAINS):
