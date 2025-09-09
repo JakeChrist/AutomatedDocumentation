@@ -21,10 +21,7 @@ def test_chunk_text_reconstructs_content() -> None:
 def test_chunk_text_splits_markdown_headings() -> None:
     tokenizer = get_tokenizer()
     text = "# H1\npara1\n\n# H2\npara2"
-    # The lightweight tokenizer overestimates token counts by splitting into
-    # very small pieces, so use a slightly larger chunk size here to ensure the
-    # heading and following paragraph stay together.
-    chunks = chunk_text(text, tokenizer, 8)
+    chunks = chunk_text(text, tokenizer, 4)
     assert len(chunks) == 2
     assert chunks[0].startswith("# H1")
     assert chunks[1].startswith("# H2")
