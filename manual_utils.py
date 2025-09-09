@@ -40,6 +40,8 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
     current: list[str] = []
     token_count = 0
     char_count = 0
+    sep_tokens = _count_tokens("\n\n")
+    sep_chars = 2
     for para in paragraphs:
         para = para.strip()
         if not para:
@@ -48,25 +50,27 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
         pchars = len(para)
         if ptokens > max_tokens or pchars > max_chars:
             if current:
-                chunks.append("\n".join(current).strip())
+                chunks.append("\n\n".join(current).strip())
                 current = []
                 token_count = 0
                 char_count = 0
             for piece in chunk_text(para, TOKENIZER, max_tokens):
                 chunks.append(piece.strip())
             continue
-        if token_count + ptokens > max_tokens or char_count + pchars > max_chars:
+        extra_tokens = ptokens if not current else ptokens + sep_tokens
+        extra_chars = pchars if not current else pchars + sep_chars
+        if token_count + extra_tokens > max_tokens or char_count + extra_chars > max_chars:
             if current:
-                chunks.append("\n".join(current).strip())
+                chunks.append("\n\n".join(current).strip())
             current = [para]
             token_count = ptokens
             char_count = pchars
         else:
             current.append(para)
-            token_count += ptokens
-            char_count += pchars
+            token_count += extra_tokens
+            char_count += extra_chars
     if current:
-        chunks.append("\n".join(current).strip())
+        chunks.append("\n\n".join(current).strip())
     return chunks
 
 
