@@ -788,3 +788,33 @@ def test_chunking_none_no_llm_calls(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert len(dummy.calls) == 5
     call = dummy.calls[0]
     assert "Overview" in call["system_prompt"]
+
+
+def test_llm_generate_manual_sanitizes_and_caches(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    docs = {Path("readme.md"): "# Overview\nExample"}
+    cache = ResponseCache(str(tmp_path / "cache.json"))
+    client = explaincode.LLMClient("http://fake")
+
+    def fake_summarize(prompt: str, prompt_type: str, system_prompt: str = "") -> str:
+        return (
+            "You are a documentation engine. Summarize the following.\n"
+            "It prints output."
+        )
+
+    monkeypatch.setattr(client, "summarize", fake_summarize)
+    manual, _, _ = explaincode.llm_generate_manual(docs, client, cache, chunking="none")
+    lower = manual.lower()
+    assert "documentation engine" not in lower
+    assert "summarize the following" not in lower
+
+    section_map, _ = explaincode.map_evidence_to_sections(docs)
+    entries = section_map["Overview"]
+    context = "\n\n".join(snippet for _, snippet in entries)
+    prompt = (
+        "Write the 'Overview' section of a user manual using the "
+        "following documentation snippets.\n\n" + context
+    )
+    key = ResponseCache.make_key("section:Overview", prompt)
+    cached = cache.get(key)
+    assert cached is not None
+    assert "documentation engine" not in cached.lower()

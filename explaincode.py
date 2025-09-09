@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 from bs4 import BeautifulSoup
 
-from llm_client import LLMClient, PROMPT_TEMPLATES
+from llm_client import LLMClient, PROMPT_TEMPLATES, sanitize_summary
 from cache import ResponseCache
 from chunk_utils import get_tokenizer
 from summarize_utils import summarize_chunked
@@ -609,13 +609,14 @@ def llm_generate_manual(
             key = ResponseCache.make_key(f"section:{section}", prompt)
             cached = cache.get(key)
             if cached is not None:
-                result = cached
+                result = sanitize_summary(cached)
             else:
                 result = client.summarize(
                     prompt,
                     "docstring",
                     system_prompt=system_prompt,
                 )
+                result = sanitize_summary(result)
                 cache.set(key, result)
         parsed = parse_manual(result, infer_missing=False)
         text = parsed.get(section, result.strip())
