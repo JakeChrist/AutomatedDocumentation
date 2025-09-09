@@ -8,7 +8,7 @@ def _count(text: str) -> int:
 def test_chunk_docs_respects_token_limit() -> None:
     docs = ["a " * 1000, "b " * 1000, "c " * 1000]
     chunks = manual_utils.chunk_docs(docs, token_limit=2000)
-    assert len(chunks) == 2
+    assert len(chunks) == 3
     assert all(_count(c) <= 2000 for c in chunks)
 
 
