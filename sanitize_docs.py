@@ -11,11 +11,13 @@ from llm_client import sanitize_summary
 
 def _sanitize_html(html: str) -> str:
     def repl(match: re.Match[str]) -> str:
-        inner = re.sub(r"<[^>]+>", "", match.group(1))
+        tag, content = match.group(1), match.group(2)
+        inner = re.sub(r"<[^>]+>", "", content)
         cleaned = sanitize_summary(inner)
-        return f"<p>{cleaned}</p>"
+        return f"<{tag}>{cleaned}</{tag}>"
 
-    return re.sub(r"<p>(.*?)</p>", repl, html, flags=re.DOTALL | re.IGNORECASE)
+    pattern = r"<(p|li|h[1-6])>(.*?)</\1>"
+    return re.sub(pattern, repl, html, flags=re.DOTALL | re.IGNORECASE)
 
 
 def sanitize_directory(directory: Path) -> None:
