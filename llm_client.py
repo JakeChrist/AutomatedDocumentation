@@ -11,7 +11,7 @@ import time
 from typing import Any, Dict
 
 import requests
-from requests.exceptions import HTTPError, RequestException
+from requests.exceptions import HTTPError, RequestException, StreamConsumedError
 import re
 
 from chunk_utils import get_tokenizer, strip_fim_tokens
@@ -248,6 +248,8 @@ class LLMClient:
                 response = requests.post(
                     self.endpoint, json=payload, timeout=None, stream=True
                 )
+                response.raise_for_status()
+
                 content_bytes = bytearray()
                 last_log = time.time()
                 try:
@@ -266,7 +268,7 @@ class LLMClient:
                             last_log = now
                 except TypeError:  # pragma: no cover - mock without iterable
                     pass
-                response.raise_for_status()
+
                 if content_bytes:
                     data = json.loads(content_bytes.decode())
                 else:  # pragma: no cover - fallback for mocked responses
@@ -282,8 +284,11 @@ class LLMClient:
                         error_message = err_json.get("error", resp.text)
                     else:
                         error_message = resp.text
-                except ValueError:
-                    error_message = resp.text
+                except (ValueError, StreamConsumedError):
+                    try:
+                        error_message = resp.text
+                    except StreamConsumedError:
+                        error_message = ""
                 logging.error("LLM request failed: %s", error_message)
                 time.sleep(1)
             except RequestException as exc:

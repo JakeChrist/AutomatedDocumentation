@@ -55,6 +55,26 @@ def test_summarize_raises_runtime_error_with_message() -> None:
             client.summarize("text", "module")
 
 
+def test_summarize_does_not_stream_on_http_error() -> None:
+    """Streaming should not be attempted when the request fails."""
+    client = LLMClient("http://fake")
+    mock_response = Mock()
+    mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+        response=mock_response
+    )
+    mock_response.json.side_effect = ValueError()
+    mock_response.text = "boom"
+    mock_response.iter_content = Mock()
+
+    with patch("llm_client.requests.post", return_value=mock_response), patch(
+        "llm_client.time.sleep"
+    ):
+        with pytest.raises(RuntimeError, match="boom"):
+            client.summarize("text", "module")
+
+    mock_response.iter_content.assert_not_called()
+
+
 def test_sanitize_summary_filters_phrases() -> None:
     text = (
         "You can run this.\n"
