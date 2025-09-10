@@ -136,7 +136,10 @@ def sanitize_summary(text: str) -> str:
     for line in lines:
         stripped = line.strip()
         line_lower = stripped.lower()
-        if line_lower in PROMPT_LINE_SET or line_lower in SYSTEM_PROMPT_LINES:
+        if any(
+            p in line_lower or line_lower in p
+            for p in PROMPT_LINE_SET.union(SYSTEM_PROMPT_LINES)
+        ):
             continue
         if stripped.startswith("-") or stripped.startswith("*"):
             continue
