@@ -28,4 +28,4 @@ def test_subclass_docs_and_method_summary(tmp_path: Path) -> None:
     assert pos != -1
     assert html.find("docstring summary", pos) != -1
     method_pos = html.find("Method:")
-    assert method_pos != -1 and html.find("function summary", method_pos) != -1
+    assert method_pos != -1 and html.find("docstring summary", method_pos) != -1
