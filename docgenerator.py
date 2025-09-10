@@ -522,6 +522,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Maximum token context window for the LLM",
     )
     parser.add_argument(
+        "--chunk-token-budget",
+        type=int,
+        help="Maximum tokens per chunk (defaults to 75% of context)",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
         help="Resume from previously saved progress",
@@ -551,7 +556,11 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
     max_context_tokens = min(max_context_tokens, MAX_CHUNK_TOKENS)
-    chunk_token_budget = int(max_context_tokens * 0.75)
+    default_chunk_budget = int(max_context_tokens * 0.75)
+    if args.chunk_token_budget is not None:
+        chunk_token_budget = min(args.chunk_token_budget, default_chunk_budget)
+    else:
+        chunk_token_budget = default_chunk_budget
     chunk_token_budget = min(chunk_token_budget, MAX_CHUNK_TOKENS)
 
     output_dir = Path(args.output)
