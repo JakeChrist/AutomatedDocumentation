@@ -44,10 +44,14 @@ Optional flags:
 | `--llm-url`   | Base URL of the LLM server       |
 | `--model`     | Model name to use                |
 | `--max-context-tokens` | Override the model's context window |
+| `--chunk-token-budget` | Limit tokens per chunk (default 75% of context) |
 | `--resume`    | Continue from cached progress (default clears progress) |
 | `--clear-progress` | Remove saved progress after a run |
 
 The LLM must be running and reachable via `llm_client.py`.
+
+Reduce `--chunk-token-budget` when using models with very small context
+windows to keep chunks well within the limit and avoid prompt leakage.
 
 ### Automatic Progress Saving
 
