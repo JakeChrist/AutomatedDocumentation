@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import time
 from typing import Any, Dict
 
 import requests
 from requests.exceptions import HTTPError, RequestException
-from chunk_utils import get_tokenizer
+import re
+
+from chunk_utils import get_tokenizer, strip_fim_tokens
 
 # Prompt definitions for the documentation model
 SYSTEM_PROMPT = (
@@ -90,13 +91,13 @@ def sanitize_summary(text: str) -> str:
     if text.strip() == "project summary":
         return "It prints."
 
-    # Remove FIM special tokens that some models may emit.  The
+    # Remove FIM special tokens that some models may emit. The
     # ``tiktoken`` tokenizer refuses to encode these reserved tokens and
-    # raises ``DisallowedToken`` errors if they appear in the prompt.  A
+    # raises ``DisallowedToken`` errors if they appear in the prompt. A
     # stray token can therefore crash later merging steps when we attempt
-    # to re-tokenize model output.  Stripping them here keeps downstream
+    # to re-tokenize model output. Stripping them here keeps downstream
     # processing robust.
-    text = re.sub(r"<\|f(?:im|m)_(?:prefix|middle|suffix)\|>", "", text)
+    text = strip_fim_tokens(text)
 
     BAD_START_PHRASES = [
         "summarize",

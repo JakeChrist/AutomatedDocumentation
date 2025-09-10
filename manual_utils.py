@@ -40,7 +40,7 @@ def _split_text(text: str, max_tokens: int = 2000, max_chars: int = 6000) -> lis
     current: list[str] = []
     token_count = 0
     char_count = 0
-    sep_tokens = _count_tokens("\n\n")
+    sep_tokens = max(_count_tokens("\n\n"), 1)
     sep_chars = 2
     for para in paragraphs:
         para = para.strip()

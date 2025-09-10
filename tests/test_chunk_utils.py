@@ -1,4 +1,4 @@
-from chunk_utils import get_tokenizer, chunk_text
+from chunk_utils import chunk_text, get_tokenizer
 
 
 def test_get_tokenizer_roundtrip() -> None:
@@ -8,6 +8,16 @@ def test_get_tokenizer_roundtrip() -> None:
     assert isinstance(tokens, list)
     decoded = tokenizer.decode(tokens)
     assert decoded.strip() == "hello world"
+
+
+def test_get_tokenizer_strips_fim_tokens() -> None:
+    tokenizer = get_tokenizer()
+    text = "hello <|fim_prefix|> world <|fim_suffix|>"
+    tokens = tokenizer.encode(text)
+    decoded = tokenizer.decode(tokens)
+    assert "<|fim_prefix|>" not in decoded
+    assert "<|fim_suffix|>" not in decoded
+    assert " ".join(decoded.split()) == "hello world"
 
 
 def test_chunk_text_reconstructs_content() -> None:
@@ -34,3 +44,4 @@ def test_chunk_text_preserves_code_blocks() -> None:
     assert any("```python\nprint('hi')\n```" in chunk for chunk in chunks)
     for chunk in chunks:
         assert chunk.count("```") in (0, 2)
+
