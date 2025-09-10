@@ -137,7 +137,7 @@ def sanitize_summary(text: str) -> str:
         stripped = line.strip()
         line_lower = stripped.lower()
         if any(
-            p in line_lower or line_lower in p
+            p in line_lower or (line_lower in p and len(line_lower) > 8)
             for p in PROMPT_LINE_SET.union(SYSTEM_PROMPT_LINES)
         ):
             continue

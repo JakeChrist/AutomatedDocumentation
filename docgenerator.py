@@ -327,6 +327,81 @@ def _rewrite_docstring(
     item["docstring"] = sanitize_summary(result) or "No summary available."
 
 
+def _summarize_function_recursive(
+    func: dict[str, Any],
+    path: str,
+    client: LLMClient,
+    cache: ResponseCache,
+    tokenizer,
+    max_context_tokens: int,
+    chunk_token_budget: int,
+    *,
+    class_name: str | None = None,
+    class_summary: str | None = None,
+    project_summary: str | None = None,
+    rewrite: bool = True,
+) -> None:
+    """Summarize ``func`` and recursively process its subfunctions and subclasses."""
+
+    src = func.get("source") or func.get("signature") or func.get("name", "")
+    prompt = _build_function_prompt(
+        src,
+        class_name=class_name,
+        class_summary=class_summary,
+        project_summary=project_summary,
+    )
+    key = ResponseCache.make_key(f"{path}:{func.get('name')}", prompt)
+    summary = _summarize_chunked(
+        client,
+        cache,
+        key,
+        prompt,
+        "docstring",
+        max_context_tokens=max_context_tokens,
+        chunk_token_budget=chunk_token_budget,
+    )
+    func["summary"] = summary
+    if rewrite:
+        _rewrite_docstring(
+            client,
+            cache,
+            path,
+            func,
+            class_name=class_name,
+            class_summary=class_summary,
+            project_summary=project_summary,
+            tokenizer=tokenizer,
+            max_context_tokens=max_context_tokens,
+            chunk_token_budget=chunk_token_budget,
+        )
+
+    for sub in func.get("subfunctions", []):
+        _summarize_function_recursive(
+            sub,
+            path,
+            client,
+            cache,
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+            class_name=class_name,
+            class_summary=class_summary,
+            project_summary=project_summary,
+        )
+
+    for subcls in func.get("subclasses", []):
+        _summarize_class_recursive(
+            subcls,
+            path,
+            project_summary or "",
+            tokenizer,
+            client,
+            cache,
+            max_context_tokens,
+            chunk_token_budget,
+        )
+
+
 def _summarize_members_recursive(
     class_data: dict[str, Any],
     path: str,
@@ -335,6 +410,7 @@ def _summarize_members_recursive(
     tokenizer,
     max_context_tokens: int,
     chunk_token_budget: int,
+    project_summary: str | None = None,
 ) -> None:
     """Summarize methods and variables of ``class_data`` and any subclasses."""
 
@@ -354,6 +430,18 @@ def _summarize_members_recursive(
         )
         method["summary"] = summary
         method["docstring"] = summary
+        _summarize_function_recursive(
+            method,
+            path,
+            client,
+            cache,
+            tokenizer,
+            max_context_tokens,
+            chunk_token_budget,
+            class_name=class_data.get("name"),
+            project_summary=project_summary,
+            rewrite=False,
+        )
 
     for var in tqdm(class_data.get("variables", []), desc="variables", leave=False):
         src = var.get("source") or var.get("name", "")
@@ -381,6 +469,7 @@ def _summarize_members_recursive(
             tokenizer,
             max_context_tokens,
             chunk_token_budget,
+            project_summary,
         )
 
 
@@ -404,6 +493,7 @@ def _summarize_class_recursive(
         tokenizer,
         max_context_tokens,
         chunk_token_budget,
+        project_summary,
     )
 
     method_lines = []
@@ -636,6 +726,7 @@ def main(argv: list[str] | None = None) -> int:
                 tokenizer,
                 max_context_tokens,
                 chunk_token_budget,
+                None,
             )
 
         # and for standalone functions (summarized later with project context)
@@ -766,29 +857,16 @@ def main(argv: list[str] | None = None) -> int:
                 max_context_tokens,
                 chunk_token_budget,
             )
-        for func in tqdm(module.get("functions", []), desc="methods", leave=False):
-            src = func.get("source") or func.get("signature") or func.get("name", "")
-            prompt = _build_function_prompt(src, project_summary=project_summary)
-            func_key = ResponseCache.make_key(f"{path}:{func.get('name')}", prompt)
-            func_summary = _summarize_chunked(
-                client,
-                cache,
-                func_key,
-                prompt,
-                "docstring",
-                max_context_tokens=max_context_tokens,
-                chunk_token_budget=chunk_token_budget,
-            )
-            func["summary"] = func_summary
-            _rewrite_docstring(
-                client,
-                cache,
-                path,
+        for func in tqdm(module.get("functions", []), desc="functions", leave=False):
+            _summarize_function_recursive(
                 func,
+                path,
+                client,
+                cache,
+                tokenizer,
+                max_context_tokens,
+                chunk_token_budget,
                 project_summary=project_summary,
-                tokenizer=tokenizer,
-                max_context_tokens=max_context_tokens,
-                chunk_token_budget=chunk_token_budget,
             )
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}

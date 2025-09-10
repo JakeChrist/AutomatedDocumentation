@@ -108,7 +108,8 @@ def test_subfunction_rendering(tmp_path: Path) -> None:
                     {
                         "name": "inner",
                         "signature": "def inner(y)",
-                        "docstring": "Inner docs",
+                        "summary": "Inner summary",
+                        "docstring": "",
                         "source": "def inner(y):\n    pass",
                         "subfunctions": [],
                     }
@@ -120,6 +121,7 @@ def test_subfunction_rendering(tmp_path: Path) -> None:
     html = (tmp_path / "mod.html").read_text(encoding="utf-8")
     assert "<details>" in html
     assert "Subfunction: def inner(y)" in html
+    assert "Inner summary" in html
     # outer and inner source should both be highlighted
     assert html.count("<pre><code>") == 2
 
@@ -138,7 +140,8 @@ def test_subclass_rendering(tmp_path: Path) -> None:
                 "subclasses": [
                     {
                         "name": "B",
-                        "docstring": "B docs",
+                        "summary": "B summary",
+                        "docstring": "",
                         "methods": [
                             {
                                 "name": "m",
@@ -157,6 +160,7 @@ def test_subclass_rendering(tmp_path: Path) -> None:
     html = (tmp_path / "mod.html").read_text(encoding="utf-8")
     assert "<details>" in html
     assert "Class: B" in html
+    assert "B summary" in html
     assert "def m(self)" in html
     assert html.count("<pre><code>") == 1
 
