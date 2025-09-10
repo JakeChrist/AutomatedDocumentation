@@ -90,6 +90,22 @@ def test_sanitize_summary_removes_prompt_lines() -> None:
     assert sanitize_summary(text) == "Defines a class."
 
 
+def test_sanitize_summary_filters_altered_prompt_line() -> None:
+    text = (
+        "Code: example snippet\n"
+        "Defines a class."
+    )
+    assert sanitize_summary(text) == "Defines a class."
+
+
+def test_sanitize_summary_filters_truncated_prompt_line() -> None:
+    text = (
+        "Do not say what is or isn't included in the code\n"
+        "Defines a class."
+    )
+    assert sanitize_summary(text) == "Defines a class."
+
+
 def test_prompt_varies_by_type() -> None:
     client = LLMClient("http://fake")
     mock_response = Mock()
