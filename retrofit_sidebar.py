@@ -44,15 +44,14 @@ def retrofit_sidebar(source_root: str, docs_dir: str) -> None:
     relative = [str(Path(p).resolve().relative_to(base)) for p in modules]
     tree = _paths_to_tree(relative)
 
-    soup = BeautifulSoup("", "html.parser")
-    sidebar_markup = str(_tree_to_ul(tree, soup))
-
     docs_path = Path(docs_dir)
     for html_file in docs_path.glob("*.html"):
         html_soup = BeautifulSoup(html_file.read_text(encoding="utf-8"), "html.parser")
         sidebar = html_soup.find("div", class_="sidebar")
         if sidebar is not None:
-            sidebar.replace_with(BeautifulSoup(sidebar_markup, "html.parser"))
+            new_ul = _tree_to_ul(tree, html_soup)
+            sidebar.clear()
+            sidebar.append(new_ul)
             html_file.write_text(str(html_soup), encoding="utf-8")
 
 
