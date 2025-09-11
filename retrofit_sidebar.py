@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
@@ -67,15 +68,32 @@ def retrofit_sidebar(source_root: str, docs_dir: str) -> None:
             html_file.write_text(str(html_soup), encoding="utf-8")
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Replace docs sidebar with hierarchical module list."
+        description="Replace docs sidebar with hierarchical module list.",
     )
     parser.add_argument("--source", default=".", help="Source root directory")
     parser.add_argument("--docs", default="Docs", help="Documentation directory")
     args = parser.parse_args()
-    retrofit_sidebar(args.source, args.docs)
+
+    source_path = Path(args.source)
+    docs_path = Path(args.docs)
+    if not source_path.is_dir():
+        print(
+            f"Error: source directory '{source_path}' does not exist or is not a directory",
+            file=sys.stderr,
+        )
+        return 1
+    if not docs_path.is_dir():
+        print(
+            f"Error: docs directory '{docs_path}' does not exist or is not a directory",
+            file=sys.stderr,
+        )
+        return 1
+
+    retrofit_sidebar(str(source_path), str(docs_path))
+    return 0
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover - CLI entry
+    raise SystemExit(main())
