@@ -62,9 +62,8 @@ def retrofit_sidebar(source_root: str, docs_dir: str) -> None:
         html_soup = BeautifulSoup(html_file.read_text(encoding="utf-8"), "html.parser")
         sidebar = html_soup.find("div", class_="sidebar")
         if sidebar is not None:
-            new_ul = _tree_to_ul(tree, html_soup)
             sidebar.clear()
-            sidebar.append(new_ul)
+            sidebar.append(_tree_to_ul(tree, html_soup))
             html_file.write_text(str(html_soup), encoding="utf-8")
 
 
