@@ -17,6 +17,15 @@ body {
     word-break: break-word;
 }
 
+.sidebar ul {
+    list-style: none;
+    padding-left: 1em;
+}
+
+.sidebar details > summary {
+    cursor: pointer;
+}
+
 .content {
     margin-left: 220px; /* push main content to the right */
     padding: 1rem;

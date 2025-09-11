@@ -666,6 +666,7 @@ def main(argv: list[str] | None = None) -> int:
     progress = cache.get_progress()
     processed_paths = set(progress.keys())
 
+    source_root = Path(args.source).resolve()
     files = scan_directory(args.source, args.ignore)
     modules = []
     for path in tqdm(files, desc="Processing modules"):
@@ -713,6 +714,7 @@ def main(argv: list[str] | None = None) -> int:
             "summary": summary,
             "filename": Path(path).name,
             "path": path,
+            "relpath": str(Path(path).resolve().relative_to(source_root)),
         }
         module.update(parsed)
 
@@ -735,7 +737,19 @@ def main(argv: list[str] | None = None) -> int:
 
         modules.append(module)
 
-    page_links = [(m["name"], f"{m['name']}.html") for m in modules]
+    nav_tree: dict[str, Any] = {}
+
+    def _insert(tree: dict, parts: list[str], name: str, link: str) -> None:
+        if not parts:
+            tree.setdefault("__files__", []).append((name, link))
+            return
+        head = parts[0]
+        sub = tree.setdefault(head, {})
+        _insert(sub, parts[1:], name, link)
+
+    for m in modules:
+        rel_parts = list(Path(m["relpath"]).parent.parts)
+        _insert(nav_tree, rel_parts, m["name"], f"{m['name']}.html")
 
     project_lines = ["Project structure:"]
     for mod in modules:
@@ -870,9 +884,9 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}
-    write_index(str(output_dir), project_summary, page_links, module_summaries)
+    write_index(str(output_dir), project_summary, nav_tree, module_summaries)
     for module in modules:
-        write_module_page(str(output_dir), module, page_links)
+        write_module_page(str(output_dir), module, nav_tree)
         cache.set_progress_entry(module.get("path", ""), module)
         processed_paths.add(module.get("path", ""))
 
