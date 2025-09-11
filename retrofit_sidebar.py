@@ -24,15 +24,28 @@ def _paths_to_tree(paths: list[str]) -> Dict[str, Any]:
     return tree
 
 
-def _tree_to_ul(tree: Dict[str, Any], soup: BeautifulSoup) -> Any:
-    """Recursively build ``<ul>`` elements from *tree*."""
+def _tree_to_ul(
+    tree: Dict[str, Any], soup: BeautifulSoup, base: Path | str = Path()
+) -> Any:
+    """Recursively build ``<ul>`` elements from *tree*.
+
+    ``base`` tracks the current path so that file entries can be linked to their
+    corresponding HTML documentation using a relative path.
+    """
+
+    base = Path(base)
     ul = soup.new_tag("ul")
     for name in sorted(tree):
         li = soup.new_tag("li")
-        li.string = name
         child = tree[name]
         if isinstance(child, dict) and child:
-            li.append(_tree_to_ul(child, soup))
+            li.string = name
+            li.append(_tree_to_ul(child, soup, base / name))
+        else:
+            href = (base / name).with_suffix(".html").as_posix()
+            a = soup.new_tag("a", href=href)
+            a.string = name
+            li.append(a)
         ul.append(li)
     return ul
 

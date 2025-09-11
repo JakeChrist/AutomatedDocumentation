@@ -19,7 +19,7 @@ def _make_module(tmp_path: Path, summary: str, methods=None) -> Path:
         data["classes"] = [
             {"name": "Foo", "docstring": "", "summary": "", "methods": methods}
         ]
-    write_module_page(str(tmp_path), data, [("index", "index.html")])
+    write_module_page(str(tmp_path), data, {"__files__": [("index", "index.html")]})
     return tmp_path / "mod.html"
 
 
