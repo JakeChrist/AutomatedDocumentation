@@ -10,16 +10,16 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>parser_matlab</h1>
-        <p>stub</p>
+        <p>The module provides a function `parse_matlab_file` that parses MATLAB `.m` files and extracts basic structure. It reads the file content, identifies leading comment lines as the file header, and uses regular expressions to find and parse function declarations, extracting their names and arguments. The result is returned as a dictionary containing the file header comments and a list of functions with their respective argument lists.</p>
 <h2>Functions</h2>
 <h3 id="parse_matlab_file">parse_matlab_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
+<p>The function `parse_matlab_file` reads and parses a MATLAB `.m` file to extract its structure. It returns a dictionary containing the file&#x27;s header comments and any function declarations found within the file. The header is extracted as lines starting with `%`, and function declarations are identified using a regular expression that matches lines defining functions, capturing their names and arguments.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_matlab_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Parse a MATLAB ``.m`` file and extract basic structure.</span>
 
 <span style="color: #BA2121; font-style: italic">    Parameters</span>
 <span style="color: #BA2121; font-style: italic">    ----------</span>
@@ -33,40 +33,40 @@
 <span style="color: #BA2121; font-style: italic">        declarations found. Each function entry provides the name of the</span>
 <span style="color: #BA2121; font-style: italic">        function and a list of arguments.</span>
 <span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
-    text <span style="color: #666">=</span> Path(path)<span style="color: #666">.</span>read_text(encoding<span style="color: #666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
-    lines <span style="color: #666">=</span> text<span style="color: #666">.</span>splitlines()
+    text <span style="color: #666666">=</span> Path(path)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>splitlines()
 
     <span style="color: #3D7B7B; font-style: italic"># Extract leading comment lines as the file header</span>
-    header_lines: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    body_start <span style="color: #666">=</span> <span style="color: #666">0</span>
-    <span style="color: #008000; font-weight: bold">for</span> i, line <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(lines):
-        stripped <span style="color: #666">=</span> line<span style="color: #666">.</span>strip()
-        <span style="color: #008000; font-weight: bold">if</span> stripped<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;%&quot;</span>):
-            header_lines<span style="color: #666">.</span>append(stripped<span style="color: #666">.</span>lstrip(<span style="color: #BA2121">&quot;% &quot;</span>))
-        <span style="color: #008000; font-weight: bold">elif</span> stripped <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
+    header_lines: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    body_start <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    <span style="color: #008000; font-weight: bold">for</span> i, line <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(lines):
+        stripped <span style="color: #666666">=</span> line<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> stripped<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;%&quot;</span>):
+            header_lines<span style="color: #666666">.</span>append(stripped<span style="color: #666666">.</span>lstrip(<span style="color: #BA2121">&quot;% &quot;</span>))
+        <span style="color: #008000; font-weight: bold">elif</span> stripped <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
             <span style="color: #3D7B7B; font-style: italic"># allow blank lines before the header ends</span>
-            header_lines<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> header_lines <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>
+            header_lines<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> header_lines <span style="color: #008000; font-weight: bold">else</span> <span style="color: #008000; font-weight: bold">None</span>
         <span style="color: #008000; font-weight: bold">else</span>:
-            body_start <span style="color: #666">=</span> i
+            body_start <span style="color: #666666">=</span> i
             <span style="color: #008000; font-weight: bold">break</span>
     <span style="color: #008000; font-weight: bold">else</span>:
-        body_start <span style="color: #666">=</span> <span style="color: #008000">len</span>(lines)
+        body_start <span style="color: #666666">=</span> <span style="color: #008000">len</span>(lines)
 
-    header <span style="color: #666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(header_lines)<span style="color: #666">.</span>strip()
+    header <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(header_lines)<span style="color: #666666">.</span>strip()
 
-    func_re <span style="color: #666">=</span> re<span style="color: #666">.</span>compile(
+    func_re <span style="color: #666666">=</span> re<span style="color: #666666">.</span>compile(
         <span style="color: #BA2121">r&quot;^\s*function\s+(?:\[[^\]]*\]|[^=]+)?=?\s*(\w+)\s*(?:\(([^)]*)\))?&quot;</span>,
-        re<span style="color: #666">.</span>IGNORECASE,
+        re<span style="color: #666666">.</span>IGNORECASE,
     )
-    functions: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666">=</span> []
+    functions: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
 
-    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #A2F; font-weight: bold">in</span> lines[body_start:]:
-        m <span style="color: #666">=</span> func_re<span style="color: #666">.</span>match(line)
+    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #AA22FF; font-weight: bold">in</span> lines[body_start:]:
+        m <span style="color: #666666">=</span> func_re<span style="color: #666666">.</span>match(line)
         <span style="color: #008000; font-weight: bold">if</span> m:
-            name <span style="color: #666">=</span> m<span style="color: #666">.</span>group(<span style="color: #666">1</span>)
-            args <span style="color: #666">=</span> m<span style="color: #666">.</span>group(<span style="color: #666">2</span>) <span style="color: #A2F; font-weight: bold">or</span> <span style="color: #BA2121">&quot;&quot;</span>
-            arg_list <span style="color: #666">=</span> [a<span style="color: #666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #A2F; font-weight: bold">in</span> args<span style="color: #666">.</span>split(<span style="color: #BA2121">&quot;;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666">.</span>strip()] <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;;&quot;</span> <span style="color: #A2F; font-weight: bold">in</span> args <span style="color: #008000; font-weight: bold">else</span> [a<span style="color: #666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #A2F; font-weight: bold">in</span> args<span style="color: #666">.</span>split(<span style="color: #BA2121">&quot;,&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666">.</span>strip()]
-            functions<span style="color: #666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;args&quot;</span>: arg_list})
+            name <span style="color: #666666">=</span> m<span style="color: #666666">.</span>group(<span style="color: #666666">1</span>)
+            args <span style="color: #666666">=</span> m<span style="color: #666666">.</span>group(<span style="color: #666666">2</span>) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #BA2121">&quot;&quot;</span>
+            arg_list <span style="color: #666666">=</span> [a<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #AA22FF; font-weight: bold">in</span> args<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;;&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>strip()] <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;;&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> args <span style="color: #008000; font-weight: bold">else</span> [a<span style="color: #666666">.</span>strip() <span style="color: #008000; font-weight: bold">for</span> a <span style="color: #AA22FF; font-weight: bold">in</span> args<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;,&quot;</span>) <span style="color: #008000; font-weight: bold">if</span> a<span style="color: #666666">.</span>strip()]
+            functions<span style="color: #666666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;args&quot;</span>: arg_list})
 
     <span style="color: #008000; font-weight: bold">return</span> {<span style="color: #BA2121">&quot;header&quot;</span>: header, <span style="color: #BA2121">&quot;functions&quot;</span>: functions}
 </code></pre>

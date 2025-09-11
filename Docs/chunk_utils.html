@@ -10,140 +10,146 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>chunk_utils</h1>
-        <p>stub</p>
+        <p>The module provides utility functions for tokenization and text chunking. It includes:
+
+1. `strip_fim_tokens(text: str) -&gt; str`: Removes FIM special tokens from the input text.
+2. `get_tokenizer()`: Returns a tokenizer object used for estimating token counts, using `tiktoken` if available or a simple character-based tokenizer otherwise.
+3. `_split_blocks(text: str) -&gt; List[str]`: Splits Markdown text into paragraphs, headings, and fenced code blocks.
+4. `_split_long_block(block: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]`: Fallback splitter that uses a character-based approximation to split long blocks exceeding the specified token size.
+5. `chunk_text(text: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]`: Splits text into chunks roughly of the specified token size, honoring natural break points like blank lines, Markdown headings, and fenced code blocks. If a single block exceeds the token size, it falls back to splitting by approximate character length.</p>
 <h2>Functions</h2>
 <h3 id="strip_fim_tokens">strip_fim_tokens(text: str) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">strip_fim_tokens</span>(text: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with any FIM special tokens removed.&quot;&quot;&quot;</span>
+<p>The function `strip_fim_tokens` removes any FIM special tokens from the input string `text`. It uses a regular expression defined in `FIM_RE` to identify and replace these tokens with an empty string.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">strip_fim_tokens</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``text`` with any FIM special tokens removed.&quot;&quot;&quot;</span>
 
-    <span style="color: #008000; font-weight: bold">return</span> FIM_RE<span style="color: #666">.</span>sub(<span style="color: #BA2121">&quot;&quot;</span>, text)
+    <span style="color: #008000; font-weight: bold">return</span> FIM_RE<span style="color: #666666">.</span>sub(<span style="color: #BA2121">&quot;&quot;</span>, text)
 </code></pre>
 <h3 id="get_tokenizer">get_tokenizer()</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">get_tokenizer</span>():
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a tokenizer object used for estimating token counts.&quot;&quot;&quot;</span>
+<p>The function `get_tokenizer` returns a tokenizer object used for estimating token counts. It first attempts to use the `tiktoken` library with the encoding &quot;cl100k_base&quot;. If successful, it wraps the tokenizer in a `_EncodingWrapper` class that strips FIM tokens and handles decoding. If `tiktoken` is not available or fails, it falls back to a simple tokenizer that splits text into words and joins them back together.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">get_tokenizer</span>():
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return a tokenizer object used for estimating token counts.&quot;&quot;&quot;</span>
 
-    <span style="color: #008000; font-weight: bold">if</span> tiktoken <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - optional branch</span>
-        enc <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+    <span style="color: #008000; font-weight: bold">if</span> tiktoken <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - optional branch</span>
+        enc <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
         <span style="color: #3D7B7B; font-style: italic"># ``tiktoken`` may attempt network access when loading encodings which</span>
         <span style="color: #3D7B7B; font-style: italic"># can trigger unraisable ``ProxyError`` warnings under pytest.  Temporarily</span>
         <span style="color: #3D7B7B; font-style: italic"># override the unraisable hook to swallow such errors.</span>
-        old_hook <span style="color: #666">=</span> <span style="color: #008000">getattr</span>(sys, <span style="color: #BA2121">&quot;unraisablehook&quot;</span>, <span style="color: #008000; font-weight: bold">None</span>)
+        old_hook <span style="color: #666666">=</span> <span style="color: #008000">getattr</span>(sys, <span style="color: #BA2121">&quot;unraisablehook&quot;</span>, <span style="color: #008000; font-weight: bold">None</span>)
         <span style="color: #008000; font-weight: bold">try</span>:
-            <span style="color: #008000; font-weight: bold">if</span> old_hook <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
-                sys<span style="color: #666">.</span>unraisablehook <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> <span style="color: #666">*</span>a, <span style="color: #666">**</span>k: <span style="color: #008000; font-weight: bold">None</span>
+            <span style="color: #008000; font-weight: bold">if</span> old_hook <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+                sys<span style="color: #666666">.</span>unraisablehook <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">lambda</span> <span style="color: #666666">*</span>a, <span style="color: #666666">**</span>k: <span style="color: #008000; font-weight: bold">None</span>
             <span style="color: #008000; font-weight: bold">try</span>:
-                enc <span style="color: #666">=</span> tiktoken<span style="color: #666">.</span>get_encoding(<span style="color: #BA2121">&quot;cl100k_base&quot;</span>)
+                enc <span style="color: #666666">=</span> tiktoken<span style="color: #666666">.</span>get_encoding(<span style="color: #BA2121">&quot;cl100k_base&quot;</span>)
             <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span>:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - fallback if model unknown or offline</span>
                 <span style="color: #008000; font-weight: bold">try</span>:
-                    enc <span style="color: #666">=</span> tiktoken<span style="color: #666">.</span>encoding_for_model(<span style="color: #BA2121">&quot;gpt-3.5-turbo&quot;</span>)
+                    enc <span style="color: #666666">=</span> tiktoken<span style="color: #666666">.</span>encoding_for_model(<span style="color: #BA2121">&quot;gpt-3.5-turbo&quot;</span>)
                 <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span>:
-                    enc <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+                    enc <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
         <span style="color: #008000; font-weight: bold">finally</span>:
-            <span style="color: #008000; font-weight: bold">if</span> old_hook <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
-                sys<span style="color: #666">.</span>unraisablehook <span style="color: #666">=</span> old_hook
+            <span style="color: #008000; font-weight: bold">if</span> old_hook <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+                sys<span style="color: #666666">.</span>unraisablehook <span style="color: #666666">=</span> old_hook
 
-        <span style="color: #008000; font-weight: bold">if</span> enc <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
-            <span style="color: #008000; font-weight: bold">class</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">_EncodingWrapper</span>:
-                <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">__init__</span>(<span style="color: #008000">self</span>, enc):
-                    <span style="color: #008000">self</span><span style="color: #666">.</span>_enc <span style="color: #666">=</span> enc
+        <span style="color: #008000; font-weight: bold">if</span> enc <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+            <span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">_EncodingWrapper</span>:
+                <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">__init__</span>(<span style="color: #008000">self</span>, enc):
+                    <span style="color: #008000">self</span><span style="color: #666666">.</span>_enc <span style="color: #666666">=</span> enc
 
-                <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">encode</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, <span style="color: #666">**</span>kwargs):
-                    text <span style="color: #666">=</span> strip_fim_tokens(text)
-                    kwargs<span style="color: #666">.</span>setdefault(<span style="color: #BA2121">&quot;disallowed_special&quot;</span>, ())
-                    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666">.</span>_enc<span style="color: #666">.</span>encode(text, <span style="color: #666">**</span>kwargs)
+                <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">encode</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>, <span style="color: #666666">**</span>kwargs):
+                    text <span style="color: #666666">=</span> strip_fim_tokens(text)
+                    kwargs<span style="color: #666666">.</span>setdefault(<span style="color: #BA2121">&quot;disallowed_special&quot;</span>, ())
+                    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>_enc<span style="color: #666666">.</span>encode(text, <span style="color: #666666">**</span>kwargs)
 
-                <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">decode</span>(<span style="color: #008000">self</span>, tokens, <span style="color: #666">**</span>kwargs):
-                    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666">.</span>_enc<span style="color: #666">.</span>decode(tokens, <span style="color: #666">**</span>kwargs)
+                <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">decode</span>(<span style="color: #008000">self</span>, tokens, <span style="color: #666666">**</span>kwargs):
+                    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">self</span><span style="color: #666666">.</span>_enc<span style="color: #666666">.</span>decode(tokens, <span style="color: #666666">**</span>kwargs)
 
             <span style="color: #008000; font-weight: bold">return</span> _EncodingWrapper(enc)
 
     <span style="color: #008000">print</span>(
         <span style="color: #BA2121">&quot;[WARNING] tiktoken is not installed or could not be loaded; token counts will be approximate.&quot;</span>,
-        file<span style="color: #666">=</span>sys<span style="color: #666">.</span>stderr,
+        file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr,
     )
 
-    <span style="color: #008000; font-weight: bold">class</span><span style="color: #BBB"> </span><span style="color: #00F; font-weight: bold">_Simple</span>:
-        <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">encode</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>):
-            text <span style="color: #666">=</span> strip_fim_tokens(text)
-            <span style="color: #008000; font-weight: bold">return</span> text<span style="color: #666">.</span>split()
+    <span style="color: #008000; font-weight: bold">class</span> <span style="color: #0000FF; font-weight: bold">_Simple</span>:
+        <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">encode</span>(<span style="color: #008000">self</span>, text: <span style="color: #008000">str</span>):
+            text <span style="color: #666666">=</span> strip_fim_tokens(text)
+            <span style="color: #008000; font-weight: bold">return</span> text<span style="color: #666666">.</span>split()
 
-        <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">decode</span>(<span style="color: #008000">self</span>, tokens):
-            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot; &quot;</span><span style="color: #666">.</span>join(tokens)
+        <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">decode</span>(<span style="color: #008000">self</span>, tokens):
+            <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot; &quot;</span><span style="color: #666666">.</span>join(tokens)
 
     <span style="color: #008000; font-weight: bold">return</span> _Simple()
 </code></pre>
 <h3 id="_split_blocks">_split_blocks(text: str) -&gt; List[str]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_split_blocks</span>(text: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> List[<span style="color: #008000">str</span>]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return Markdown ``text`` separated into paragraphs, headings and fences.&quot;&quot;&quot;</span>
+<p>The `_split_blocks` function takes a string of Markdown text and splits it into paragraphs, headings, and code blocks. It returns a list of these blocks as strings. The function processes the input line by line, identifying code fences (indicated by triple backticks), empty lines, and heading lines (indicated by hash symbols). It constructs each block based on these delimiters and appends them to a list, which is then returned after filtering out any empty strings.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_split_blocks</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return Markdown ``text`` separated into paragraphs, headings and fences.&quot;&quot;&quot;</span>
 
-    blocks: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    lines <span style="color: #666">=</span> text<span style="color: #666">.</span>splitlines()
-    current: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    in_code <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">False</span>
+    blocks: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>splitlines()
+    current: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    in_code <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>
 
-    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #A2F; font-weight: bold">in</span> lines:
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;```&quot;</span>):
+    <span style="color: #008000; font-weight: bold">for</span> line <span style="color: #AA22FF; font-weight: bold">in</span> lines:
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;```&quot;</span>):
             <span style="color: #008000; font-weight: bold">if</span> in_code:  <span style="color: #3D7B7B; font-style: italic"># closing fence</span>
-                current<span style="color: #666">.</span>append(line)
-                blocks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current)<span style="color: #666">.</span>strip())
-                current <span style="color: #666">=</span> []
-                in_code <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">False</span>
+                current<span style="color: #666666">.</span>append(line)
+                blocks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current)<span style="color: #666666">.</span>strip())
+                current <span style="color: #666666">=</span> []
+                in_code <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>
             <span style="color: #008000; font-weight: bold">else</span>:  <span style="color: #3D7B7B; font-style: italic"># opening fence</span>
                 <span style="color: #008000; font-weight: bold">if</span> current:
-                    blocks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current)<span style="color: #666">.</span>strip())
-                    current <span style="color: #666">=</span> []
-                current<span style="color: #666">.</span>append(line)
-                in_code <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">True</span>
+                    blocks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current)<span style="color: #666666">.</span>strip())
+                    current <span style="color: #666666">=</span> []
+                current<span style="color: #666666">.</span>append(line)
+                in_code <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">True</span>
             <span style="color: #008000; font-weight: bold">continue</span>
 
         <span style="color: #008000; font-weight: bold">if</span> in_code:
-            current<span style="color: #666">.</span>append(line)
+            current<span style="color: #666666">.</span>append(line)
             <span style="color: #008000; font-weight: bold">continue</span>
 
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>strip() <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>strip() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
             <span style="color: #008000; font-weight: bold">if</span> current:
-                blocks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current)<span style="color: #666">.</span>strip())
-                current <span style="color: #666">=</span> []
+                blocks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current)<span style="color: #666666">.</span>strip())
+                current <span style="color: #666666">=</span> []
             <span style="color: #008000; font-weight: bold">continue</span>
 
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>lstrip()<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;#&quot;</span>):
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>lstrip()<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;#&quot;</span>):
             <span style="color: #008000; font-weight: bold">if</span> current:
-                blocks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current)<span style="color: #666">.</span>strip())
-            blocks<span style="color: #666">.</span>append(line<span style="color: #666">.</span>strip())
-            current <span style="color: #666">=</span> []
+                blocks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current)<span style="color: #666666">.</span>strip())
+            blocks<span style="color: #666666">.</span>append(line<span style="color: #666666">.</span>strip())
+            current <span style="color: #666666">=</span> []
             <span style="color: #008000; font-weight: bold">continue</span>
 
-        current<span style="color: #666">.</span>append(line)
+        current<span style="color: #666666">.</span>append(line)
 
     <span style="color: #008000; font-weight: bold">if</span> current:
-        blocks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current)<span style="color: #666">.</span>strip())
+        blocks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current)<span style="color: #666666">.</span>strip())
 
-    <span style="color: #008000; font-weight: bold">return</span> [b <span style="color: #008000; font-weight: bold">for</span> b <span style="color: #A2F; font-weight: bold">in</span> blocks <span style="color: #008000; font-weight: bold">if</span> b]
+    <span style="color: #008000; font-weight: bold">return</span> [b <span style="color: #008000; font-weight: bold">for</span> b <span style="color: #AA22FF; font-weight: bold">in</span> blocks <span style="color: #008000; font-weight: bold">if</span> b]
 </code></pre>
 <h3 id="_split_long_block">_split_long_block(block: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_split_long_block</span>(block: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666">-&gt;</span> List[<span style="color: #008000">str</span>]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Fallback splitter that uses a character based approximation.&quot;&quot;&quot;</span>
+<p>This function `_split_long_block` takes a string `block`, a tokenizer, and an integer `chunk_size_tokens`. It encodes the block into tokens using the provided tokenizer. If the number of tokens is less than or equal to `chunk_size_tokens`, it returns the original block as a single element list. Otherwise, it calculates an average character size per token and determines a maximum character length for each chunk based on this average. The function then splits the block into chunks of up to `max_chars` characters and returns these chunks as a list.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_split_long_block</span>(block: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Fallback splitter that uses a character based approximation.&quot;&quot;&quot;</span>
 
-    tokens <span style="color: #666">=</span> tokenizer<span style="color: #666">.</span>encode(block)
-    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokens) <span style="color: #666">&lt;=</span> chunk_size_tokens:
+    tokens <span style="color: #666666">=</span> tokenizer<span style="color: #666666">.</span>encode(block)
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokens) <span style="color: #666666">&lt;=</span> chunk_size_tokens:
         <span style="color: #008000; font-weight: bold">return</span> [block]
 
-    avg_chars <span style="color: #666">=</span> <span style="color: #008000">max</span>(<span style="color: #008000">len</span>(block) <span style="color: #666">//</span> <span style="color: #008000">len</span>(tokens), <span style="color: #666">1</span>)
-    max_chars <span style="color: #666">=</span> <span style="color: #008000">max</span>(chunk_size_tokens <span style="color: #666">*</span> avg_chars, <span style="color: #666">1</span>)
-    <span style="color: #008000; font-weight: bold">return</span> [block[i : i <span style="color: #666">+</span> max_chars] <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666">0</span>, <span style="color: #008000">len</span>(block), max_chars)]
+    avg_chars <span style="color: #666666">=</span> <span style="color: #008000">max</span>(<span style="color: #008000">len</span>(block) <span style="color: #666666">//</span> <span style="color: #008000">len</span>(tokens), <span style="color: #666666">1</span>)
+    max_chars <span style="color: #666666">=</span> <span style="color: #008000">max</span>(chunk_size_tokens <span style="color: #666666">*</span> avg_chars, <span style="color: #666666">1</span>)
+    <span style="color: #008000; font-weight: bold">return</span> [block[i : i <span style="color: #666666">+</span> max_chars] <span style="color: #008000; font-weight: bold">for</span> i <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">range</span>(<span style="color: #666666">0</span>, <span style="color: #008000">len</span>(block), max_chars)]
 </code></pre>
 <h3 id="chunk_text">chunk_text(text: str, tokenizer, chunk_size_tokens: int) -&gt; List[str]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">chunk_text</span>(text: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666">-&gt;</span> List[<span style="color: #008000">str</span>]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``text`` into chunks roughly ``chunk_size_tokens`` each.</span>
+<p>The function `chunk_text` splits a given text into chunks of approximately specified token size. It uses a tokenizer to determine the number of tokens in each block and ensures natural break points such as blank lines, Markdown headings, and fenced code blocks are respected. If a single block exceeds the token limit, it is further split by character length. The function returns a list of text chunks.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">chunk_text</span>(text: <span style="color: #008000">str</span>, tokenizer, chunk_size_tokens: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> List[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Split ``text`` into chunks roughly ``chunk_size_tokens`` each.</span>
 
 <span style="color: #BA2121; font-style: italic">    Natural break points such as blank lines, Markdown headings and fenced code</span>
 <span style="color: #BA2121; font-style: italic">    blocks are honoured.  If a single block still exceeds ``chunk_size_tokens``</span>
@@ -151,27 +157,27 @@
 <span style="color: #BA2121; font-style: italic">    length.</span>
 <span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
 
-    blocks <span style="color: #666">=</span> _split_blocks(text)
-    chunks: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    current: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    token_count <span style="color: #666">=</span> <span style="color: #666">0</span>
+    blocks <span style="color: #666666">=</span> _split_blocks(text)
+    chunks: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    current: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    token_count <span style="color: #666666">=</span> <span style="color: #666666">0</span>
 
-    <span style="color: #008000; font-weight: bold">for</span> block <span style="color: #A2F; font-weight: bold">in</span> blocks:
-        block_tokens <span style="color: #666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(block))
-        <span style="color: #008000; font-weight: bold">if</span> token_count <span style="color: #666">+</span> block_tokens <span style="color: #666">&gt;</span> chunk_size_tokens <span style="color: #A2F; font-weight: bold">and</span> current:
-            chunks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current))
-            current <span style="color: #666">=</span> []
-            token_count <span style="color: #666">=</span> <span style="color: #666">0</span>
+    <span style="color: #008000; font-weight: bold">for</span> block <span style="color: #AA22FF; font-weight: bold">in</span> blocks:
+        block_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(block))
+        <span style="color: #008000; font-weight: bold">if</span> token_count <span style="color: #666666">+</span> block_tokens <span style="color: #666666">&gt;</span> chunk_size_tokens <span style="color: #AA22FF; font-weight: bold">and</span> current:
+            chunks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current))
+            current <span style="color: #666666">=</span> []
+            token_count <span style="color: #666666">=</span> <span style="color: #666666">0</span>
 
-        <span style="color: #008000; font-weight: bold">if</span> block_tokens <span style="color: #666">&gt;</span> chunk_size_tokens:
-            chunks<span style="color: #666">.</span>extend(_split_long_block(block, tokenizer, chunk_size_tokens))
+        <span style="color: #008000; font-weight: bold">if</span> block_tokens <span style="color: #666666">&gt;</span> chunk_size_tokens:
+            chunks<span style="color: #666666">.</span>extend(_split_long_block(block, tokenizer, chunk_size_tokens))
             <span style="color: #008000; font-weight: bold">continue</span>
 
-        current<span style="color: #666">.</span>append(block)
-        token_count <span style="color: #666">+=</span> block_tokens
+        current<span style="color: #666666">.</span>append(block)
+        token_count <span style="color: #666666">+=</span> block_tokens
 
     <span style="color: #008000; font-weight: bold">if</span> current:
-        chunks<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(current))
+        chunks<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(current))
 
     <span style="color: #008000; font-weight: bold">return</span> chunks
 </code></pre>

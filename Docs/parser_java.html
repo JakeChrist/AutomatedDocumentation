@@ -10,132 +10,139 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>parser_java</h1>
-        <p>stub</p>
+        <p>This Python module provides a simple parser for Java files used by DocGen-LM. It extracts the package name, classes, public methods, and variables from Java source code using naive line-based parsing. The output mirrors the structure of `parse_python_file`, with keys for `module_docstring`, `classes`, and `functions`. Each class entry includes its source code and leading documentation comments (Javadoc or `//`).</p>
 <h2>Functions</h2>
 <h3 id="_get_preceding_comment">_get_preceding_comment(lines: List[str], idx: int) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_get_preceding_comment</span>(lines: List[<span style="color: #008000">str</span>], idx: <span style="color: #008000">int</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-    comments: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    j <span style="color: #666">=</span> idx <span style="color: #666">-</span> <span style="color: #666">1</span>
-    <span style="color: #008000; font-weight: bold">while</span> j <span style="color: #666">&gt;=</span> <span style="color: #666">0</span>:
-        line <span style="color: #666">=</span> lines[j]<span style="color: #666">.</span>strip()
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;//&quot;</span>):
-            comments<span style="color: #666">.</span>insert(<span style="color: #666">0</span>, line<span style="color: #666">.</span>lstrip(<span style="color: #BA2121">&quot;/ &quot;</span>))
-            j <span style="color: #666">-=</span> <span style="color: #666">1</span>
+<p>The function `_get_preceding_comment` retrieves the preceding comment(s) from a list of lines at a given index. It iterates backward through the lines, collecting single-line and multi-line comments until it encounters a non-comment line or reaches the beginning of the file. The collected comments are then joined into a single string and returned, stripped of leading/trailing whitespace.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_get_preceding_comment</span>(lines: List[<span style="color: #008000">str</span>], idx: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+    comments: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    j <span style="color: #666666">=</span> idx <span style="color: #666666">-</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">while</span> j <span style="color: #666666">&gt;=</span> <span style="color: #666666">0</span>:
+        line <span style="color: #666666">=</span> lines[j]<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;//&quot;</span>):
+            comments<span style="color: #666666">.</span>insert(<span style="color: #666666">0</span>, line<span style="color: #666666">.</span>lstrip(<span style="color: #BA2121">&quot;/ &quot;</span>))
+            j <span style="color: #666666">-=</span> <span style="color: #666666">1</span>
             <span style="color: #008000; font-weight: bold">continue</span>
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;*/&quot;</span>):
-            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;/*&quot;</span> <span style="color: #A2F; font-weight: bold">in</span> line:
-                comments<span style="color: #666">.</span>insert(<span style="color: #666">0</span>, line<span style="color: #666">.</span>strip()<span style="color: #666">.</span>lstrip(<span style="color: #BA2121">&quot;/* &quot;</span>)<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;*/ &quot;</span>))
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;*/&quot;</span>):
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;/*&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line:
+                comments<span style="color: #666666">.</span>insert(<span style="color: #666666">0</span>, line<span style="color: #666666">.</span>strip()<span style="color: #666666">.</span>lstrip(<span style="color: #BA2121">&quot;/* &quot;</span>)<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;*/ &quot;</span>))
                 <span style="color: #008000; font-weight: bold">break</span>
-            block: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-            block<span style="color: #666">.</span>insert(<span style="color: #666">0</span>, line)
-            j <span style="color: #666">-=</span> <span style="color: #666">1</span>
-            <span style="color: #008000; font-weight: bold">while</span> j <span style="color: #666">&gt;=</span> <span style="color: #666">0</span> <span style="color: #A2F; font-weight: bold">and</span> <span style="color: #BA2121">&quot;/*&quot;</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #A2F; font-weight: bold">in</span> lines[j]:
-                block<span style="color: #666">.</span>insert(<span style="color: #666">0</span>, lines[j])
-                j <span style="color: #666">-=</span> <span style="color: #666">1</span>
-            <span style="color: #008000; font-weight: bold">if</span> j <span style="color: #666">&gt;=</span> <span style="color: #666">0</span>:
-                block<span style="color: #666">.</span>insert(<span style="color: #666">0</span>, lines[j])
-            cleaned <span style="color: #666">=</span> [b<span style="color: #666">.</span>strip()<span style="color: #666">.</span>lstrip(<span style="color: #BA2121">&quot;/* &quot;</span>)<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;*/ &quot;</span>) <span style="color: #008000; font-weight: bold">for</span> b <span style="color: #A2F; font-weight: bold">in</span> block]
-            comments <span style="color: #666">=</span> cleaned <span style="color: #666">+</span> comments
+            block: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+            block<span style="color: #666666">.</span>insert(<span style="color: #666666">0</span>, line)
+            j <span style="color: #666666">-=</span> <span style="color: #666666">1</span>
+            <span style="color: #008000; font-weight: bold">while</span> j <span style="color: #666666">&gt;=</span> <span style="color: #666666">0</span> <span style="color: #AA22FF; font-weight: bold">and</span> <span style="color: #BA2121">&quot;/*&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> lines[j]:
+                block<span style="color: #666666">.</span>insert(<span style="color: #666666">0</span>, lines[j])
+                j <span style="color: #666666">-=</span> <span style="color: #666666">1</span>
+            <span style="color: #008000; font-weight: bold">if</span> j <span style="color: #666666">&gt;=</span> <span style="color: #666666">0</span>:
+                block<span style="color: #666666">.</span>insert(<span style="color: #666666">0</span>, lines[j])
+            cleaned <span style="color: #666666">=</span> [b<span style="color: #666666">.</span>strip()<span style="color: #666666">.</span>lstrip(<span style="color: #BA2121">&quot;/* &quot;</span>)<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;*/ &quot;</span>) <span style="color: #008000; font-weight: bold">for</span> b <span style="color: #AA22FF; font-weight: bold">in</span> block]
+            comments <span style="color: #666666">=</span> cleaned <span style="color: #666666">+</span> comments
             <span style="color: #008000; font-weight: bold">break</span>
-        <span style="color: #008000; font-weight: bold">if</span> line <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
+        <span style="color: #008000; font-weight: bold">if</span> line <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;&quot;</span>:
             <span style="color: #008000; font-weight: bold">if</span> comments:
                 <span style="color: #008000; font-weight: bold">break</span>
-            j <span style="color: #666">-=</span> <span style="color: #666">1</span>
+            j <span style="color: #666666">-=</span> <span style="color: #666666">1</span>
             <span style="color: #008000; font-weight: bold">continue</span>
         <span style="color: #008000; font-weight: bold">break</span>
-    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(c <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #A2F; font-weight: bold">in</span> comments <span style="color: #008000; font-weight: bold">if</span> c)<span style="color: #666">.</span>strip()
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(c <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> comments <span style="color: #008000; font-weight: bold">if</span> c)<span style="color: #666666">.</span>strip()
 </code></pre>
 <h3 id="_extract_block">_extract_block(lines: List[str], start: int) -&gt; Tuple[str, int]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_extract_block</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>) <span style="color: #666">-&gt;</span> Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">int</span>]:
-    text_lines <span style="color: #666">=</span> [lines[start]]
-    brace <span style="color: #666">=</span> lines[start]<span style="color: #666">.</span>count(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #666">-</span> lines[start]<span style="color: #666">.</span>count(<span style="color: #BA2121">&quot;}&quot;</span>)
-    i <span style="color: #666">=</span> start <span style="color: #666">+</span> <span style="color: #666">1</span>
-    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666">&lt;</span> <span style="color: #008000">len</span>(lines) <span style="color: #A2F; font-weight: bold">and</span> brace <span style="color: #666">&gt;</span> <span style="color: #666">0</span>:
-        line <span style="color: #666">=</span> lines[i]
-        text_lines<span style="color: #666">.</span>append(line)
-        brace <span style="color: #666">+=</span> line<span style="color: #666">.</span>count(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #666">-</span> line<span style="color: #666">.</span>count(<span style="color: #BA2121">&quot;}&quot;</span>)
-        i <span style="color: #666">+=</span> <span style="color: #666">1</span>
-    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(text_lines), i <span style="color: #666">-</span> <span style="color: #666">1</span>
+<p>The function `_extract_block` extracts a block of code from a list of lines starting at a given index. It reads lines until the balance of opening and closing braces returns to zero, indicating the end of the block. The extracted block is returned along with the index of the last line read.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_extract_block</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">int</span>]:
+    text_lines <span style="color: #666666">=</span> [lines[start]]
+    brace <span style="color: #666666">=</span> lines[start]<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #666666">-</span> lines[start]<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;}&quot;</span>)
+    i <span style="color: #666666">=</span> start <span style="color: #666666">+</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666666">&lt;</span> <span style="color: #008000">len</span>(lines) <span style="color: #AA22FF; font-weight: bold">and</span> brace <span style="color: #666666">&gt;</span> <span style="color: #666666">0</span>:
+        line <span style="color: #666666">=</span> lines[i]
+        text_lines<span style="color: #666666">.</span>append(line)
+        brace <span style="color: #666666">+=</span> line<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #666666">-</span> line<span style="color: #666666">.</span>count(<span style="color: #BA2121">&quot;}&quot;</span>)
+        i <span style="color: #666666">+=</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(text_lines), i <span style="color: #666666">-</span> <span style="color: #666666">1</span>
 </code></pre>
 <h3 id="_parse_class_body">_parse_class_body(lines: List[str], start: int, end: int) -&gt; Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_parse_class_body</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>, end: <span style="color: #008000">int</span>) <span style="color: #666">-&gt;</span> Tuple[List[Dict[<span style="color: #008000">str</span>, Any]], List[Dict[<span style="color: #008000">str</span>, Any]]]:
-    methods: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666">=</span> []
-    variables: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666">=</span> []
-    i <span style="color: #666">=</span> start
-    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666">&lt;=</span> end:
-        line <span style="color: #666">=</span> lines[i]<span style="color: #666">.</span>strip()
-        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;public &quot;</span>):
-            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;(&quot;</span> <span style="color: #A2F; font-weight: bold">in</span> line <span style="color: #A2F; font-weight: bold">and</span> (line<span style="color: #666">.</span>rstrip()<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> line<span style="color: #666">.</span>rstrip()<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>)):
-                <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>rstrip()<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>):
-                    sig <span style="color: #666">=</span> line<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>)<span style="color: #666">.</span>strip()
-                    block <span style="color: #666">=</span> line
-                    end_idx <span style="color: #666">=</span> i
+<p>The function `_parse_class_body` extracts methods and variables from a block of code within a class. It takes three parameters: `lines`, which is a list of strings representing the lines of code; `start`, which is the starting index of the block to parse; and `end`, which is the ending index of the block to parse.
+
+The function initializes two empty lists, `methods` and `variables`, to store dictionaries containing information about each method and variable found in the class body. It then iterates over the lines from the specified start index to the end index.
+
+For each line, it checks if the line starts with &quot;public &quot;. If it does, the function further checks if the line contains a method signature (indicated by parentheses) or a variable declaration (indicated by a semicolon). Based on this check, it extracts the relevant information:
+
+
+The function uses helper functions `_extract_block` to extract the method body if it spans multiple lines, and `_get</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_parse_class_body</span>(lines: List[<span style="color: #008000">str</span>], start: <span style="color: #008000">int</span>, end: <span style="color: #008000">int</span>) <span style="color: #666666">-&gt;</span> Tuple[List[Dict[<span style="color: #008000">str</span>, Any]], List[Dict[<span style="color: #008000">str</span>, Any]]]:
+    methods: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
+    variables: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
+    i <span style="color: #666666">=</span> start
+    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666666">&lt;=</span> end:
+        line <span style="color: #666666">=</span> lines[i]<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;public &quot;</span>):
+            <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;(&quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> line <span style="color: #AA22FF; font-weight: bold">and</span> (line<span style="color: #666666">.</span>rstrip()<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;{&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> line<span style="color: #666666">.</span>rstrip()<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>)):
+                <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>rstrip()<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>):
+                    sig <span style="color: #666666">=</span> line<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&quot;</span>)<span style="color: #666666">.</span>strip()
+                    block <span style="color: #666666">=</span> line
+                    end_idx <span style="color: #666666">=</span> i
                 <span style="color: #008000; font-weight: bold">else</span>:
-                    sig <span style="color: #666">=</span> line<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;{&quot;</span>)<span style="color: #666">.</span>strip()
-                    block, end_idx <span style="color: #666">=</span> _extract_block(lines, i)
-                name <span style="color: #666">=</span> sig<span style="color: #666">.</span>split(<span style="color: #BA2121">&quot;(&quot;</span>)[<span style="color: #666">0</span>]<span style="color: #666">.</span>split()[<span style="color: #666">-1</span>]
-                doc <span style="color: #666">=</span> _get_preceding_comment(lines, i)
-                methods<span style="color: #666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;signature&quot;</span>: sig, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;source&quot;</span>: block})
-                i <span style="color: #666">=</span> end_idx <span style="color: #666">+</span> <span style="color: #666">1</span>
+                    sig <span style="color: #666666">=</span> line<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;{&quot;</span>)<span style="color: #666666">.</span>strip()
+                    block, end_idx <span style="color: #666666">=</span> _extract_block(lines, i)
+                name <span style="color: #666666">=</span> sig<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;(&quot;</span>)[<span style="color: #666666">0</span>]<span style="color: #666666">.</span>split()[<span style="color: #666666">-1</span>]
+                doc <span style="color: #666666">=</span> _get_preceding_comment(lines, i)
+                methods<span style="color: #666666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;signature&quot;</span>: sig, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;source&quot;</span>: block})
+                i <span style="color: #666666">=</span> end_idx <span style="color: #666666">+</span> <span style="color: #666666">1</span>
                 <span style="color: #008000; font-weight: bold">continue</span>
-            <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;;&quot;</span>) <span style="color: #A2F; font-weight: bold">and</span> <span style="color: #BA2121">&quot;(&quot;</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #A2F; font-weight: bold">in</span> line:
-                parts <span style="color: #666">=</span> line<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;;&quot;</span>)<span style="color: #666">.</span>split()
-                name <span style="color: #666">=</span> parts[<span style="color: #666">-1</span>]
-                vartype <span style="color: #666">=</span> <span style="color: #BA2121">&quot; &quot;</span><span style="color: #666">.</span>join(parts[<span style="color: #666">1</span>:<span style="color: #666">-1</span>])
-                doc <span style="color: #666">=</span> _get_preceding_comment(lines, i)
-                variables<span style="color: #666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;type&quot;</span>: vartype, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;source&quot;</span>: lines[i]})
-        i <span style="color: #666">+=</span> <span style="color: #666">1</span>
+            <span style="color: #008000; font-weight: bold">if</span> line<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;;&quot;</span>) <span style="color: #AA22FF; font-weight: bold">and</span> <span style="color: #BA2121">&quot;(&quot;</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #AA22FF; font-weight: bold">in</span> line:
+                parts <span style="color: #666666">=</span> line<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;;&quot;</span>)<span style="color: #666666">.</span>split()
+                name <span style="color: #666666">=</span> parts[<span style="color: #666666">-1</span>]
+                vartype <span style="color: #666666">=</span> <span style="color: #BA2121">&quot; &quot;</span><span style="color: #666666">.</span>join(parts[<span style="color: #666666">1</span>:<span style="color: #666666">-1</span>])
+                doc <span style="color: #666666">=</span> _get_preceding_comment(lines, i)
+                variables<span style="color: #666666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;type&quot;</span>: vartype, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;source&quot;</span>: lines[i]})
+        i <span style="color: #666666">+=</span> <span style="color: #666666">1</span>
     <span style="color: #008000; font-weight: bold">return</span> methods, variables
 </code></pre>
 <h3 id="parse_java_file">parse_java_file(path: str) -&gt; Dict[str, Any]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">parse_java_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
-    text <span style="color: #666">=</span> Path(path)<span style="color: #666">.</span>read_text(encoding<span style="color: #666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
-    lines <span style="color: #666">=</span> text<span style="color: #666">.</span>splitlines()
+<p>The `parse_java_file` function reads a Java source file from the specified path and parses it to extract information about packages, classes, methods, and variables. It returns a dictionary containing these parsed elements.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">parse_java_file</span>(path: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
+    text <span style="color: #666666">=</span> Path(path)<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    lines <span style="color: #666666">=</span> text<span style="color: #666666">.</span>splitlines()
 
-    first_code <span style="color: #666">=</span> <span style="color: #666">0</span>
-    <span style="color: #008000; font-weight: bold">while</span> first_code <span style="color: #666">&lt;</span> <span style="color: #008000">len</span>(lines):
-        stripped <span style="color: #666">=</span> lines[first_code]<span style="color: #666">.</span>strip()
-        <span style="color: #008000; font-weight: bold">if</span> stripped <span style="color: #666">==</span> <span style="color: #BA2121">&quot;&quot;</span> <span style="color: #A2F; font-weight: bold">or</span> stripped<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;//&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> stripped<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;/*&quot;</span>):
-            first_code <span style="color: #666">+=</span> <span style="color: #666">1</span>
+    first_code <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    <span style="color: #008000; font-weight: bold">while</span> first_code <span style="color: #666666">&lt;</span> <span style="color: #008000">len</span>(lines):
+        stripped <span style="color: #666666">=</span> lines[first_code]<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> stripped <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;&quot;</span> <span style="color: #AA22FF; font-weight: bold">or</span> stripped<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;//&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> stripped<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;/*&quot;</span>):
+            first_code <span style="color: #666666">+=</span> <span style="color: #666666">1</span>
             <span style="color: #008000; font-weight: bold">continue</span>
         <span style="color: #008000; font-weight: bold">break</span>
-    module_docstring <span style="color: #666">=</span> _get_preceding_comment(lines, first_code)
+    module_docstring <span style="color: #666666">=</span> _get_preceding_comment(lines, first_code)
 
-    package <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">None</span>
-    classes: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666">=</span> []
-    functions: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666">=</span> []
+    package <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>
+    classes: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
+    functions: List[Dict[<span style="color: #008000">str</span>, Any]] <span style="color: #666666">=</span> []
 
-    i <span style="color: #666">=</span> <span style="color: #666">0</span>
-    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666">&lt;</span> <span style="color: #008000">len</span>(lines):
-        line <span style="color: #666">=</span> lines[i]
-        stripped <span style="color: #666">=</span> line<span style="color: #666">.</span>strip()
-        <span style="color: #008000; font-weight: bold">if</span> package <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #A2F; font-weight: bold">and</span> stripped<span style="color: #666">.</span>startswith(<span style="color: #BA2121">&quot;package &quot;</span>):
-            package <span style="color: #666">=</span> stripped<span style="color: #666">.</span>split()[<span style="color: #666">1</span>]<span style="color: #666">.</span>rstrip(<span style="color: #BA2121">&quot;;&quot;</span>)
-        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;class &quot;</span> <span style="color: #A2F; font-weight: bold">in</span> stripped <span style="color: #A2F; font-weight: bold">and</span> <span style="color: #A2F; font-weight: bold">not</span> stripped<span style="color: #666">.</span>startswith((<span style="color: #BA2121">&quot;//&quot;</span>, <span style="color: #BA2121">&quot;/*&quot;</span>, <span style="color: #BA2121">&quot;*&quot;</span>)):
-            tokens <span style="color: #666">=</span> stripped<span style="color: #666">.</span>split()
-            idx <span style="color: #666">=</span> tokens<span style="color: #666">.</span>index(<span style="color: #BA2121">&quot;class&quot;</span>)
-            name <span style="color: #666">=</span> tokens[idx <span style="color: #666">+</span> <span style="color: #666">1</span>]
-            <span style="color: #008000; font-weight: bold">if</span> name<span style="color: #666">.</span>endswith(<span style="color: #BA2121">&quot;{&quot;</span>):
-                name <span style="color: #666">=</span> name[:<span style="color: #666">-1</span>]
-            doc <span style="color: #666">=</span> _get_preceding_comment(lines, i)
-            block, end_idx <span style="color: #666">=</span> _extract_block(lines, i)
-            methods, variables <span style="color: #666">=</span> _parse_class_body(lines, i <span style="color: #666">+</span> <span style="color: #666">1</span>, end_idx <span style="color: #666">-</span> <span style="color: #666">1</span>)
-            classes<span style="color: #666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;methods&quot;</span>: methods, <span style="color: #BA2121">&quot;variables&quot;</span>: variables, <span style="color: #BA2121">&quot;source&quot;</span>: block})
-            i <span style="color: #666">=</span> end_idx <span style="color: #666">+</span> <span style="color: #666">1</span>
+    i <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+    <span style="color: #008000; font-weight: bold">while</span> i <span style="color: #666666">&lt;</span> <span style="color: #008000">len</span>(lines):
+        line <span style="color: #666666">=</span> lines[i]
+        stripped <span style="color: #666666">=</span> line<span style="color: #666666">.</span>strip()
+        <span style="color: #008000; font-weight: bold">if</span> package <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #AA22FF; font-weight: bold">and</span> stripped<span style="color: #666666">.</span>startswith(<span style="color: #BA2121">&quot;package &quot;</span>):
+            package <span style="color: #666666">=</span> stripped<span style="color: #666666">.</span>split()[<span style="color: #666666">1</span>]<span style="color: #666666">.</span>rstrip(<span style="color: #BA2121">&quot;;&quot;</span>)
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #BA2121">&quot;class &quot;</span> <span style="color: #AA22FF; font-weight: bold">in</span> stripped <span style="color: #AA22FF; font-weight: bold">and</span> <span style="color: #AA22FF; font-weight: bold">not</span> stripped<span style="color: #666666">.</span>startswith((<span style="color: #BA2121">&quot;//&quot;</span>, <span style="color: #BA2121">&quot;/*&quot;</span>, <span style="color: #BA2121">&quot;*&quot;</span>)):
+            tokens <span style="color: #666666">=</span> stripped<span style="color: #666666">.</span>split()
+            idx <span style="color: #666666">=</span> tokens<span style="color: #666666">.</span>index(<span style="color: #BA2121">&quot;class&quot;</span>)
+            name <span style="color: #666666">=</span> tokens[idx <span style="color: #666666">+</span> <span style="color: #666666">1</span>]
+            <span style="color: #008000; font-weight: bold">if</span> name<span style="color: #666666">.</span>endswith(<span style="color: #BA2121">&quot;{&quot;</span>):
+                name <span style="color: #666666">=</span> name[:<span style="color: #666666">-1</span>]
+            doc <span style="color: #666666">=</span> _get_preceding_comment(lines, i)
+            block, end_idx <span style="color: #666666">=</span> _extract_block(lines, i)
+            methods, variables <span style="color: #666666">=</span> _parse_class_body(lines, i <span style="color: #666666">+</span> <span style="color: #666666">1</span>, end_idx <span style="color: #666666">-</span> <span style="color: #666666">1</span>)
+            classes<span style="color: #666666">.</span>append({<span style="color: #BA2121">&quot;name&quot;</span>: name, <span style="color: #BA2121">&quot;docstring&quot;</span>: doc, <span style="color: #BA2121">&quot;methods&quot;</span>: methods, <span style="color: #BA2121">&quot;variables&quot;</span>: variables, <span style="color: #BA2121">&quot;source&quot;</span>: block})
+            i <span style="color: #666666">=</span> end_idx <span style="color: #666666">+</span> <span style="color: #666666">1</span>
             <span style="color: #008000; font-weight: bold">continue</span>
-        i <span style="color: #666">+=</span> <span style="color: #666">1</span>
+        i <span style="color: #666666">+=</span> <span style="color: #666666">1</span>
 
-    result: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666">=</span> {<span style="color: #BA2121">&quot;module_docstring&quot;</span>: module_docstring, <span style="color: #BA2121">&quot;classes&quot;</span>: classes, <span style="color: #BA2121">&quot;functions&quot;</span>: functions}
+    result: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {<span style="color: #BA2121">&quot;module_docstring&quot;</span>: module_docstring, <span style="color: #BA2121">&quot;classes&quot;</span>: classes, <span style="color: #BA2121">&quot;functions&quot;</span>: functions}
     <span style="color: #008000; font-weight: bold">if</span> package:
-        result[<span style="color: #BA2121">&quot;package&quot;</span>] <span style="color: #666">=</span> package
+        result[<span style="color: #BA2121">&quot;package&quot;</span>] <span style="color: #666666">=</span> package
     <span style="color: #008000; font-weight: bold">return</span> result
 </code></pre>
     </div>

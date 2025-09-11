@@ -10,211 +10,220 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>summarize_utils</h1>
-        <p>stub</p>
+        <p>This module provides functions for summarizing text using a language model client, with caching to avoid redundant requests. It includes:
+
+1. `_summarize`: Summarizes a single piece of text.
+2. `summarize_chunked`: Sums up large pieces of text by breaking them into smaller chunks and then recursively merging the summaries.
+
+The module uses a tokenizer for tokenization operations, handles caching to store previously summarized texts, and manages chunking and merging processes to ensure efficient summarization even for long texts.</p>
 <h2>Functions</h2>
 <h3 id="_summarize">_summarize(client: LLMClient, cache: ResponseCache, key: str, text: str, prompt_type: str, *, system_prompt: str) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_summarize</span>(
+<p>The `_summarize` function interfaces with an LLMClient to generate a summary of provided text. It uses a ResponseCache to store and retrieve summaries based on a unique key. If the summary is found in the cache, it sanitizes the cached version before returning it. If not found, it generates a new summary using the client&#x27;s `summarize` method with specified prompt type and system prompt, caches the result, and then returns it.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_summarize</span>(
     client: LLMClient,
     cache: ResponseCache,
     key: <span style="color: #008000">str</span>,
     text: <span style="color: #008000">str</span>,
     prompt_type: <span style="color: #008000">str</span>,
-    <span style="color: #666">*</span>,
+    <span style="color: #666666">*</span>,
     system_prompt: <span style="color: #008000">str</span>,
-) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-    cached <span style="color: #666">=</span> cache<span style="color: #666">.</span>get(key)
-    <span style="color: #008000; font-weight: bold">if</span> cached <span style="color: #A2F; font-weight: bold">is</span> <span style="color: #A2F; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
+) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+    cached <span style="color: #666666">=</span> cache<span style="color: #666666">.</span>get(key)
+    <span style="color: #008000; font-weight: bold">if</span> cached <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
         <span style="color: #3D7B7B; font-style: italic"># Old cache entries might contain reserved tokens; sanitize to keep</span>
         <span style="color: #3D7B7B; font-style: italic"># later tokenization safe.</span>
         <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(cached)
-    summary <span style="color: #666">=</span> client<span style="color: #666">.</span>summarize(text, prompt_type, system_prompt<span style="color: #666">=</span>system_prompt)
-    cache<span style="color: #666">.</span>set(key, summary)
+    summary <span style="color: #666666">=</span> client<span style="color: #666666">.</span>summarize(text, prompt_type, system_prompt<span style="color: #666666">=</span>system_prompt)
+    cache<span style="color: #666666">.</span>set(key, summary)
     <span style="color: #008000; font-weight: bold">return</span> summary
 </code></pre>
 <h3 id="summarize_chunked">summarize_chunked(client: LLMClient, cache: ResponseCache, key_prefix: str, text: str, prompt_type: str, *, system_prompt: str=SYSTEM_PROMPT, max_context_tokens: int=4096, chunk_token_budget: int=3072) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">summarize_chunked</span>(
+<p>This function `summarize_chunked` is designed to summarize a given text by chunking it if necessary and then combining the summaries into a single technical paragraph. It uses an LLMClient for generating summaries, a ResponseCache for caching responses, and various parameters for controlling the summarization process.
+
+The function first checks if the text can be summarized in one go without exceeding the available token budget. If not, it chunks the text into manageable parts using `chunk_text`. Each chunk is then summarized individually. The summaries are combined recursively to form a final technical paragraph, ensuring that the total length does not exceed the available tokens.
+
+The function handles exceptions during chunking and summarization, providing fallback mechanisms to sanitize any disclaimers or unwanted content in the final summary.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">summarize_chunked</span>(
     client: LLMClient,
     cache: ResponseCache,
     key_prefix: <span style="color: #008000">str</span>,
     text: <span style="color: #008000">str</span>,
     prompt_type: <span style="color: #008000">str</span>,
-    <span style="color: #666">*</span>,
-    system_prompt: <span style="color: #008000">str</span> <span style="color: #666">=</span> SYSTEM_PROMPT,
-    max_context_tokens: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">4096</span>,
-    chunk_token_budget: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">3072</span>,
-) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Summarize ``text`` by chunking if necessary.&quot;&quot;&quot;</span>
+    <span style="color: #666666">*</span>,
+    system_prompt: <span style="color: #008000">str</span> <span style="color: #666666">=</span> SYSTEM_PROMPT,
+    max_context_tokens: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">4096</span>,
+    chunk_token_budget: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">3072</span>,
+) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Summarize ``text`` by chunking if necessary.&quot;&quot;&quot;</span>
 
-    tokenizer <span style="color: #666">=</span> get_tokenizer()
-    max_context_tokens <span style="color: #666">=</span> <span style="color: #008000">min</span>(max_context_tokens, MAX_CHUNK_TOKENS)
-    chunk_token_budget <span style="color: #666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, MAX_CHUNK_TOKENS)
-    template <span style="color: #666">=</span> PROMPT_TEMPLATES<span style="color: #666">.</span>get(prompt_type, PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>])
-    overhead_tokens <span style="color: #666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(system_prompt)) <span style="color: #666">+</span> <span style="color: #008000">len</span>(
-        tokenizer<span style="color: #666">.</span>encode(template<span style="color: #666">.</span>format(text<span style="color: #666">=</span><span style="color: #BA2121">&quot;&quot;</span>))
+    tokenizer <span style="color: #666666">=</span> get_tokenizer()
+    max_context_tokens <span style="color: #666666">=</span> <span style="color: #008000">min</span>(max_context_tokens, MAX_CHUNK_TOKENS)
+    chunk_token_budget <span style="color: #666666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, MAX_CHUNK_TOKENS)
+    template <span style="color: #666666">=</span> PROMPT_TEMPLATES<span style="color: #666666">.</span>get(prompt_type, PROMPT_TEMPLATES[<span style="color: #BA2121">&quot;module&quot;</span>])
+    overhead_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(system_prompt)) <span style="color: #666666">+</span> <span style="color: #008000">len</span>(
+        tokenizer<span style="color: #666666">.</span>encode(template<span style="color: #666666">.</span>format(text<span style="color: #666666">=</span><span style="color: #BA2121">&quot;&quot;</span>))
     )
-    available_tokens <span style="color: #666">=</span> <span style="color: #008000">max</span>(<span style="color: #666">1</span>, max_context_tokens <span style="color: #666">-</span> overhead_tokens)
+    available_tokens <span style="color: #666666">=</span> <span style="color: #008000">max</span>(<span style="color: #666666">1</span>, max_context_tokens <span style="color: #666666">-</span> overhead_tokens)
 
-    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(text)) <span style="color: #666">&lt;=</span> available_tokens:
-        key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(key_prefix, text)
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(text)) <span style="color: #666666">&lt;=</span> available_tokens:
+        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(key_prefix, text)
         <span style="color: #008000; font-weight: bold">return</span> _summarize(
-            client, cache, key, text, prompt_type, system_prompt<span style="color: #666">=</span>system_prompt
+            client, cache, key, text, prompt_type, system_prompt<span style="color: #666666">=</span>system_prompt
         )
 
-    chunk_size_tokens <span style="color: #666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, available_tokens, MAX_CHUNK_TOKENS)
+    chunk_size_tokens <span style="color: #666666">=</span> <span style="color: #008000">min</span>(chunk_token_budget, available_tokens, MAX_CHUNK_TOKENS)
     <span style="color: #008000; font-weight: bold">try</span>:
-        parts <span style="color: #666">=</span> chunk_text(text, tokenizer, chunk_size_tokens)
+        parts <span style="color: #666666">=</span> chunk_text(text, tokenizer, chunk_size_tokens)
     <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - defensive</span>
-        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Chunking failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666">=</span>sys<span style="color: #666">.</span>stderr)
-        key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(key_prefix, text)
+        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Chunking failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
+        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(key_prefix, text)
         <span style="color: #008000; font-weight: bold">try</span>:
             <span style="color: #008000; font-weight: bold">return</span> _summarize(
-                client, cache, key, text, prompt_type, system_prompt<span style="color: #666">=</span>system_prompt
+                client, cache, key, text, prompt_type, system_prompt<span style="color: #666666">=</span>system_prompt
             )
         <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span>:
             <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;&quot;</span>)
 
-    partials: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    <span style="color: #008000; font-weight: bold">for</span> idx, part <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(parts):
-        key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:part</span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, part)
+    partials: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> idx, part <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(parts):
+        key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:part</span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, part)
         <span style="color: #008000; font-weight: bold">try</span>:
-            partials<span style="color: #666">.</span>append(
+            partials<span style="color: #666666">.</span>append(
                 _summarize(
                     client,
                     cache,
                     key,
                     part,
                     prompt_type,
-                    system_prompt<span style="color: #666">=</span>system_prompt,
+                    system_prompt<span style="color: #666666">=</span>system_prompt,
                 )
             )
         <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - network failure</span>
             <span style="color: #008000">print</span>(
                 <span style="color: #BA2121">f&quot;[WARN] Summarization failed for chunk </span><span style="color: #A45A77; font-weight: bold">{</span>idx<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>,
-                file<span style="color: #666">=</span>sys<span style="color: #666">.</span>stderr,
+                file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr,
             )
-    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #A2F; font-weight: bold">not</span> partials:
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> partials:
         <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;&quot;</span>)
 
-    instructions <span style="color: #666">=</span> (
+    instructions <span style="color: #666666">=</span> (
         <span style="color: #BA2121">&quot;You are a documentation generator.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Combine the following summaries into a single technical paragraph.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Do not critique, evaluate, or offer suggestions.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Do not speculate or use uncertain language.</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
         <span style="color: #BA2121">&quot;Only summarize what the text explicitly states.</span><span style="color: #AA5D1F; font-weight: bold">\n\n</span><span style="color: #BA2121">&quot;</span>
     )
-    instr_tokens <span style="color: #666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(instructions))
-    merge_budget <span style="color: #666">=</span> <span style="color: #008000">max</span>(<span style="color: #666">1</span>, available_tokens <span style="color: #666">-</span> instr_tokens)
+    instr_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(instructions))
+    merge_budget <span style="color: #666666">=</span> <span style="color: #008000">max</span>(<span style="color: #666666">1</span>, available_tokens <span style="color: #666666">-</span> instr_tokens)
 
-    <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_merge_recursive</span>(items: List[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">0</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-        merge_text <span style="color: #666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #A2F; font-weight: bold">in</span> items)
-        prompt <span style="color: #666">=</span> instructions <span style="color: #666">+</span> merge_text
-        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(prompt)) <span style="color: #666">&lt;=</span> available_tokens:
-            key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_merge_recursive</span>(items: List[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items)
+        prompt <span style="color: #666666">=</span> instructions <span style="color: #666666">+</span> merge_text
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(prompt)) <span style="color: #666666">&lt;=</span> available_tokens:
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
             <span style="color: #008000; font-weight: bold">return</span> _summarize(
                 client,
                 cache,
                 key,
                 prompt,
                 <span style="color: #BA2121">&quot;docstring&quot;</span>,
-                system_prompt<span style="color: #666">=</span>system_prompt,
+                system_prompt<span style="color: #666666">=</span>system_prompt,
             )
-        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666">==</span> <span style="color: #666">1</span>:
-            single <span style="color: #666">=</span> items[<span style="color: #666">0</span>]
-            key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666666">==</span> <span style="color: #666666">1</span>:
+            single <span style="color: #666666">=</span> items[<span style="color: #666666">0</span>]
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
             <span style="color: #008000; font-weight: bold">return</span> summarize_chunked(
                 client,
                 cache,
                 key,
                 single,
                 <span style="color: #BA2121">&quot;docstring&quot;</span>,
-                system_prompt<span style="color: #666">=</span>system_prompt,
-                max_context_tokens<span style="color: #666">=</span>max_context_tokens,
-                chunk_token_budget<span style="color: #666">=</span>chunk_token_budget,
+                system_prompt<span style="color: #666666">=</span>system_prompt,
+                max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+                chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
             )
-        groups: List[List[<span style="color: #008000">str</span>]] <span style="color: #666">=</span> []
-        current: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        current_tokens <span style="color: #666">=</span> <span style="color: #666">0</span>
-        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #A2F; font-weight: bold">in</span> items:
-            bullet <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
-            b_tokens <span style="color: #666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(bullet))
-            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #A2F; font-weight: bold">and</span> current_tokens <span style="color: #666">+</span> b_tokens <span style="color: #666">&gt;</span> merge_budget:
-                groups<span style="color: #666">.</span>append(current)
-                current <span style="color: #666">=</span> [p]
-                current_tokens <span style="color: #666">=</span> b_tokens
+        groups: List[List[<span style="color: #008000">str</span>]] <span style="color: #666666">=</span> []
+        current: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        current_tokens <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items:
+            bullet <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+            b_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(bullet))
+            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #AA22FF; font-weight: bold">and</span> current_tokens <span style="color: #666666">+</span> b_tokens <span style="color: #666666">&gt;</span> merge_budget:
+                groups<span style="color: #666666">.</span>append(current)
+                current <span style="color: #666666">=</span> [p]
+                current_tokens <span style="color: #666666">=</span> b_tokens
             <span style="color: #008000; font-weight: bold">else</span>:
-                current<span style="color: #666">.</span>append(p)
-                current_tokens <span style="color: #666">+=</span> b_tokens
+                current<span style="color: #666666">.</span>append(p)
+                current_tokens <span style="color: #666666">+=</span> b_tokens
         <span style="color: #008000; font-weight: bold">if</span> current:
-            groups<span style="color: #666">.</span>append(current)
+            groups<span style="color: #666666">.</span>append(current)
 
-        merged: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
-            merged<span style="color: #666">.</span>append(_merge_recursive(grp, depth <span style="color: #666">+</span> <span style="color: #666">1</span>))
-        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666">+</span> <span style="color: #666">1</span>)
+        merged: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
+            merged<span style="color: #666666">.</span>append(_merge_recursive(grp, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>)
 
     <span style="color: #008000; font-weight: bold">try</span>:
-        final_summary <span style="color: #666">=</span> _merge_recursive(partials)
+        final_summary <span style="color: #666666">=</span> _merge_recursive(partials)
     <span style="color: #008000; font-weight: bold">except</span> <span style="color: #CB3F38; font-weight: bold">Exception</span> <span style="color: #008000; font-weight: bold">as</span> exc:  <span style="color: #3D7B7B; font-style: italic"># pragma: no cover - network failure</span>
-        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Merge failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666">=</span>sys<span style="color: #666">.</span>stderr)
-        <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(partials))
+        <span style="color: #008000">print</span>(<span style="color: #BA2121">f&quot;[WARN] Merge failed: </span><span style="color: #A45A77; font-weight: bold">{</span>exc<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr)
+        <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(<span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(partials))
     <span style="color: #008000; font-weight: bold">return</span> sanitize_summary(final_summary)
 </code></pre>
 <details>
 <summary>Subfunction: _merge_recursive(items: List[str], depth: int=0) -&gt; str</summary>
 <h4 id="_merge_recursive">_merge_recursive(items: List[str], depth: int=0) -&gt; str</h4>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_merge_recursive</span>(items: List[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">0</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-        merge_text <span style="color: #666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #A2F; font-weight: bold">in</span> items)
-        prompt <span style="color: #666">=</span> instructions <span style="color: #666">+</span> merge_text
-        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(prompt)) <span style="color: #666">&lt;=</span> available_tokens:
-            key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
+<p>The function `summarize_chunked` is designed to recursively merge and summarize text chunks using an LLM (Language Model). It takes a list of items (text chunks) and attempts to merge them into a single summary that fits within the specified context length. If merging fails due to exceeding the context length, it splits the chunks further and recursively merges the resulting groups until all chunks are summarized. The function uses caching to store intermediate results for efficiency.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_merge_recursive</span>(items: List[<span style="color: #008000">str</span>], depth: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">0</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        merge_text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(<span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span> <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items)
+        prompt <span style="color: #666666">=</span> instructions <span style="color: #666666">+</span> merge_text
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(prompt)) <span style="color: #666666">&lt;=</span> available_tokens:
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>, prompt)
             <span style="color: #008000; font-weight: bold">return</span> _summarize(
                 client,
                 cache,
                 key,
                 prompt,
                 <span style="color: #BA2121">&quot;docstring&quot;</span>,
-                system_prompt<span style="color: #666">=</span>system_prompt,
+                system_prompt<span style="color: #666666">=</span>system_prompt,
             )
-        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666">==</span> <span style="color: #666">1</span>:
-            single <span style="color: #666">=</span> items[<span style="color: #666">0</span>]
-            key <span style="color: #666">=</span> ResponseCache<span style="color: #666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
+        <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">len</span>(items) <span style="color: #666666">==</span> <span style="color: #666666">1</span>:
+            single <span style="color: #666666">=</span> items[<span style="color: #666666">0</span>]
+            key <span style="color: #666666">=</span> ResponseCache<span style="color: #666666">.</span>make_key(<span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>key_prefix<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:merge</span><span style="color: #A45A77; font-weight: bold">{</span>depth<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">:solo&quot;</span>, single)
             <span style="color: #008000; font-weight: bold">return</span> summarize_chunked(
                 client,
                 cache,
                 key,
                 single,
                 <span style="color: #BA2121">&quot;docstring&quot;</span>,
-                system_prompt<span style="color: #666">=</span>system_prompt,
-                max_context_tokens<span style="color: #666">=</span>max_context_tokens,
-                chunk_token_budget<span style="color: #666">=</span>chunk_token_budget,
+                system_prompt<span style="color: #666666">=</span>system_prompt,
+                max_context_tokens<span style="color: #666666">=</span>max_context_tokens,
+                chunk_token_budget<span style="color: #666666">=</span>chunk_token_budget,
             )
-        groups: List[List[<span style="color: #008000">str</span>]] <span style="color: #666">=</span> []
-        current: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        current_tokens <span style="color: #666">=</span> <span style="color: #666">0</span>
-        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #A2F; font-weight: bold">in</span> items:
-            bullet <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
-            b_tokens <span style="color: #666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666">.</span>encode(bullet))
-            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #A2F; font-weight: bold">and</span> current_tokens <span style="color: #666">+</span> b_tokens <span style="color: #666">&gt;</span> merge_budget:
-                groups<span style="color: #666">.</span>append(current)
-                current <span style="color: #666">=</span> [p]
-                current_tokens <span style="color: #666">=</span> b_tokens
+        groups: List[List[<span style="color: #008000">str</span>]] <span style="color: #666666">=</span> []
+        current: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        current_tokens <span style="color: #666666">=</span> <span style="color: #666666">0</span>
+        <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> items:
+            bullet <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;- </span><span style="color: #A45A77; font-weight: bold">{</span>p<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span>
+            b_tokens <span style="color: #666666">=</span> <span style="color: #008000">len</span>(tokenizer<span style="color: #666666">.</span>encode(bullet))
+            <span style="color: #008000; font-weight: bold">if</span> current <span style="color: #AA22FF; font-weight: bold">and</span> current_tokens <span style="color: #666666">+</span> b_tokens <span style="color: #666666">&gt;</span> merge_budget:
+                groups<span style="color: #666666">.</span>append(current)
+                current <span style="color: #666666">=</span> [p]
+                current_tokens <span style="color: #666666">=</span> b_tokens
             <span style="color: #008000; font-weight: bold">else</span>:
-                current<span style="color: #666">.</span>append(p)
-                current_tokens <span style="color: #666">+=</span> b_tokens
+                current<span style="color: #666666">.</span>append(p)
+                current_tokens <span style="color: #666666">+=</span> b_tokens
         <span style="color: #008000; font-weight: bold">if</span> current:
-            groups<span style="color: #666">.</span>append(current)
+            groups<span style="color: #666666">.</span>append(current)
 
-        merged: List[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
-            merged<span style="color: #666">.</span>append(_merge_recursive(grp, depth <span style="color: #666">+</span> <span style="color: #666">1</span>))
-        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666">+</span> <span style="color: #666">1</span>)
+        merged: List[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">for</span> idx, grp <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">enumerate</span>(groups):
+            merged<span style="color: #666666">.</span>append(_merge_recursive(grp, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        <span style="color: #008000; font-weight: bold">return</span> _merge_recursive(merged, depth <span style="color: #666666">+</span> <span style="color: #666666">1</span>)
 </code></pre>
 </details>
     </div>

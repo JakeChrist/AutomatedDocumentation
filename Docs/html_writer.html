@@ -10,243 +10,256 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>html_writer</h1>
-        <p>stub</p>
+        <p>This module provides utilities for rendering documentation pages using simple template substitution. It includes functions for rendering navigation trees, highlighting code snippets, and generating HTML content based on structured data representing project modules, classes, methods, and variables. The module also includes functions to write index and module-specific documentation pages to output directories.</p>
 <h2>Functions</h2>
 <h3 id="_render_nav_tree">_render_nav_tree(tree: Dict[str, Any], include_home: bool=False) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render_nav_tree</span>(tree: Dict[<span style="color: #008000">str</span>, Any], include_home: <span style="color: #008000">bool</span> <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML for a nested navigation ``tree``.&quot;&quot;&quot;</span>
+<p>This function `_render_nav_tree` generates HTML for a nested navigation tree based on the provided `tree` dictionary. It includes an optional &quot;🏠 Project Overview&quot; link at the root if specified. The function recursively processes each node in the tree, rendering files and subdirectories as list items with expandable details sections.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_nav_tree</span>(tree: Dict[<span style="color: #008000">str</span>, Any], include_home: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML for a nested navigation ``tree``.&quot;&quot;&quot;</span>
 
-    <span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render</span>(node: Dict[<span style="color: #008000">str</span>, Any], is_root: <span style="color: #008000">bool</span> <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-        parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        <span style="color: #008000; font-weight: bold">if</span> is_root <span style="color: #A2F; font-weight: bold">and</span> include_home:
-            parts<span style="color: #666">.</span>append(
+    <span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render</span>(node: Dict[<span style="color: #008000">str</span>, Any], is_root: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">if</span> is_root <span style="color: #AA22FF; font-weight: bold">and</span> include_home:
+            parts<span style="color: #666666">.</span>append(
                 <span style="color: #BA2121">&#39;&lt;li&gt;&lt;a href=&quot;index.html&quot;&gt;&lt;strong&gt;🏠 Project Overview&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;&#39;</span>
             )
-        <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #A2F; font-weight: bold">in</span> node<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
-            parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;li&gt;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&lt;/li&gt;&#39;</span>)
-        <span style="color: #008000; font-weight: bold">for</span> dirname <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">sorted</span>(k <span style="color: #008000; font-weight: bold">for</span> k <span style="color: #A2F; font-weight: bold">in</span> node<span style="color: #666">.</span>keys() <span style="color: #008000; font-weight: bold">if</span> k <span style="color: #666">!=</span> <span style="color: #BA2121">&quot;__files__&quot;</span>):
-            parts<span style="color: #666">.</span>append(
-                <span style="color: #BA2121">&#39;&lt;li&gt;&lt;details&gt;&lt;summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/details&gt;&lt;/li&gt;&#39;</span><span style="color: #666">.</span>format(
-                    html<span style="color: #666">.</span>escape(dirname), _render(node[dirname])
+        <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
+            parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;li&gt;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&lt;/li&gt;&#39;</span>)
+        <span style="color: #008000; font-weight: bold">for</span> dirname <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">sorted</span>(k <span style="color: #008000; font-weight: bold">for</span> k <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>keys() <span style="color: #008000; font-weight: bold">if</span> k <span style="color: #666666">!=</span> <span style="color: #BA2121">&quot;__files__&quot;</span>):
+            parts<span style="color: #666666">.</span>append(
+                <span style="color: #BA2121">&#39;&lt;li&gt;&lt;details&gt;&lt;summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/details&gt;&lt;/li&gt;&#39;</span><span style="color: #666666">.</span>format(
+                    html<span style="color: #666666">.</span>escape(dirname), _render(node[dirname])
                 )
             )
-        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;ul&gt;&quot;</span> <span style="color: #666">+</span> <span style="color: #BA2121">&quot;&quot;</span><span style="color: #666">.</span>join(parts) <span style="color: #666">+</span> <span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;ul&gt;&quot;</span> <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;&quot;</span><span style="color: #666666">.</span>join(parts) <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>
 
     <span style="color: #008000; font-weight: bold">return</span> _render(tree, <span style="color: #008000; font-weight: bold">True</span>)
 </code></pre>
 <details>
 <summary>Subfunction: _render(node: Dict[str, Any], is_root: bool=False) -&gt; str</summary>
 <h4 id="_render">_render(node: Dict[str, Any], is_root: bool=False) -&gt; str</h4>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render</span>(node: Dict[<span style="color: #008000">str</span>, Any], is_root: <span style="color: #008000">bool</span> <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-        parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-        <span style="color: #008000; font-weight: bold">if</span> is_root <span style="color: #A2F; font-weight: bold">and</span> include_home:
-            parts<span style="color: #666">.</span>append(
+<p>This function `_render` is designed to generate HTML list items representing a hierarchical structure of files and directories. It takes two parameters: `node`, which is a dictionary representing the current node in the hierarchy, and `is_root`, a boolean indicating whether the current node is the root of the hierarchy.
+
+The function constructs an HTML unordered list (`&lt;ul&gt;`) by iterating over the keys of the `node` dictionary. If the `node` represents the root and includes a home page (`include_home` is True), it adds a list item for the home page. It then iterates over any files associated with the current node, adding them as list items with hyperlinks.
+
+For each directory within the current node (excluding the special key `__files__`), the function creates a nested HTML details element (`&lt;details&gt;`) containing a summary and recursively calls itself to render the contents of that directory. The resulting parts are joined into a single string, which is wrapped in an unordered list and returned as the output.
+
+This function is used to generate the navigation structure for static HTML documentation, allowing users to explore files and directories interactively through expandable sections.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render</span>(node: Dict[<span style="color: #008000">str</span>, Any], is_root: <span style="color: #008000">bool</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">False</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+        parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+        <span style="color: #008000; font-weight: bold">if</span> is_root <span style="color: #AA22FF; font-weight: bold">and</span> include_home:
+            parts<span style="color: #666666">.</span>append(
                 <span style="color: #BA2121">&#39;&lt;li&gt;&lt;a href=&quot;index.html&quot;&gt;&lt;strong&gt;🏠 Project Overview&lt;/strong&gt;&lt;/a&gt;&lt;/li&gt;&#39;</span>
             )
-        <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #A2F; font-weight: bold">in</span> node<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
-            parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;li&gt;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&lt;/li&gt;&#39;</span>)
-        <span style="color: #008000; font-weight: bold">for</span> dirname <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">sorted</span>(k <span style="color: #008000; font-weight: bold">for</span> k <span style="color: #A2F; font-weight: bold">in</span> node<span style="color: #666">.</span>keys() <span style="color: #008000; font-weight: bold">if</span> k <span style="color: #666">!=</span> <span style="color: #BA2121">&quot;__files__&quot;</span>):
-            parts<span style="color: #666">.</span>append(
-                <span style="color: #BA2121">&#39;&lt;li&gt;&lt;details&gt;&lt;summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/details&gt;&lt;/li&gt;&#39;</span><span style="color: #666">.</span>format(
-                    html<span style="color: #666">.</span>escape(dirname), _render(node[dirname])
+        <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
+            parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;li&gt;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&lt;/li&gt;&#39;</span>)
+        <span style="color: #008000; font-weight: bold">for</span> dirname <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">sorted</span>(k <span style="color: #008000; font-weight: bold">for</span> k <span style="color: #AA22FF; font-weight: bold">in</span> node<span style="color: #666666">.</span>keys() <span style="color: #008000; font-weight: bold">if</span> k <span style="color: #666666">!=</span> <span style="color: #BA2121">&quot;__files__&quot;</span>):
+            parts<span style="color: #666666">.</span>append(
+                <span style="color: #BA2121">&#39;&lt;li&gt;&lt;details&gt;&lt;summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/summary&gt;</span><span style="color: #A45A77; font-weight: bold">{}</span><span style="color: #BA2121">&lt;/details&gt;&lt;/li&gt;&#39;</span><span style="color: #666666">.</span>format(
+                    html<span style="color: #666666">.</span>escape(dirname), _render(node[dirname])
                 )
             )
-        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;ul&gt;&quot;</span> <span style="color: #666">+</span> <span style="color: #BA2121">&quot;&quot;</span><span style="color: #666">.</span>join(parts) <span style="color: #666">+</span> <span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;ul&gt;&quot;</span> <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;&quot;</span><span style="color: #666666">.</span>join(parts) <span style="color: #666666">+</span> <span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>
 </code></pre>
 </details>
 <h3 id="_flatten_nav_tree">_flatten_nav_tree(tree: Dict[str, Any]) -&gt; Iterable[Tuple[str, str]]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_flatten_nav_tree</span>(tree: Dict[<span style="color: #008000">str</span>, Any]) <span style="color: #666">-&gt;</span> Iterable[Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>]]:
-    <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #A2F; font-weight: bold">in</span> tree<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
+<p>The function `_flatten_nav_tree` takes a dictionary `tree` representing a navigation tree and yields tuples of file names and links. It iterates through the keys of the dictionary, checking for the presence of a special key `&quot;__files__&quot;` which contains pairs of file names and their corresponding links. For each pair found, it yields them as tuples. Additionally, if the key is not `&quot;__files__&quot;`, it recursively calls itself on the sub-dictionary to handle nested structures, ensuring all file-name-link pairs are yielded.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_flatten_nav_tree</span>(tree: Dict[<span style="color: #008000">str</span>, Any]) <span style="color: #666666">-&gt;</span> Iterable[Tuple[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>]]:
+    <span style="color: #008000; font-weight: bold">for</span> name, link <span style="color: #AA22FF; font-weight: bold">in</span> tree<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;__files__&quot;</span>, []):
         <span style="color: #008000; font-weight: bold">yield</span> name, link
-    <span style="color: #008000; font-weight: bold">for</span> dirname, sub <span style="color: #A2F; font-weight: bold">in</span> tree<span style="color: #666">.</span>items():
-        <span style="color: #008000; font-weight: bold">if</span> dirname <span style="color: #666">==</span> <span style="color: #BA2121">&quot;__files__&quot;</span>:
+    <span style="color: #008000; font-weight: bold">for</span> dirname, sub <span style="color: #AA22FF; font-weight: bold">in</span> tree<span style="color: #666666">.</span>items():
+        <span style="color: #008000; font-weight: bold">if</span> dirname <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;__files__&quot;</span>:
             <span style="color: #008000; font-weight: bold">continue</span>
         <span style="color: #008000; font-weight: bold">yield from</span> _flatten_nav_tree(sub)
 </code></pre>
 <h3 id="_highlight">_highlight(code: str, language: str) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_highlight</span>(code: <span style="color: #008000">str</span>, language: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``code`` highlighted for ``language`` using pygments.&quot;&quot;&quot;</span>
-    <span style="color: #008000; font-weight: bold">if</span> language<span style="color: #666">.</span>lower() <span style="color: #666">==</span> <span style="color: #BA2121">&quot;matlab&quot;</span>:
-        lexer <span style="color: #666">=</span> MatlabLexer()
-    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666">.</span>lower() <span style="color: #666">==</span> <span style="color: #BA2121">&quot;python&quot;</span>:
-        lexer <span style="color: #666">=</span> PythonLexer()
-    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666">.</span>lower() <span style="color: #666">==</span> <span style="color: #BA2121">&quot;cpp&quot;</span>:
-        lexer <span style="color: #666">=</span> CppLexer()
-    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666">.</span>lower() <span style="color: #666">==</span> <span style="color: #BA2121">&quot;java&quot;</span>:
-        lexer <span style="color: #666">=</span> JavaLexer()
+<p>The function `_highlight` takes a string `code` and a string `language` as input. It returns the code highlighted for the specified language using Pygments. The function selects an appropriate lexer based on the language, formats the highlighted code with HTML, and wraps it in `&lt;pre&gt;&lt;code&gt;` tags. If the language is not supported, it uses a generic `TextLexer`.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_highlight</span>(code: <span style="color: #008000">str</span>, language: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return ``code`` highlighted for ``language`` using pygments.&quot;&quot;&quot;</span>
+    <span style="color: #008000; font-weight: bold">if</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;matlab&quot;</span>:
+        lexer <span style="color: #666666">=</span> MatlabLexer()
+    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;python&quot;</span>:
+        lexer <span style="color: #666666">=</span> PythonLexer()
+    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;cpp&quot;</span>:
+        lexer <span style="color: #666666">=</span> CppLexer()
+    <span style="color: #008000; font-weight: bold">elif</span> language<span style="color: #666666">.</span>lower() <span style="color: #666666">==</span> <span style="color: #BA2121">&quot;java&quot;</span>:
+        lexer <span style="color: #666666">=</span> JavaLexer()
     <span style="color: #008000; font-weight: bold">else</span>:
-        lexer <span style="color: #666">=</span> TextLexer()
-    formatter <span style="color: #666">=</span> HtmlFormatter(noclasses<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, nowrap<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
-    highlighted <span style="color: #666">=</span> highlight(code, lexer, formatter)
+        lexer <span style="color: #666666">=</span> TextLexer()
+    formatter <span style="color: #666666">=</span> HtmlFormatter(noclasses<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>, nowrap<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+    highlighted <span style="color: #666666">=</span> highlight(code, lexer, formatter)
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">f&quot;&lt;pre&gt;&lt;code&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>highlighted<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/code&gt;&lt;/pre&gt;&quot;</span>
 </code></pre>
 <h3 id="_render_html">_render_html(title: str, header: str, body: str, nav_html: str) -&gt; str</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render_html</span>(title: <span style="color: #008000">str</span>, header: <span style="color: #008000">str</span>, body: <span style="color: #008000">str</span>, nav_html: <span style="color: #008000">str</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">str</span>:
-    template <span style="color: #666">=</span> _TEMPLATE_PATH<span style="color: #666">.</span>read_text(encoding<span style="color: #666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
-    content <span style="color: #666">=</span> template<span style="color: #666">.</span>format(
-        title<span style="color: #666">=</span>title,
-        header<span style="color: #666">=</span>header,
-        body<span style="color: #666">=</span>body,
-        navigation<span style="color: #666">=</span>nav_html,
-        static_path<span style="color: #666">=</span><span style="color: #BA2121">&quot;static/style.css&quot;</span>,
+<p>The function `_render_html` takes four parameters: `title`, `header`, `body`, and `nav_html`. It reads a template file specified by `_TEMPLATE_PATH` and uses the provided parameters to format the template. The formatted content is then returned as an HTML string, prefixed with a comment indicating it was generated by DocGen-LM.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_html</span>(title: <span style="color: #008000">str</span>, header: <span style="color: #008000">str</span>, body: <span style="color: #008000">str</span>, nav_html: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">str</span>:
+    template <span style="color: #666666">=</span> _TEMPLATE_PATH<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    content <span style="color: #666666">=</span> template<span style="color: #666666">.</span>format(
+        title<span style="color: #666666">=</span>title,
+        header<span style="color: #666666">=</span>header,
+        body<span style="color: #666666">=</span>body,
+        navigation<span style="color: #666666">=</span>nav_html,
+        static_path<span style="color: #666666">=</span><span style="color: #BA2121">&quot;static/style.css&quot;</span>,
     )
-    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;!-- Generated by DocGen-LM --&gt;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666">+</span> content
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;&lt;!-- Generated by DocGen-LM --&gt;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span> <span style="color: #666666">+</span> content
 </code></pre>
 <h3 id="write_index">write_index(output_dir: str, project_summary: str, nav_tree: Dict[str, Any], module_summaries: Dict[str, str] | None=None) -&gt; None</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">write_index</span>(
+<p>This function `write_index` generates the content for an `index.html` file. It takes three parameters: `output_dir`, `project_summary`, and `nav_tree`. The optional parameter `module_summaries` provides additional summaries for modules.
+
+The function creates a directory at the specified `output_dir` if it doesn&#x27;t exist. It then renders a navigation tree using `_render_nav_tree(nav_tree)` and constructs the body of the HTML document with the project summary, a horizontal rule, and a heading for modules. For each item in the flattened navigation tree, it generates an HTML list item with a link to the module and an optional summary.
+
+If there are any module items, they are wrapped in an unordered list. The final HTML content is generated using `_render_html` and written to `index.html` in the output directory.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">write_index</span>(
     output_dir: <span style="color: #008000">str</span>,
     project_summary: <span style="color: #008000">str</span>,
     nav_tree: Dict[<span style="color: #008000">str</span>, Any],
-    module_summaries: Dict[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>] <span style="color: #666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
-) <span style="color: #666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Render ``index.html`` with *project_summary* and navigation links.&quot;&quot;&quot;</span>
-    dest_dir <span style="color: #666">=</span> Path(output_dir)
-    dest_dir<span style="color: #666">.</span>mkdir(parents<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
-    nav_html <span style="color: #666">=</span> _render_nav_tree(nav_tree)
-    body_parts <span style="color: #666">=</span> [<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(project_summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>, <span style="color: #BA2121">&quot;&lt;hr/&gt;&quot;</span>, <span style="color: #BA2121">&quot;&lt;h2&gt;Modules&lt;/h2&gt;&quot;</span>]
+    module_summaries: Dict[<span style="color: #008000">str</span>, <span style="color: #008000">str</span>] <span style="color: #666666">|</span> <span style="color: #008000; font-weight: bold">None</span> <span style="color: #666666">=</span> <span style="color: #008000; font-weight: bold">None</span>,
+) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Render ``index.html`` with *project_summary* and navigation links.&quot;&quot;&quot;</span>
+    dest_dir <span style="color: #666666">=</span> Path(output_dir)
+    dest_dir<span style="color: #666666">.</span>mkdir(parents<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+    nav_html <span style="color: #666666">=</span> _render_nav_tree(nav_tree)
+    body_parts <span style="color: #666666">=</span> [<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(project_summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>, <span style="color: #BA2121">&quot;&lt;hr/&gt;&quot;</span>, <span style="color: #BA2121">&quot;&lt;h2&gt;Modules&lt;/h2&gt;&quot;</span>]
 
-    module_items: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    <span style="color: #008000; font-weight: bold">for</span> text, link <span style="color: #A2F; font-weight: bold">in</span> _flatten_nav_tree(nav_tree):
-        summary <span style="color: #666">=</span> (module_summaries <span style="color: #A2F; font-weight: bold">or</span> {})<span style="color: #666">.</span>get(text, <span style="color: #BA2121">&quot;&quot;</span>)
-        item <span style="color: #666">=</span> (
+    module_items: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    <span style="color: #008000; font-weight: bold">for</span> text, link <span style="color: #AA22FF; font-weight: bold">in</span> _flatten_nav_tree(nav_tree):
+        summary <span style="color: #666666">=</span> (module_summaries <span style="color: #AA22FF; font-weight: bold">or</span> {})<span style="color: #666666">.</span>get(text, <span style="color: #BA2121">&quot;&quot;</span>)
+        item <span style="color: #666666">=</span> (
             <span style="color: #BA2121">f&#39;&lt;li style=&quot;margin-bottom: 1em;&quot;&gt;&#39;</span>
-            <span style="color: #BA2121">f&#39;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(text)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&#39;</span>
+            <span style="color: #BA2121">f&#39;&lt;a href=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>link<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(text)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/a&gt;&#39;</span>
         )
         <span style="color: #008000; font-weight: bold">if</span> summary:
-            item <span style="color: #666">+=</span> <span style="color: #BA2121">f&quot;&lt;br/&gt;&lt;small&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/small&gt;&quot;</span>
-        item <span style="color: #666">+=</span> <span style="color: #BA2121">&quot;&lt;/li&gt;&quot;</span>
-        module_items<span style="color: #666">.</span>append(item)
+            item <span style="color: #666666">+=</span> <span style="color: #BA2121">f&quot;&lt;br/&gt;&lt;small&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/small&gt;&quot;</span>
+        item <span style="color: #666666">+=</span> <span style="color: #BA2121">&quot;&lt;/li&gt;&quot;</span>
+        module_items<span style="color: #666666">.</span>append(item)
 
     <span style="color: #008000; font-weight: bold">if</span> module_items:
-        body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&#39;&lt;ul style=&quot;list-style-type: none; padding-left: 0;&quot;&gt;&#39;</span>)
-        body_parts<span style="color: #666">.</span>extend(module_items)
-        body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>)
+        body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&#39;&lt;ul style=&quot;list-style-type: none; padding-left: 0;&quot;&gt;&#39;</span>)
+        body_parts<span style="color: #666666">.</span>extend(module_items)
+        body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;/ul&gt;&quot;</span>)
 
-    body <span style="color: #666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(body_parts)
-    html_out <span style="color: #666">=</span> _render_html(
+    body <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(body_parts)
+    html_out <span style="color: #666666">=</span> _render_html(
         <span style="color: #BA2121">&quot;Project Documentation&quot;</span>, <span style="color: #BA2121">&quot;Project Documentation&quot;</span>, body, nav_html
     )
-    (dest_dir <span style="color: #666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666">.</span>write_text(html_out, encoding<span style="color: #666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    (dest_dir <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;index.html&quot;</span>)<span style="color: #666666">.</span>write_text(html_out, encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
 <h3 id="_render_function">_render_function(func: dict[str, Any], language: str, level: int=3, prefix: str=&#x27;&#x27;) -&gt; list[str]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render_function</span>(func: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">3</span>, prefix: <span style="color: #008000">str</span> <span style="color: #666">=</span> <span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``func`` and any nested subfunctions.&quot;&quot;&quot;</span>
+<p>This function `_render_function` generates HTML parts for a given function and its nested subfunctions. It takes a dictionary representing the function, a programming language string, an optional heading level (default is 3), and an optional prefix string. The function constructs HTML elements based on the function&#x27;s signature, summary, source code, and any nested subfunctions. It uses HTML tags to structure the output, including headings, paragraphs, and details/summary elements for subfunctions.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_function</span>(func: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">3</span>, prefix: <span style="color: #008000">str</span> <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;&quot;</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``func`` and any nested subfunctions.&quot;&quot;&quot;</span>
 
-    parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    tag <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level,<span style="color: #BBB"> </span><span style="color: #666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
-    sig <span style="color: #666">=</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;signature&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
-    parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>prefix<span style="color: #A45A77; font-weight: bold">}{</span>html<span style="color: #666">.</span>escape(sig)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
+    parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+    sig <span style="color: #666666">=</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;signature&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+    parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>prefix<span style="color: #A45A77; font-weight: bold">}{</span>html<span style="color: #666666">.</span>escape(sig)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
 
-    summary <span style="color: #666">=</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
+    summary <span style="color: #666666">=</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
     <span style="color: #008000; font-weight: bold">if</span> summary:
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
 
-    src <span style="color: #666">=</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
+    src <span style="color: #666666">=</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
     <span style="color: #008000; font-weight: bold">if</span> src:
-        parts<span style="color: #666">.</span>append(_highlight(src, language))
+        parts<span style="color: #666666">.</span>append(_highlight(src, language))
 
-    <span style="color: #008000; font-weight: bold">for</span> sub <span style="color: #A2F; font-weight: bold">in</span> func<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;subfunctions&quot;</span>, []):
-        sub_sig <span style="color: #666">=</span> sub<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;signature&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> sub<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span>)
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;summary&gt;Subfunction: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(sub_sig)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/summary&gt;&quot;</span>)
-        parts<span style="color: #666">.</span>extend(_render_function(sub, language, level <span style="color: #666">+</span> <span style="color: #666">1</span>))
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;/details&gt;&quot;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> sub <span style="color: #AA22FF; font-weight: bold">in</span> func<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;subfunctions&quot;</span>, []):
+        sub_sig <span style="color: #666666">=</span> sub<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;signature&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> sub<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;summary&gt;Subfunction: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(sub_sig)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/summary&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>extend(_render_function(sub, language, level <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;/details&gt;&quot;</span>)
 
     <span style="color: #008000; font-weight: bold">return</span> parts
 </code></pre>
 <h3 id="_render_class">_render_class(cls: dict[str, Any], language: str, level: int=2) -&gt; list[str]</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">_render_class</span>(<span style="color: #008000">cls</span>: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666">=</span> <span style="color: #666">2</span>) <span style="color: #666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``cls`` and any subclasses.&quot;&quot;&quot;</span>
+<p>The function `_render_class` generates HTML content for a class and its subclasses. It takes a dictionary representing the class, a programming language string, and an optional heading level as input. The function returns a list of HTML strings.
 
-    parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666">=</span> []
-    tag <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level,<span style="color: #BBB"> </span><span style="color: #666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
-    cls_name <span style="color: #666">=</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
-    parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>cls_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;Class: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(cls_name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
-    doc <span style="color: #666">=</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>)
+
+The function uses nested lists and string formatting to construct the HTML parts, ensuring that each class, variable, method, and subclass is represented in a structured format suitable for static HTML documentation.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_render_class</span>(<span style="color: #008000">cls</span>: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], language: <span style="color: #008000">str</span>, level: <span style="color: #008000">int</span> <span style="color: #666666">=</span> <span style="color: #666666">2</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Return HTML parts for ``cls`` and any subclasses.&quot;&quot;&quot;</span>
+
+    parts: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>] <span style="color: #666666">=</span> []
+    tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+    cls_name <span style="color: #666666">=</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+    parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>cls_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;Class: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(cls_name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
+    doc <span style="color: #666666">=</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>)
     <span style="color: #008000; font-weight: bold">if</span> doc:
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(doc)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(doc)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
 
-    variables <span style="color: #666">=</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
+    variables <span style="color: #666666">=</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
     <span style="color: #008000; font-weight: bold">if</span> variables:
-        var_section_tag <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #BBB"> </span><span style="color: #666">+</span><span style="color: #BBB"> </span><span style="color: #666">1</span>,<span style="color: #BBB"> </span><span style="color: #666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
-        parts<span style="color: #666">.</span>append(
+        var_section_tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #bbbbbb"> </span><span style="color: #666666">+</span><span style="color: #bbbbbb"> </span><span style="color: #666666">1</span>,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+        parts<span style="color: #666666">.</span>append(
             <span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>var_section_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>cls_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">-variables&quot;&gt;Variables&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>var_section_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>
         )
-        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #A2F; font-weight: bold">in</span> variables:
-            var_tag <span style="color: #666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #BBB"> </span><span style="color: #666">+</span><span style="color: #BBB"> </span><span style="color: #666">2</span>,<span style="color: #BBB"> </span><span style="color: #666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
-            name <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
-            parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
-            summary <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
+        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #AA22FF; font-weight: bold">in</span> variables:
+            var_tag <span style="color: #666666">=</span> <span style="color: #BA2121">f&quot;h</span><span style="color: #A45A77; font-weight: bold">{</span><span style="color: #008000">min</span>(level<span style="color: #bbbbbb"> </span><span style="color: #666666">+</span><span style="color: #bbbbbb"> </span><span style="color: #666666">2</span>,<span style="color: #bbbbbb"> </span><span style="color: #666666">6</span>)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;</span>
+            name <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+            parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121"> id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/</span><span style="color: #A45A77; font-weight: bold">{</span>var_tag<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&gt;&#39;</span>)
+            summary <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
             <span style="color: #008000; font-weight: bold">if</span> summary:
-                parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
-            src <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
+                parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+            src <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
             <span style="color: #008000; font-weight: bold">if</span> src:
-                parts<span style="color: #666">.</span>append(_highlight(src, language))
+                parts<span style="color: #666666">.</span>append(_highlight(src, language))
 
-    <span style="color: #008000; font-weight: bold">for</span> method <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;methods&quot;</span>, []):
-        parts<span style="color: #666">.</span>extend(_render_function(method, language, level <span style="color: #666">+</span> <span style="color: #666">1</span>, <span style="color: #BA2121">&quot;Method: &quot;</span>))
+    <span style="color: #008000; font-weight: bold">for</span> method <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;methods&quot;</span>, []):
+        parts<span style="color: #666666">.</span>extend(_render_function(method, language, level <span style="color: #666666">+</span> <span style="color: #666666">1</span>, <span style="color: #BA2121">&quot;Method: &quot;</span>))
 
-    <span style="color: #008000; font-weight: bold">for</span> sub <span style="color: #A2F; font-weight: bold">in</span> <span style="color: #008000">cls</span><span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;subclasses&quot;</span>, []):
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span>)
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;summary&gt;Class: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(sub<span style="color: #666">.</span>get(<span style="color: #BA2121">&#39;name&#39;</span>,<span style="color: #BBB"> </span><span style="color: #BA2121">&#39;&#39;</span>))<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/summary&gt;&quot;</span>)
-        parts<span style="color: #666">.</span>extend(_render_class(sub, language, level <span style="color: #666">+</span> <span style="color: #666">1</span>))
-        parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;/details&gt;&quot;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> sub <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">cls</span><span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;subclasses&quot;</span>, []):
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;details&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;summary&gt;Class: </span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(sub<span style="color: #666666">.</span>get(<span style="color: #BA2121">&#39;name&#39;</span>,<span style="color: #bbbbbb"> </span><span style="color: #BA2121">&#39;&#39;</span>))<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/summary&gt;&quot;</span>)
+        parts<span style="color: #666666">.</span>extend(_render_class(sub, language, level <span style="color: #666666">+</span> <span style="color: #666666">1</span>))
+        parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;/details&gt;&quot;</span>)
 
     <span style="color: #008000; font-weight: bold">return</span> parts
 </code></pre>
 <h3 id="write_module_page">write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Dict[str, Any]) -&gt; None</h3>
-<p>stub</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span><span style="color: #BBB"> </span><span style="color: #00F">write_module_page</span>(output_dir: <span style="color: #008000">str</span>, module_data: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], nav_tree: Dict[<span style="color: #008000">str</span>, Any]) <span style="color: #666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
-<span style="color: #BBB">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Render a module documentation page using ``module_data``.&quot;&quot;&quot;</span>
-    dest_dir <span style="color: #666">=</span> Path(output_dir)
-    dest_dir<span style="color: #666">.</span>mkdir(parents<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
-    module_name <span style="color: #666">=</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;module&quot;</span>)
-    language <span style="color: #666">=</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;language&quot;</span>, <span style="color: #BA2121">&quot;python&quot;</span>)
-    nav_html <span style="color: #666">=</span> _render_nav_tree(nav_tree, include_home<span style="color: #666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+<p>This function `write_module_page` generates an HTML documentation page for a module based on provided data. It takes three parameters: `output_dir`, `module_data`, and `nav_tree`. The function creates the output directory if it doesn&#x27;t exist, extracts necessary information from `module_data`, renders a navigation tree using `_render_nav_tree`, and constructs the body of the HTML page by iterating over classes, variables, and functions in `module_data`. Each class and function is rendered using helper functions `_render_class` and `_render_function`. The final HTML content is then written to a file named after the module.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">write_module_page</span>(output_dir: <span style="color: #008000">str</span>, module_data: <span style="color: #008000">dict</span>[<span style="color: #008000">str</span>, Any], nav_tree: Dict[<span style="color: #008000">str</span>, Any]) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Render a module documentation page using ``module_data``.&quot;&quot;&quot;</span>
+    dest_dir <span style="color: #666666">=</span> Path(output_dir)
+    dest_dir<span style="color: #666666">.</span>mkdir(parents<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>, exist_ok<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
+    module_name <span style="color: #666666">=</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;module&quot;</span>)
+    language <span style="color: #666666">=</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;language&quot;</span>, <span style="color: #BA2121">&quot;python&quot;</span>)
+    nav_html <span style="color: #666666">=</span> _render_nav_tree(nav_tree, include_home<span style="color: #666666">=</span><span style="color: #008000; font-weight: bold">True</span>)
 
-    body_parts <span style="color: #666">=</span> [<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&#39;summary&#39;</span>,<span style="color: #BBB"> </span><span style="color: #BA2121">&#39;&#39;</span>))<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>]
+    body_parts <span style="color: #666666">=</span> [<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&#39;summary&#39;</span>,<span style="color: #bbbbbb"> </span><span style="color: #BA2121">&#39;&#39;</span>))<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>]
 
-    <span style="color: #008000; font-weight: bold">for</span> <span style="color: #008000">cls</span> <span style="color: #A2F; font-weight: bold">in</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;classes&quot;</span>, []):
-        body_parts<span style="color: #666">.</span>extend(_render_class(<span style="color: #008000">cls</span>, language, <span style="color: #666">2</span>))
+    <span style="color: #008000; font-weight: bold">for</span> <span style="color: #008000">cls</span> <span style="color: #AA22FF; font-weight: bold">in</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;classes&quot;</span>, []):
+        body_parts<span style="color: #666666">.</span>extend(_render_class(<span style="color: #008000">cls</span>, language, <span style="color: #666666">2</span>))
 
-    module_vars <span style="color: #666">=</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
+    module_vars <span style="color: #666666">=</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;variables&quot;</span>, [])
     <span style="color: #008000; font-weight: bold">if</span> module_vars:
-        body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&#39;&lt;h2 id=&quot;variables&quot;&gt;Variables&lt;/h2&gt;&#39;</span>)
-        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #A2F; font-weight: bold">in</span> module_vars:
-            var_name <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
-            body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&#39;&lt;h3 id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>var_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(var_name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/h3&gt;&#39;</span>)
-            summary <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #A2F; font-weight: bold">or</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
+        body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&#39;&lt;h2 id=&quot;variables&quot;&gt;Variables&lt;/h2&gt;&#39;</span>)
+        <span style="color: #008000; font-weight: bold">for</span> var <span style="color: #AA22FF; font-weight: bold">in</span> module_vars:
+            var_name <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;name&quot;</span>, <span style="color: #BA2121">&quot;&quot;</span>)
+            body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&#39;&lt;h3 id=&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>var_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&quot;&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(var_name)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/h3&gt;&#39;</span>)
+            summary <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;summary&quot;</span>) <span style="color: #AA22FF; font-weight: bold">or</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;docstring&quot;</span>)
             <span style="color: #008000; font-weight: bold">if</span> summary:
-                body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
-            src <span style="color: #666">=</span> var<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
+                body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">f&quot;&lt;p&gt;</span><span style="color: #A45A77; font-weight: bold">{</span>html<span style="color: #666666">.</span>escape(summary)<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&lt;/p&gt;&quot;</span>)
+            src <span style="color: #666666">=</span> var<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;source&quot;</span>)
             <span style="color: #008000; font-weight: bold">if</span> src:
-                body_parts<span style="color: #666">.</span>append(_highlight(src, language))
+                body_parts<span style="color: #666666">.</span>append(_highlight(src, language))
 
-    <span style="color: #008000; font-weight: bold">if</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;functions&quot;</span>):
-        body_parts<span style="color: #666">.</span>append(<span style="color: #BA2121">&quot;&lt;h2&gt;Functions&lt;/h2&gt;&quot;</span>)
-    <span style="color: #008000; font-weight: bold">for</span> func <span style="color: #A2F; font-weight: bold">in</span> module_data<span style="color: #666">.</span>get(<span style="color: #BA2121">&quot;functions&quot;</span>, []):
-        body_parts<span style="color: #666">.</span>extend(_render_function(func, language, <span style="color: #666">3</span>))
+    <span style="color: #008000; font-weight: bold">if</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;functions&quot;</span>):
+        body_parts<span style="color: #666666">.</span>append(<span style="color: #BA2121">&quot;&lt;h2&gt;Functions&lt;/h2&gt;&quot;</span>)
+    <span style="color: #008000; font-weight: bold">for</span> func <span style="color: #AA22FF; font-weight: bold">in</span> module_data<span style="color: #666666">.</span>get(<span style="color: #BA2121">&quot;functions&quot;</span>, []):
+        body_parts<span style="color: #666666">.</span>extend(_render_function(func, language, <span style="color: #666666">3</span>))
 
-    body <span style="color: #666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666">.</span>join(body_parts)
-    html_out <span style="color: #666">=</span> _render_html(
-        html<span style="color: #666">.</span>escape(module_name),
-        html<span style="color: #666">.</span>escape(module_name),
+    body <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;</span><span style="color: #AA5D1F; font-weight: bold">\n</span><span style="color: #BA2121">&quot;</span><span style="color: #666666">.</span>join(body_parts)
+    html_out <span style="color: #666666">=</span> _render_html(
+        html<span style="color: #666666">.</span>escape(module_name),
+        html<span style="color: #666666">.</span>escape(module_name),
         body,
         nav_html,
     )
-    (dest_dir <span style="color: #666">/</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>module_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">.html&quot;</span>)<span style="color: #666">.</span>write_text(html_out, encoding<span style="color: #666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
+    (dest_dir <span style="color: #666666">/</span> <span style="color: #BA2121">f&quot;</span><span style="color: #A45A77; font-weight: bold">{</span>module_name<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">.html&quot;</span>)<span style="color: #666666">.</span>write_text(html_out, encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
     </div>
     <script src="static/toggle.js"></script>
