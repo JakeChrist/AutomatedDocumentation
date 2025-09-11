@@ -34,10 +34,21 @@ def test_retrofit_sidebar(tmp_path: Path) -> None:
     sidebar = soup.find("div", class_="sidebar")
     ul = sidebar.find("ul", recursive=False)
     top_items = ul.find_all("li", recursive=False)
-    assert [li.contents[0] for li in top_items] == ["module_a.py", "pkg"]
-    pkg_ul = top_items[1].find("ul", recursive=False)
-    assert [li.string for li in pkg_ul.find_all("li", recursive=False)] == [
-        "__init__.py",
-        "submodule.py",
+
+    module_link = top_items[0].find("a", recursive=False)
+    assert module_link is not None
+    assert module_link["href"] == "module_a.html"
+    assert module_link.string == "module_a.py"
+
+    pkg_li = top_items[1]
+    assert pkg_li.contents[0] == "pkg"
+    pkg_ul = pkg_li.find("ul", recursive=False)
+    pkg_items = pkg_ul.find_all("li", recursive=False)
+    pkg_links = [li.find("a", recursive=False) for li in pkg_items]
+    assert [link.string for link in pkg_links] == ["__init__.py", "submodule.py"]
+    assert [link["href"] for link in pkg_links] == [
+        "pkg/__init__.html",
+        "pkg/submodule.html",
     ]
+
     assert soup.find("div", class_="content").decode() == original_main
