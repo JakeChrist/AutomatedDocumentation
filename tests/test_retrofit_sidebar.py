@@ -4,7 +4,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from retrofit_sidebar import retrofit_sidebar
+from retrofit_sidebar import retrofit_sidebar, main
 
 
 def test_retrofit_sidebar(tmp_path: Path) -> None:
@@ -52,3 +52,43 @@ def test_retrofit_sidebar(tmp_path: Path) -> None:
     ]
 
     assert soup.find("div", class_="content").decode() == original_main
+
+
+def test_main_missing_source(tmp_path: Path, capsys, monkeypatch) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "retrofit_sidebar",
+            "--source",
+            str(missing),
+            "--docs",
+            str(docs),
+        ],
+    )
+    assert main() == 1
+    err = capsys.readouterr().err
+    assert "source directory" in err
+
+
+def test_main_missing_docs(tmp_path: Path, capsys, monkeypatch) -> None:
+    src = tmp_path / "src"
+    src.mkdir()
+    missing = tmp_path / "missing"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "retrofit_sidebar",
+            "--source",
+            str(src),
+            "--docs",
+            str(missing),
+        ],
+    )
+    assert main() == 1
+    err = capsys.readouterr().err
+    assert "docs directory" in err
