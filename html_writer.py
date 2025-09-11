@@ -15,6 +15,37 @@ from pygments.formatters import HtmlFormatter
 _TEMPLATE_PATH = Path(__file__).parent / "templates" / "template.html"
 
 
+def _render_nav_tree(tree: Dict[str, Any], include_home: bool = False) -> str:
+    """Return HTML for a nested navigation ``tree``."""
+
+    def _render(node: Dict[str, Any], is_root: bool = False) -> str:
+        parts: list[str] = []
+        if is_root and include_home:
+            parts.append(
+                '<li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>'
+            )
+        for name, link in node.get("__files__", []):
+            parts.append(f'<li><a href="{link}">{html.escape(name)}</a></li>')
+        for dirname in sorted(k for k in node.keys() if k != "__files__"):
+            parts.append(
+                '<li><details><summary>{}</summary>{}</details></li>'.format(
+                    html.escape(dirname), _render(node[dirname])
+                )
+            )
+        return "<ul>" + "".join(parts) + "</ul>"
+
+    return _render(tree, True)
+
+
+def _flatten_nav_tree(tree: Dict[str, Any]) -> Iterable[Tuple[str, str]]:
+    for name, link in tree.get("__files__", []):
+        yield name, link
+    for dirname, sub in tree.items():
+        if dirname == "__files__":
+            continue
+        yield from _flatten_nav_tree(sub)
+
+
 def _highlight(code: str, language: str) -> str:
     """Return ``code`` highlighted for ``language`` using pygments."""
     if language.lower() == "matlab":
@@ -47,20 +78,17 @@ def _render_html(title: str, header: str, body: str, nav_html: str) -> str:
 def write_index(
     output_dir: str,
     project_summary: str,
-    page_links: Iterable[Tuple[str, str]],
+    nav_tree: Dict[str, Any],
     module_summaries: Dict[str, str] | None = None,
 ) -> None:
     """Render ``index.html`` with *project_summary* and navigation links."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
-    nav_html = "\n".join(
-        f'<li><a href="{link}">{html.escape(text)}</a></li>'
-        for text, link in page_links
-    )
+    nav_html = _render_nav_tree(nav_tree)
     body_parts = [f"<p>{html.escape(project_summary)}</p>", "<hr/>", "<h2>Modules</h2>"]
 
     module_items: list[str] = []
-    for text, link in page_links:
+    for text, link in _flatten_nav_tree(nav_tree):
         summary = (module_summaries or {}).get(text, "")
         item = (
             f'<li style="margin-bottom: 1em;">'
@@ -149,20 +177,13 @@ def _render_class(cls: dict[str, Any], language: str, level: int = 2) -> list[st
     return parts
 
 
-def write_module_page(output_dir: str, module_data: dict[str, Any], page_links: Iterable[Tuple[str, str]]) -> None:
+def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Dict[str, Any]) -> None:
     """Render a module documentation page using ``module_data``."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
     module_name = module_data.get("name", "module")
     language = module_data.get("language", "python")
-    nav_items = [
-        '<li><a href="index.html"><strong>🏠 Project Overview</strong></a></li>'
-    ]
-    nav_items.extend(
-        f'<li><a href="{link}">{html.escape(text)}</a></li>'
-        for text, link in page_links
-    )
-    nav_html = "\n".join(nav_items)
+    nav_html = _render_nav_tree(nav_tree, include_home=True)
 
     body_parts = [f"<p>{html.escape(module_data.get('summary', ''))}</p>"]
 
