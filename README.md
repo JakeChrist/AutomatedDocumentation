@@ -174,6 +174,19 @@ python sanitize_docs.py ./docs
 The command rewrites every `.html` file in the directory using the same filtering
 applied during generation.
 
+## Retrofitting Documentation Sidebars
+
+Refresh sidebar navigation in existing HTML docs:
+
+```bash
+python retrofit_sidebar.py --source . --docs Docs
+```
+
+The script scans the source tree at `.` to build a hierarchical list of modules,
+then replaces each `<div class="sidebar">` in `Docs/*.html` with a nested menu
+reflecting that structure. Existing files are updated in place, giving the
+current documentation a consistent module sidebar.
+
 ## Project Summary Utility
 
 Generate a lightweight overview of an existing project and its documentation:
