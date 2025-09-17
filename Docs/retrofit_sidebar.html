@@ -10,14 +10,14 @@
     <button id="sidebar-toggle">Menu</button>
     <div class="sidebar">
         <h2>Navigation</h2>
-        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
+        <ul><li><a href="index.html"><strong>🏠 Project Overview</strong></a></li><li><a href="cache.html">cache</a></li><li><a href="chunk_utils.html">chunk_utils</a></li><li><a href="docgenerator.html">docgenerator</a></li><li><a href="explaincode.html">explaincode</a></li><li><a href="gui_wrapper.html">gui_wrapper</a></li><li><a href="html_writer.html">html_writer</a></li><li><a href="llm_client.html">llm_client</a></li><li><a href="manual_utils.html">manual_utils</a></li><li><a href="parser_cpp.html">parser_cpp</a></li><li><a href="parser_java.html">parser_java</a></li><li><a href="parser_matlab.html">parser_matlab</a></li><li><a href="parser_python.html">parser_python</a></li><li><a href="retrofit_sidebar.html">retrofit_sidebar</a></li><li><a href="reviewer.html">reviewer</a></li><li><a href="sanitize_docs.html">sanitize_docs</a></li><li><a href="scanner.html">scanner</a></li><li><a href="setup.html">setup</a></li><li><a href="summarize_utils.html">summarize_utils</a></li><li><details><summary>tests</summary><ul><li><a href="test_cache.html">test_cache</a></li><li><a href="test_chunk_utils.html">test_chunk_utils</a></li><li><a href="test_docgenerator.html">test_docgenerator</a></li><li><a href="test_docgenerator_subclasses.html">test_docgenerator_subclasses</a></li><li><a href="test_explaincode.html">test_explaincode</a></li><li><a href="test_html_writer.html">test_html_writer</a></li><li><a href="test_integration.html">test_integration</a></li><li><a href="test_llm_client.html">test_llm_client</a></li><li><a href="test_manual_utils.html">test_manual_utils</a></li><li><a href="test_parser_cpp.html">test_parser_cpp</a></li><li><a href="test_parser_java.html">test_parser_java</a></li><li><a href="test_parser_matlab.html">test_parser_matlab</a></li><li><a href="test_parser_python.html">test_parser_python</a></li><li><a href="test_resume_progress.html">test_resume_progress</a></li><li><a href="test_retrofit_sidebar.html">test_retrofit_sidebar</a></li><li><a href="test_reviewer.html">test_reviewer</a></li><li><a href="test_sanitize_docs.html">test_sanitize_docs</a></li><li><a href="test_scanner.html">test_scanner</a></li></ul></details></li></ul>
     </div>
     <div class="content">
         <h1>retrofit_sidebar</h1>
-        <p>This module defines a script to replace documentation sidebars with a hierarchical module list. It includes functions for converting file paths into a nested dictionary tree and recursively building unordered lists from this tree. The `retrofit_sidebar` function scans a source directory for Python modules, constructs a hierarchical structure, and updates HTML files in the documentation directory by replacing existing sidebars with the new hierarchical module list. The script is executed via the command line with optional arguments for specifying the source root directory and the documentation directory.</p>
+        <p>The module implements a tool to replace documentation sidebars with hierarchical lists of modules. It scans a source directory for files, constructs a tree structure from their paths, and generates HTML unordered lists to populate sidebar elements in documentation files. The tool uses BeautifulSoup for HTML parsing and modification, and includes command-line argument parsing to specify source and documentation directories. The process involves resolving file paths, building a nested dictionary representation of the module structure, and converting this structure into HTML list elements with appropriate links. The script operates on all HTML files within the specified documentation directory, modifying their sidebar content in place.</p>
 <h2>Functions</h2>
 <h3 id="_paths_to_tree">_paths_to_tree(paths: list[str]) -&gt; Dict[str, Any]</h3>
-<p>Converts a list of file paths into a nested dictionary tree. Each path is split into parts, and the function builds a dictionary structure where each key represents a directory or file name, with nested dictionaries representing subdirectories. The final part of each path becomes a leaf node in the tree.</p>
+<p>The function `_paths_to_tree` converts a list of file paths into a nested dictionary representing a directory tree structure. Each path is split into its constituent parts, and the function iteratively builds the tree by creating nested dictionaries for each directory level. The final component of each path is added as a key with a value of `None`. The resulting dictionary mirrors the hierarchical organization of the input file paths.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_paths_to_tree</span>(paths: <span style="color: #008000">list</span>[<span style="color: #008000">str</span>]) <span style="color: #666666">-&gt;</span> Dict[<span style="color: #008000">str</span>, Any]:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Convert a list of file paths into a nested dictionary tree.&quot;&quot;&quot;</span>
     tree: Dict[<span style="color: #008000">str</span>, Any] <span style="color: #666666">=</span> {}
@@ -29,24 +29,35 @@
         node<span style="color: #666666">.</span>setdefault(parts[<span style="color: #666666">-1</span>], <span style="color: #008000; font-weight: bold">None</span>)
     <span style="color: #008000; font-weight: bold">return</span> tree
 </code></pre>
-<h3 id="_tree_to_ul">_tree_to_ul(tree: Dict[str, Any], soup: BeautifulSoup) -&gt; Any</h3>
-<p>This function recursively constructs an unordered list (`&lt;ul&gt;`) from a nested dictionary structure. It iterates through the keys of the dictionary, creating list items (`&lt;li&gt;`) for each key and appending them to the `&lt;ul&gt;`. If a value is another dictionary, it calls itself recursively to create nested lists. The resulting `&lt;ul&gt;` element is returned.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_tree_to_ul</span>(tree: Dict[<span style="color: #008000">str</span>, Any], soup: BeautifulSoup) <span style="color: #666666">-&gt;</span> Any:
-<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively build ``&lt;ul&gt;`` elements from *tree*.&quot;&quot;&quot;</span>
+<h3 id="_tree_to_ul">_tree_to_ul(tree: Dict[str, Any], soup: BeautifulSoup, base: Path | str=Path()) -&gt; Any</h3>
+<p>The function `_tree_to_ul` recursively constructs an HTML unordered list (`&lt;ul&gt;`) from a nested dictionary structure (`tree`). It uses a `BeautifulSoup` object to create and manipulate HTML tags. Each key in the dictionary corresponds to a list item (`&lt;li&gt;`), with nested dictionaries generating child `&lt;ul&gt;` elements. For non-dictionary values, it creates an anchor tag (`&lt;a&gt;`) linking to an HTML file derived from the current path and filename. The `base` parameter maintains the relative path context for generating correct links. The function returns the constructed `&lt;ul&gt;` element.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_tree_to_ul</span>(
+    tree: Dict[<span style="color: #008000">str</span>, Any], soup: BeautifulSoup, base: Path <span style="color: #666666">|</span> <span style="color: #008000">str</span> <span style="color: #666666">=</span> Path()
+) <span style="color: #666666">-&gt;</span> Any:
+<span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Recursively build ``&lt;ul&gt;`` elements from *tree*.</span>
+
+<span style="color: #BA2121; font-style: italic">    ``base`` tracks the current path so that file entries can be linked to their</span>
+<span style="color: #BA2121; font-style: italic">    corresponding HTML documentation using a relative path.</span>
+<span style="color: #BA2121; font-style: italic">    &quot;&quot;&quot;</span>
+
+    base <span style="color: #666666">=</span> Path(base)
     ul <span style="color: #666666">=</span> soup<span style="color: #666666">.</span>new_tag(<span style="color: #BA2121">&quot;ul&quot;</span>)
     <span style="color: #008000; font-weight: bold">for</span> name <span style="color: #AA22FF; font-weight: bold">in</span> <span style="color: #008000">sorted</span>(tree):
         li <span style="color: #666666">=</span> soup<span style="color: #666666">.</span>new_tag(<span style="color: #BA2121">&quot;li&quot;</span>)
-        li<span style="color: #666666">.</span>string <span style="color: #666666">=</span> name
         child <span style="color: #666666">=</span> tree[name]
         <span style="color: #008000; font-weight: bold">if</span> <span style="color: #008000">isinstance</span>(child, <span style="color: #008000">dict</span>) <span style="color: #AA22FF; font-weight: bold">and</span> child:
-            li<span style="color: #666666">.</span>append(_tree_to_ul(child, soup))
+            li<span style="color: #666666">.</span>string <span style="color: #666666">=</span> name
+            li<span style="color: #666666">.</span>append(_tree_to_ul(child, soup, base <span style="color: #666666">/</span> name))
+        <span style="color: #008000; font-weight: bold">else</span>:
+            href <span style="color: #666666">=</span> (base <span style="color: #666666">/</span> name)<span style="color: #666666">.</span>with_suffix(<span style="color: #BA2121">&quot;.html&quot;</span>)<span style="color: #666666">.</span>as_posix()
+            a <span style="color: #666666">=</span> soup<span style="color: #666666">.</span>new_tag(<span style="color: #BA2121">&quot;a&quot;</span>, href<span style="color: #666666">=</span>href)
+            a<span style="color: #666666">.</span>string <span style="color: #666666">=</span> name
+            li<span style="color: #666666">.</span>append(a)
         ul<span style="color: #666666">.</span>append(li)
     <span style="color: #008000; font-weight: bold">return</span> ul
 </code></pre>
 <h3 id="retrofit_sidebar">retrofit_sidebar(source_root: str, docs_dir: str) -&gt; None</h3>
-<p>The function `retrofit_sidebar` takes two parameters: `source_root` and `docs_dir`. It scans the directory specified by `source_root` to find all Python files. These file paths are converted into a hierarchical tree structure using `_paths_to_tree`. The HTML markup for this tree is then generated using `_tree_to_ul`.
-
-The function iterates over all `.html` files in the directory specified by `docs_dir`. For each HTML file, it finds the `&lt;div&gt;` element with the class &quot;sidebar&quot; and replaces its content with the newly generated sidebar markup. The modified HTML file is then saved back to disk.</p>
+<p>The function `retrofit_sidebar` updates HTML documentation files by replacing existing sidebars with a hierarchical list of modules. It takes the root directory of source code and the documentation directory as inputs. The function scans the source directory to identify module paths, constructs a tree structure from these paths, and then processes each HTML file in the documentation directory. For each HTML file, it locates the sidebar element, clears its contents, and populates it with a hierarchical unordered list generated from the module tree. The updated HTML content is then written back to the respective files.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">retrofit_sidebar</span>(source_root: <span style="color: #008000">str</span>, docs_dir: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
 <span style="color: #bbbbbb">    </span><span style="color: #BA2121; font-style: italic">&quot;&quot;&quot;Replace documentation sidebars with a hierarchical module list.&quot;&quot;&quot;</span>
     base <span style="color: #666666">=</span> Path(source_root)<span style="color: #666666">.</span>resolve()
@@ -54,27 +65,42 @@ The function iterates over all `.html` files in the directory specified by `docs
     relative <span style="color: #666666">=</span> [<span style="color: #008000">str</span>(Path(p)<span style="color: #666666">.</span>resolve()<span style="color: #666666">.</span>relative_to(base)) <span style="color: #008000; font-weight: bold">for</span> p <span style="color: #AA22FF; font-weight: bold">in</span> modules]
     tree <span style="color: #666666">=</span> _paths_to_tree(relative)
 
-    soup <span style="color: #666666">=</span> BeautifulSoup(<span style="color: #BA2121">&quot;&quot;</span>, <span style="color: #BA2121">&quot;html.parser&quot;</span>)
-    sidebar_markup <span style="color: #666666">=</span> <span style="color: #008000">str</span>(_tree_to_ul(tree, soup))
-
     docs_path <span style="color: #666666">=</span> Path(docs_dir)
     <span style="color: #008000; font-weight: bold">for</span> html_file <span style="color: #AA22FF; font-weight: bold">in</span> docs_path<span style="color: #666666">.</span>glob(<span style="color: #BA2121">&quot;*.html&quot;</span>):
         html_soup <span style="color: #666666">=</span> BeautifulSoup(html_file<span style="color: #666666">.</span>read_text(encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>), <span style="color: #BA2121">&quot;html.parser&quot;</span>)
         sidebar <span style="color: #666666">=</span> html_soup<span style="color: #666666">.</span>find(<span style="color: #BA2121">&quot;div&quot;</span>, class_<span style="color: #666666">=</span><span style="color: #BA2121">&quot;sidebar&quot;</span>)
         <span style="color: #008000; font-weight: bold">if</span> sidebar <span style="color: #AA22FF; font-weight: bold">is</span> <span style="color: #AA22FF; font-weight: bold">not</span> <span style="color: #008000; font-weight: bold">None</span>:
-            sidebar<span style="color: #666666">.</span>replace_with(BeautifulSoup(sidebar_markup, <span style="color: #BA2121">&quot;html.parser&quot;</span>))
+            sidebar<span style="color: #666666">.</span>clear()
+            sidebar<span style="color: #666666">.</span>append(_tree_to_ul(tree, html_soup))
             html_file<span style="color: #666666">.</span>write_text(<span style="color: #008000">str</span>(html_soup), encoding<span style="color: #666666">=</span><span style="color: #BA2121">&quot;utf-8&quot;</span>)
 </code></pre>
-<h3 id="main">main() -&gt; None</h3>
-<p>The `main` function sets up an argument parser to handle command-line arguments for specifying the source root directory and the documentation directory. It then calls the `retrofit_sidebar` function with these arguments to modify a sidebar with documentation information based on the hierarchical module list of the project.</p>
-<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
+<h3 id="main">main() -&gt; int</h3>
+<p>The `main` function serves as the entry point for a documentation tool that replaces a documentation sidebar with a hierarchical module list. It accepts command-line arguments to specify the source code directory and documentation directory, validates that both paths exist and are directories, and then calls `retrofit_sidebar` to perform the sidebar replacement operation. The function returns an integer status code, with 0 indicating success and 1 indicating an error if either directory does not exist or is not a directory.</p>
+<pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">main</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000">int</span>:
     parser <span style="color: #666666">=</span> argparse<span style="color: #666666">.</span>ArgumentParser(
-        description<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Replace docs sidebar with hierarchical module list.&quot;</span>
+        description<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Replace docs sidebar with hierarchical module list.&quot;</span>,
     )
     parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&quot;--source&quot;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&quot;.&quot;</span>, help<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Source root directory&quot;</span>)
     parser<span style="color: #666666">.</span>add_argument(<span style="color: #BA2121">&quot;--docs&quot;</span>, default<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Docs&quot;</span>, help<span style="color: #666666">=</span><span style="color: #BA2121">&quot;Documentation directory&quot;</span>)
     args <span style="color: #666666">=</span> parser<span style="color: #666666">.</span>parse_args()
-    retrofit_sidebar(args<span style="color: #666666">.</span>source, args<span style="color: #666666">.</span>docs)
+
+    source_path <span style="color: #666666">=</span> Path(args<span style="color: #666666">.</span>source)
+    docs_path <span style="color: #666666">=</span> Path(args<span style="color: #666666">.</span>docs)
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> source_path<span style="color: #666666">.</span>is_dir():
+        <span style="color: #008000">print</span>(
+            <span style="color: #BA2121">f&quot;Error: source directory &#39;</span><span style="color: #A45A77; font-weight: bold">{</span>source_path<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&#39; does not exist or is not a directory&quot;</span>,
+            file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr,
+        )
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">1</span>
+    <span style="color: #008000; font-weight: bold">if</span> <span style="color: #AA22FF; font-weight: bold">not</span> docs_path<span style="color: #666666">.</span>is_dir():
+        <span style="color: #008000">print</span>(
+            <span style="color: #BA2121">f&quot;Error: docs directory &#39;</span><span style="color: #A45A77; font-weight: bold">{</span>docs_path<span style="color: #A45A77; font-weight: bold">}</span><span style="color: #BA2121">&#39; does not exist or is not a directory&quot;</span>,
+            file<span style="color: #666666">=</span>sys<span style="color: #666666">.</span>stderr,
+        )
+        <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">1</span>
+
+    retrofit_sidebar(<span style="color: #008000">str</span>(source_path), <span style="color: #008000">str</span>(docs_path))
+    <span style="color: #008000; font-weight: bold">return</span> <span style="color: #666666">0</span>
 </code></pre>
     </div>
     <script src="static/toggle.js"></script>
