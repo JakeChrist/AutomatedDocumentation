@@ -6,5 +6,5 @@ tqdm
 markdown
 python-docx
 reportlab
-PyQt5
+PyQt6
 pytest

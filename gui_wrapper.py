@@ -3,7 +3,7 @@ import subprocess
 import threading
 import re
 from pathlib import Path
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 
 class PathLineEdit(QtWidgets.QLineEdit):
@@ -26,8 +26,10 @@ class CollapsibleBox(QtWidgets.QWidget):
         super().__init__(parent)
         self.toggle_button = QtWidgets.QToolButton(text=title, checkable=True)
         self.toggle_button.setStyleSheet("QToolButton { border: none; color: #ddd; font-weight: bold; }")
-        self.toggle_button.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.toggle_button.setArrowType(QtCore.Qt.RightArrow)
+        self.toggle_button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        self.toggle_button.setArrowType(QtCore.Qt.ArrowType.RightArrow)
         self.toggle_button.clicked.connect(self.on_toggled)
 
         self.content = QtWidgets.QWidget()
@@ -40,7 +42,9 @@ class CollapsibleBox(QtWidgets.QWidget):
 
     def on_toggled(self):
         checked = self.toggle_button.isChecked()
-        arrow = QtCore.Qt.DownArrow if checked else QtCore.Qt.RightArrow
+        arrow = (
+            QtCore.Qt.ArrowType.DownArrow if checked else QtCore.Qt.ArrowType.RightArrow
+        )
         self.toggle_button.setArrowType(arrow)
         self.content.setVisible(checked)
 
@@ -125,7 +129,9 @@ class MainWindow(QtWidgets.QWidget):
         logo = QtWidgets.QLabel()
         logo_path = Path("Assets/docgen-lm-logo.png")
         if logo_path.exists():
-            pixmap = QtGui.QPixmap(str(logo_path)).scaledToHeight(48, QtCore.Qt.SmoothTransformation)
+            pixmap = QtGui.QPixmap(str(logo_path)).scaledToHeight(
+                48, QtCore.Qt.TransformationMode.SmoothTransformation
+            )
             logo.setPixmap(pixmap)
         title = QtWidgets.QLabel("DocGen-LM Documentation Tool")
         title.setStyleSheet("font-size: 18pt; font-weight: bold; color: #fff;")
@@ -271,11 +277,14 @@ class MainWindow(QtWidgets.QWidget):
 
     def append_log(self, text):
         cursor = self.log.textCursor()
-        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.movePosition(QtGui.QTextCursor.MoveOperation.End)
         for part in re.split('(\r)', text):
             if part == '\r':
-                cursor.movePosition(QtGui.QTextCursor.StartOfLine)
-                cursor.movePosition(QtGui.QTextCursor.EndOfLine, QtGui.QTextCursor.KeepAnchor)
+                cursor.movePosition(QtGui.QTextCursor.MoveOperation.StartOfLine)
+                cursor.movePosition(
+                    QtGui.QTextCursor.MoveOperation.EndOfLine,
+                    QtGui.QTextCursor.MoveMode.KeepAnchor,
+                )
                 cursor.removeSelectedText()
             else:
                 cursor.insertText(part)
@@ -354,4 +363,4 @@ if __name__ == "__main__":
     window = MainWindow()
     window.resize(800, 600)
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
