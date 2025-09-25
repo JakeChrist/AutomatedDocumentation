@@ -121,10 +121,10 @@ The generated docs list the `Calculator` class along with its public methods.
 
 ## GUI Usage
 
-Install `PyQt5` to enable the graphical interface:
+Install `PyQt6` to enable the graphical interface:
 
 ```bash
-pip install pyqt5
+pip install pyqt6
 ```
 
 Launch the GUI:
