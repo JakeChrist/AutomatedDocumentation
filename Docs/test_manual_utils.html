@@ -14,15 +14,15 @@
     </div>
     <div class="content">
         <h1>test_manual_utils</h1>
-        <p>Module defines tests for documentation utilities. Includes functions to count tokens in text and verify chunking behavior respects token limits. Tests validate placeholder identification in text strings.</p>
+        <p>Module defines tests for document chunking and placeholder finding functionality. Includes a helper function that counts tokens in text using a tokenizer, and two test functions that verify chunking respects token limits and that placeholder detection correctly identifies specific patterns in text.</p>
 <h2>Functions</h2>
 <h3 id="_count">_count(text: str) -&gt; int</h3>
-<p>The function `_count` takes a string input `text` and returns the number of tokens in the text by encoding it using `manual_utils.TOKENIZER` and calculating the length of the resulting token sequence.</p>
+<p>The function `_count` takes a string input `text` and returns the number of tokens in the string by encoding it using `manual_utils.TOKENIZER` and calculating the length of the resulting token sequence.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">_count</span>(text: <span style="color: #008000">str</span>) <span style="color: #666666">-&gt;</span> <span style="color: #008000">int</span>:
     <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000">len</span>(manual_utils<span style="color: #666666">.</span>TOKENIZER<span style="color: #666666">.</span>encode(text))
 </code></pre>
 <h3 id="test_chunk_docs_respects_token_limit">test_chunk_docs_respects_token_limit() -&gt; None</h3>
-<p>The function `test_chunk_docs_respects_token_limit` tests that the `chunk_docs` utility respects a specified token limit when processing a list of documentation strings. It creates three documentation strings, each consisting of 1000 repeated characters, and passes them to `chunk_docs` with a token limit of 2000. The test verifies that the resulting chunks match the expected number (3) and that each chunk contains no more than the specified token limit.</p>
+<p>The function `test_chunk_docs_respects_token_limit` tests the behavior of the `chunk_docs` utility function from the `manual_utils` module. It verifies that when a list of document strings is chunked with a specified token limit of 2000, the resulting chunks respect this limit. The test creates three document strings, each consisting of repeated words, and passes them to `chunk_docs`. It asserts that the number of chunks produced equals the number of input documents and that each chunk contains no more than 2000 tokens.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_chunk_docs_respects_token_limit</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     docs <span style="color: #666666">=</span> [<span style="color: #BA2121">&quot;a &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">1000</span>, <span style="color: #BA2121">&quot;b &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">1000</span>, <span style="color: #BA2121">&quot;c &quot;</span> <span style="color: #666666">*</span> <span style="color: #666666">1000</span>]
     chunks <span style="color: #666666">=</span> manual_utils<span style="color: #666666">.</span>chunk_docs(docs, token_limit<span style="color: #666666">=2000</span>)
@@ -30,7 +30,7 @@
     <span style="color: #008000; font-weight: bold">assert</span> <span style="color: #008000">all</span>(_count(c) <span style="color: #666666">&lt;=</span> <span style="color: #666666">2000</span> <span style="color: #008000; font-weight: bold">for</span> c <span style="color: #AA22FF; font-weight: bold">in</span> chunks)
 </code></pre>
 <h3 id="test_find_placeholders">test_find_placeholders() -&gt; None</h3>
-<p>The function `test_find_placeholders` tests the `find_placeholders` utility function by providing a sample text containing two placeholders formatted as `[[PLACEHOLDER_NAME]]`. It verifies that the `find_placeholders` function correctly identifies and returns both placeholders as a set containing `{&quot;[[NEEDS_OVERVIEW]]&quot;, &quot;[[FOO]]&quot;}`.</p>
+<p>The function `test_find_placeholders` tests the `find_placeholders` utility by asserting that it correctly identifies and returns a set of placeholder strings enclosed in double square brackets from a given input text. The test verifies that placeholders such as `[[NEEDS_OVERVIEW]]` and `[[FOO]]` are extracted from the string &quot;Intro [[NEEDS_OVERVIEW]] middle [[FOO]] end&quot;.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_find_placeholders</span>() <span style="color: #666666">-&gt;</span> <span style="color: #008000; font-weight: bold">None</span>:
     text <span style="color: #666666">=</span> <span style="color: #BA2121">&quot;Intro [[NEEDS_OVERVIEW]] middle [[FOO]] end&quot;</span>
     tokens <span style="color: #666666">=</span> manual_utils<span style="color: #666666">.</span>find_placeholders(text)

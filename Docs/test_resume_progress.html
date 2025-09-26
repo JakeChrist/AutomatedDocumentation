@@ -14,12 +14,10 @@
     </div>
     <div class="content">
         <h1>test_resume_progress</h1>
-        <p>Test function that verifies resume functionality of documentation generation with caching. Sets up a project with two Python modules and mocks various docgenerator functions to simulate processing. Configures a mock cache that raises an exception on the first progress update to simulate a failure. Executes main generation process which fails, then resumes it. Verifies that only the second module is processed after resuming, and that both HTML files are generated. Confirms cache progress tracking behavior and ensures all modules are eventually documented.</p>
+        <p>Test function that verifies resume functionality of the documentation generator. Sets up a project with two Python modules and simulates a failure during caching of progress. After the failure, it checks that only the first module&#x27;s progress is recorded in the cache. Then, it runs the generator again with resume flag, verifying that only the second module is processed and both HTML files are generated. The test confirms that the cache state is properly managed across failures and resumptions.</p>
 <h2>Functions</h2>
 <h3 id="test_resume_progress">test_resume_progress(tmp_path, monkeypatch)</h3>
-<p>The function `test_resume_progress` tests the resumable documentation generation feature of the tool. It creates a temporary project with two Python modules, `mod1.py` and `mod2.py`, each containing a single function. The test mocks various internal functions of the documentation generator to simulate summarization and docstring rewriting, and also simulates a failure during progress saving on the first run.
-
-On the first execution without resume, the function raises a `RuntimeError` due to the mocked failure, and verifies that progress is saved only for the first module (`mod1.py`). On the second execution with the `--resume` flag, it verifies that the generation resumes from where it left off, processes the remaining module (`mod2.py`), and successfully generates HTML documentation for both modules. It also confirms that the cache progress is cleared after a successful resume run.</p>
+<p>The function `test_resume_progress` tests the resumption of documentation generation progress after a failure. It sets up a temporary project directory with two Python modules, then mocks several functions from the `docgenerator` module to simulate summarization and docstring rewriting. A `ResponseCache` method is also mocked to simulate a failure during progress saving after processing the first module. The test verifies that the first module&#x27;s progress is saved in the cache and that the second module is processed upon resuming. It confirms that both modules are eventually documented and that the cache is cleared after successful completion.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">test_resume_progress</span>(tmp_path, monkeypatch):
     project_dir <span style="color: #666666">=</span> tmp_path <span style="color: #666666">/</span> <span style="color: #BA2121">&quot;proj&quot;</span>
     project_dir<span style="color: #666666">.</span>mkdir()
@@ -80,7 +78,7 @@ On the first execution without resume, the function raises a `RuntimeError` due 
 <details>
 <summary>Subfunction: fake_summarize_module(client, cache, key_prefix, module_text, module, tokenizer, max_context_tokens, chunk_token_budget)</summary>
 <h4 id="fake_summarize_module">fake_summarize_module(client, cache, key_prefix, module_text, module, tokenizer, max_context_tokens, chunk_token_budget)</h4>
-<p>The function `fake_summarize_module` is a placeholder implementation that simulates the process of summarizing a code module. It takes parameters including an LLM client, cache object, key prefix, module text, module name, tokenizer, maximum context tokens, and chunk token budget. The function extracts a path from the key prefix, appends it to a global list `module_calls`, and returns a static string &quot;summary&quot; without performing any actual summarization. This function appears to be used for testing or demonstration purposes where real LLM integration is not required.</p>
+<p>The function `fake_summarize_module` is a placeholder implementation that simulates the behavior of a module summarization process. It takes several parameters including a client, cache, key prefix, module text, module name, tokenizer, maximum context tokens, and chunk token budget. The function extracts a path from the key prefix, appends it to a global list `module_calls`, and returns a static string &quot;summary&quot;. This implementation does not perform actual summarization but serves as a mockup for testing or demonstration purposes.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">fake_summarize_module</span>(client, cache, key_prefix, module_text, module, tokenizer, max_context_tokens, chunk_token_budget):
         path <span style="color: #666666">=</span> key_prefix<span style="color: #666666">.</span>split(<span style="color: #BA2121">&quot;:&quot;</span>)[<span style="color: #666666">0</span>]
         module_calls<span style="color: #666666">.</span>append(path)
@@ -90,7 +88,7 @@ On the first execution without resume, the function raises a `RuntimeError` due 
 <details>
 <summary>Subfunction: fake_summarize_chunked(client, cache, key, text, prompt_type, max_context_tokens, chunk_token_budget)</summary>
 <h4 id="fake_summarize_chunked">fake_summarize_chunked(client, cache, key, text, prompt_type, max_context_tokens, chunk_token_budget)</h4>
-<p>The function `fake_summarize_chunked` is a placeholder implementation that takes parameters related to client configuration, caching, text processing, and prompting, but always returns the string &quot;summary&quot; regardless of the input. It appears to be a mock version of a chunked text summarization function, likely used for testing or demonstration purposes where actual LLM interaction is not required.</p>
+<p>The function `fake_summarize_chunked` is a placeholder implementation that takes parameters related to client configuration, caching, text processing, and summarization settings, but always returns the string &quot;summary&quot; regardless of the input. It appears to be used for testing or demonstration purposes where actual summarization logic is not required.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">fake_summarize_chunked</span>(client, cache, key, text, prompt_type, max_context_tokens, chunk_token_budget):
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #BA2121">&quot;summary&quot;</span>
 </code></pre>
@@ -98,7 +96,7 @@ On the first execution without resume, the function raises a `RuntimeError` due 
 <details>
 <summary>Subfunction: fake_rewrite_docstring(*args, **kwargs)</summary>
 <h4 id="fake_rewrite_docstring">fake_rewrite_docstring(*args, **kwargs)</h4>
-<p>The function `fake_rewrite_docstring` is a placeholder implementation that accepts any number of positional and keyword arguments but always returns `None`. It does not perform any actual docstring rewriting or processing.</p>
+<p>The function `fake_rewrite_docstring` is defined to accept any number of positional and keyword arguments, but always returns `None`. It appears to be a placeholder or dummy implementation that does not perform any actual docstring rewriting functionality.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">fake_rewrite_docstring</span>(<span style="color: #666666">*</span>args, <span style="color: #666666">**</span>kwargs):
         <span style="color: #008000; font-weight: bold">return</span> <span style="color: #008000; font-weight: bold">None</span>
 </code></pre>
@@ -106,7 +104,7 @@ On the first execution without resume, the function raises a `RuntimeError` due 
 <details>
 <summary>Subfunction: crashing_set_progress(self, path, module_data)</summary>
 <h4 id="crashing_set_progress">crashing_set_progress(self, path, module_data)</h4>
-<p>The function `crashing_set_progress` is a wrapper around an original `set_progress` function that increments a call counter stored in the `calls` dictionary. When the counter reaches one, it raises a `RuntimeError` with the message &quot;boom&quot;. This function appears to be designed to simulate or induce a failure on the first invocation while otherwise delegating its behavior to the original progress-setting functionality.</p>
+<p>The function `crashing_set_progress` overrides the behavior of `original_set_progress` by first calling it with the provided arguments `path` and `module_data`. It then increments a counter stored in the global dictionary `calls` under the key `&quot;count&quot;`. If this counter reaches the value 1, the function raises a `RuntimeError` with the message &quot;boom&quot;. This implementation appears to be designed to simulate or induce an error on the first invocation while allowing subsequent calls to proceed normally.</p>
 <pre><code><span style="color: #008000; font-weight: bold">def</span> <span style="color: #0000FF">crashing_set_progress</span>(<span style="color: #008000">self</span>, path, module_data):
         original_set_progress(<span style="color: #008000">self</span>, path, module_data)
         calls[<span style="color: #BA2121">&quot;count&quot;</span>] <span style="color: #666666">+=</span> <span style="color: #666666">1</span>
