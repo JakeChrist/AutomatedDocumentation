@@ -2,20 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{title}</title>
     <link rel="stylesheet" href="{static_path}">
 </head>
 <body>
-    <button id="sidebar-toggle">Menu</button>
-    <div class="sidebar">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="topbar">
+        <button id="sidebar-toggle" aria-label="Toggle navigation menu">Menu</button>
+        <span class="topbar-title">{header}</span>
+    </header>
+    <nav class="sidebar" aria-label="Documentation navigation">
         <h2>Navigation</h2>
         {navigation}
-    </div>
+    </nav>
     <div class="sidebar-resizer" aria-hidden="true"></div>
-    <div class="content">
+    <main id="main-content" class="content" role="main">
         <h1>{header}</h1>
         {body}
-    </div>
+    </main>
+    <footer class="page-footer" aria-label="Page footer">
+        <p>Generated documentation</p>
+    </footer>
     <script src="static/toggle.js"></script>
 </body>
 </html>
