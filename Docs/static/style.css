@@ -1,50 +1,367 @@
-/* Basic stylesheet for DocGen-LM output as referenced in the SRS. */
+/* Enhanced stylesheet for DocGen-LM output focusing on readability and accessibility. */
+:root {
+    --sidebar-width: 240px;
+    --sidebar-min-width: 180px;
+    --sidebar-max-width: 480px;
+    --sidebar-bg: #f7f7fb;
+    --sidebar-border: #d9d9e3;
+    --sidebar-text: #1f1f24;
+    --body-bg: #ffffff;
+    --body-text: #202027;
+    --body-muted: #5d5d6a;
+    --accent: #3055d5;
+    --accent-soft: rgba(48, 85, 213, 0.08);
+    --code-bg: #f4f4f7;
+    --code-border: #e1e1eb;
+    --max-content-width: 920px;
+    --heading-weight: 600;
+    --border-radius: 8px;
+    --transition: 0.2s ease;
+    color-scheme: light;
+}
+
 body {
-    font-family: sans-serif;
+    margin: 0;
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    background: var(--body-bg);
+    color: var(--body-text);
+}
+
+.skip-link {
+    position: absolute;
+    left: -1000px;
+    top: 0;
+    padding: 0.5rem 1rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    z-index: 100;
+    text-decoration: none;
+    transition: transform var(--transition);
+}
+
+.skip-link:focus {
+    left: 1rem;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    padding-left: calc(var(--sidebar-width) + 3rem);
+    background: #fff;
+    border-bottom: 1px solid var(--sidebar-border);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    z-index: 15;
+}
+
+body.sidebar-collapsed .topbar {
+    padding-left: 1.5rem;
+}
+
+.topbar-title {
+    font-weight: var(--heading-weight);
+    color: var(--body-text);
+    font-size: 1rem;
+}
+
+#sidebar-toggle {
+    border: 1px solid var(--sidebar-border);
+    background: #fff;
+    color: var(--body-text);
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+#sidebar-toggle:hover,
+#sidebar-toggle:focus-visible {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    outline: none;
 }
 
 .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 220px; /* fixed width */
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-min-width);
+    max-width: var(--sidebar-max-width);
     height: 100vh;
     overflow-y: auto; /* scroll if links exceed viewport */
-    background: #f0f0f0;
-    padding: 1rem;
+    background: var(--sidebar-bg);
+    padding: 1.5rem 1rem 2rem;
     box-sizing: border-box;
     overflow-wrap: anywhere;
     word-break: break-word;
+    border-right: 1px solid var(--sidebar-border);
+    z-index: 20;
+    transition: transform var(--transition);
+    color: var(--sidebar-text);
+}
+
+.sidebar.hidden {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+    pointer-events: none;
+}
+
+.sidebar.hidden + .sidebar-resizer {
+    display: none;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+    font-size: 1rem;
+    font-weight: var(--heading-weight);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
 }
 
 .sidebar ul {
     list-style: none;
-    padding-left: 1em;
+    padding-left: 0.5em;
+    margin: 0;
 }
 
 .sidebar details > summary {
     cursor: pointer;
+    font-weight: 500;
+    color: var(--body-text);
+    margin: 0.4rem 0;
+}
+
+.sidebar a {
+    color: inherit;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.2rem 0.25rem;
+    border-radius: 4px;
+    transition: background var(--transition), color var(--transition);
+}
+
+.sidebar a:hover,
+.sidebar a:focus-visible {
+    background: var(--accent-soft);
+    color: var(--accent);
+    outline: none;
+}
+
+.sidebar a.is-active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.sidebar-resizer {
+    position: fixed;
+    top: 0;
+    left: calc(var(--sidebar-width) - 4px);
+    width: 8px;
+    height: 100vh;
+    cursor: col-resize;
+    z-index: 30;
+    background: transparent;
+    touch-action: none;
+}
+
+.sidebar-resizer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: 0 3px;
+    background: rgba(48, 85, 213, 0.15);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizing .sidebar-resizer::after {
+    background: rgba(48, 85, 213, 0.3);
 }
 
 .content {
-    margin-left: 220px; /* push main content to the right */
-    padding: 1rem;
+    margin-left: calc(var(--sidebar-width) + 4px); /* push main content to the right */
+    padding: 2rem 3rem;
+    max-width: var(--max-content-width);
+    margin-right: auto;
+}
+
+body.sidebar-collapsed .content {
+    margin-left: 0;
+}
+
+body.sidebar-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.sidebar.hidden ~ .content {
+    margin-left: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--heading-weight);
+    color: var(--body-text);
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+h1 {
+    font-size: 2.25rem;
+    letter-spacing: -0.02em;
+}
+
+h2 {
+    font-size: 1.75rem;
+}
+
+h3 {
+    font-size: 1.35rem;
+}
+
+h4 {
+    font-size: 1.15rem;
+}
+
+p {
+    color: var(--body-text);
+    margin-bottom: 1.2rem;
+}
+
+strong {
+    color: var(--body-text);
+}
+
+em {
+    color: var(--body-muted);
+}
+
+a {
+    color: var(--accent);
 }
 
 pre {
-    background: #eee;
-    padding: 0.5rem;
+    background: var(--code-bg);
+    padding: 1rem;
     overflow-x: auto;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--code-border);
+    font-family: "Fira Code", "SFMono-Regular", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+}
+
+code {
+    font-family: inherit;
+    background: var(--code-bg);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    border: 1px solid var(--code-border);
+    font-size: 0.95rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--code-border);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+th, td {
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--code-border);
+}
+
+thead th {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid var(--accent);
+    background: rgba(48, 85, 213, 0.04);
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    color: var(--body-muted);
+}
+
+ul, ol {
+    margin: 0 0 1.4rem 1.4rem;
+    padding-left: 0;
+}
+
+li {
+    margin-bottom: 0.4rem;
+}
+
+.page-footer {
+    margin-left: calc(var(--sidebar-width) + 4px);
+    padding: 1.5rem 3rem 3rem;
+    color: var(--body-muted);
+    font-size: 0.9rem;
+}
+
+body.sidebar-collapsed .page-footer {
+    margin-left: 0;
+}
+
+.page-footer p {
+    margin: 0;
 }
 
 /* Responsive adjustments for narrow screens */
 @media (max-width: 768px) {
     body { display: block; }
-    .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
-        overflow: visible;
+    .topbar {
+        position: sticky;
+        z-index: 40;
+        padding-left: 1.5rem;
     }
-    .content { margin-left: 0; }
+    .sidebar {
+        position: fixed;
+        top: 3.2rem;
+        left: 0;
+        width: 100%;
+        height: calc(100vh - 3.2rem);
+        overflow: auto;
+        transform: translateX(-100%);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    }
+    .sidebar.hidden {
+        transform: translateX(-100%);
+    }
+    .sidebar:not(.hidden) {
+        transform: translateX(0);
+    }
+    .sidebar-resizer {
+        display: none;
+    }
+    .content {
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 3rem;
+    }
+    .page-footer {
+        margin: 0;
+        padding: 1.5rem 1.25rem 3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
 }
