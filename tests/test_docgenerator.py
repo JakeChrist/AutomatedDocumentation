@@ -122,6 +122,30 @@ def test_project_summary_is_sanitized(tmp_path: Path) -> None:
     assert any(call.args[1] == "project" for call in instance.summarize.call_args_list)
 
 
+def test_module_page_includes_project_summary(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("def foo():\n    pass\n")
+
+    output_dir = tmp_path / "docs"
+
+    with patch("docgenerator.LLMClient") as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.side_effect = [
+            "module summary",
+            "project summary",
+            "function summary",
+            "function doc",
+        ]
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    html = (output_dir / "mod.html").read_text(encoding="utf-8")
+    assert "Project Overview" in html
+    assert "It prints." in html
+
+
 def test_readme_summary_used(tmp_path: Path) -> None:
     project_dir = tmp_path / "proj"
     project_dir.mkdir()

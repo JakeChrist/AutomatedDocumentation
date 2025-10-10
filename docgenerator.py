@@ -854,6 +854,9 @@ def main(argv: list[str] | None = None) -> int:
     if readme_summary:
         project_summary = f"{readme_summary}\n{project_summary}".strip()
 
+    for module in modules:
+        module["project_summary"] = project_summary
+
     # Now that the project summary is available, generate class and function summaries
     # and rewrite method/function docstrings with context.
     for module in modules:
