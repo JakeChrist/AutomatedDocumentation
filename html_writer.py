@@ -15,6 +15,25 @@ from pygments.formatters import HtmlFormatter
 _TEMPLATE_PATH = Path(__file__).parent / "templates" / "template.html"
 
 
+def _render_paragraphs(text: str) -> list[str]:
+    """Render *text* as a list of HTML paragraph strings."""
+
+    cleaned = text.strip()
+    if not cleaned:
+        return []
+
+    paragraphs: list[str] = []
+    normalized = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    for block in normalized.split("\n\n"):
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if not lines:
+            continue
+        joined = " ".join(lines)
+        paragraphs.append(f"<p>{html.escape(joined)}</p>")
+
+    return paragraphs
+
+
 def _render_nav_tree(tree: Dict[str, Any], include_home: bool = False) -> str:
     """Return HTML for a nested navigation ``tree``."""
 
@@ -85,7 +104,10 @@ def write_index(
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
     nav_html = _render_nav_tree(nav_tree)
-    body_parts = [f"<p>{html.escape(project_summary)}</p>", "<hr/>", "<h2>Modules</h2>"]
+    body_parts = _render_paragraphs(project_summary)
+    if body_parts:
+        body_parts.append("<hr/>")
+    body_parts.append("<h2>Modules</h2>")
 
     module_items: list[str] = []
     for text, link in _flatten_nav_tree(nav_tree):
@@ -177,7 +199,9 @@ def _render_class(cls: dict[str, Any], language: str, level: int = 2) -> list[st
     return parts
 
 
-def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Dict[str, Any]) -> None:
+def write_module_page(
+    output_dir: str, module_data: dict[str, Any], nav_tree: Dict[str, Any]
+) -> None:
     """Render a module documentation page using ``module_data``."""
     dest_dir = Path(output_dir)
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -185,7 +209,18 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Di
     language = module_data.get("language", "python")
     nav_html = _render_nav_tree(nav_tree, include_home=True)
 
-    body_parts = [f"<p>{html.escape(module_data.get('summary', ''))}</p>"]
+    body_parts: list[str] = []
+
+    project_summary = module_data.get("project_summary", "")
+    project_paragraphs = _render_paragraphs(project_summary)
+    if project_paragraphs:
+        body_parts.append('<section class="project-summary">')
+        body_parts.append("<h2>Project Overview</h2>")
+        body_parts.extend(project_paragraphs)
+        body_parts.append("</section>")
+
+    module_summary = module_data.get("summary", "")
+    body_parts.extend(_render_paragraphs(module_summary))
 
     for cls in module_data.get("classes", []):
         body_parts.extend(_render_class(cls, language, 2))
