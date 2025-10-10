@@ -27,6 +27,15 @@ def test_parse_simple_matlab(tmp_path: Path) -> None:
     func = result["functions"][0]
     assert func["name"] == "add"
     assert func["args"] == ["x", "y"]
+    assert "function y = add" in func["signature"]
+    expected_source = textwrap.dedent(
+        """
+        function y = add(x, y)
+            y = x + y;
+        end
+        """
+    ).strip()
+    assert func["source"] == expected_source
 
 
 def test_parse_multiple_functions(tmp_path: Path) -> None:
