@@ -1,4 +1,10 @@
 /* Basic stylesheet for DocGen-LM output as referenced in the SRS. */
+:root {
+    --sidebar-width: 220px;
+    --sidebar-min-width: 160px;
+    --sidebar-max-width: 500px;
+}
+
 body {
     font-family: sans-serif;
 }
@@ -7,7 +13,9 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 220px; /* fixed width */
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-min-width);
+    max-width: var(--sidebar-max-width);
     height: 100vh;
     overflow-y: auto; /* scroll if links exceed viewport */
     background: #f0f0f0;
@@ -15,6 +23,17 @@ body {
     box-sizing: border-box;
     overflow-wrap: anywhere;
     word-break: break-word;
+    z-index: 20;
+    transition: transform 0.2s ease;
+}
+
+.sidebar.hidden {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+    pointer-events: none;
+}
+
+.sidebar.hidden + .sidebar-resizer {
+    display: none;
 }
 
 .sidebar ul {
@@ -26,9 +45,45 @@ body {
     cursor: pointer;
 }
 
+.sidebar-resizer {
+    position: fixed;
+    top: 0;
+    left: calc(var(--sidebar-width) - 4px);
+    width: 8px;
+    height: 100vh;
+    cursor: col-resize;
+    z-index: 30;
+    background: transparent;
+    touch-action: none;
+}
+
+.sidebar-resizer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: 0 3px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizing .sidebar-resizer::after {
+    background: rgba(0, 0, 0, 0.25);
+}
+
 .content {
-    margin-left: 220px; /* push main content to the right */
+    margin-left: calc(var(--sidebar-width) + 4px); /* push main content to the right */
     padding: 1rem;
+}
+
+body.sidebar-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+.sidebar.hidden ~ .content {
+    margin-left: 0;
 }
 
 pre {
@@ -45,6 +100,9 @@ pre {
         width: 100%;
         height: auto;
         overflow: visible;
+    }
+    .sidebar-resizer {
+        display: none;
     }
     .content { margin-left: 0; }
 }
