@@ -30,8 +30,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         setSidebarWidth(initialWidth);
 
-        body.classList.toggle('sidebar-collapsed', sidebar.classList.contains('hidden'));
-
         if (resizer) {
             resizer.setAttribute('aria-hidden', sidebar.classList.contains('hidden') ? 'true' : 'false');
             resizer.addEventListener('mousedown', startResize);
@@ -49,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleButton.addEventListener('click', function () {
             var isHidden = sidebar.classList.toggle('hidden');
             toggleButton.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
-            body.classList.toggle('sidebar-collapsed', isHidden);
             if (resizer) {
                 resizer.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
             }
@@ -64,8 +61,6 @@ document.addEventListener('DOMContentLoaded', function () {
         '.sidebar a[href="' + window.location.pathname.split('/').pop() + '"]'
     );
     if (current) {
-        current.classList.add('is-active');
-        current.setAttribute('aria-current', 'page');
         var el = current.parentElement;
         while (el) {
             if (el.tagName && el.tagName.toLowerCase() === 'details') {
