@@ -208,6 +208,37 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Di
     for func in module_data.get("functions", []):
         body_parts.extend(_render_function(func, language, 3))
 
+    if module_data.get("language") == "simulink":
+        model = module_data.get("model") or {}
+        model_name = model.get("name")
+        if model_name:
+            body_parts.append(f'<h2 id="model">Model: {html.escape(model_name)}</h2>')
+        blocks = model.get("blocks", [])
+        if blocks:
+            body_parts.append('<h3 id="blocks">Blocks</h3>')
+            body_parts.append("<ul>")
+            for block in blocks:
+                label = block.get("name", "Unnamed block")
+                block_type = block.get("type", "Unknown")
+                line = f"<strong>{html.escape(label)}</strong> <em>[{html.escape(block_type)}]</em>"
+                params = block.get("parameters", [])
+                if params:
+                    param_text = ", ".join(
+                        f"{html.escape(p['name'])}={html.escape(p['value'])}" for p in params
+                    )
+                    line += f" – {param_text}"
+                body_parts.append(f"<li>{line}</li>")
+            body_parts.append("</ul>")
+        connections = model.get("connections", [])
+        if connections:
+            body_parts.append('<h3 id="connections">Connections</h3>')
+            body_parts.append("<ul>")
+            for conn in connections:
+                src = html.escape(conn.get("source", "?"))
+                dst = html.escape(conn.get("target", "?"))
+                body_parts.append(f"<li>{src} → {dst}</li>")
+            body_parts.append("</ul>")
+
     body = "\n".join(body_parts)
     html_out = _render_html(
         html.escape(module_name),
