@@ -178,3 +178,33 @@ def test_cpp_java_highlighting() -> None:
     java_html = _highlight("class T { int x; }", "java")
     assert "<span" in cpp_html
     assert "<span" in java_html
+
+
+def test_simulink_rendering(tmp_path: Path) -> None:
+    tree = {"__files__": [("simple_model", "simple_model.html")]}
+    module_data = {
+        "name": "simple_model",
+        "language": "simulink",
+        "summary": "",
+        "module_docstring": "Simulink model: simple\n\nBlocks:\n- Source\n- Gain\n- Scope",
+        "model": {
+            "name": "simple",
+            "blocks": [
+                {"name": "Source", "type": "Inport"},
+                {"name": "Gain", "type": "Gain", "parameters": [{"name": "Gain", "value": "2"}]},
+                {"name": "Scope", "type": "Outport"},
+            ],
+            "connections": [
+                {"source": "Source:1", "target": "Gain:1"},
+                {"source": "Gain:1", "target": "Scope:1"},
+            ],
+        },
+    }
+
+    write_module_page(str(tmp_path), module_data, tree)
+
+    html = (tmp_path / "simple_model.html").read_text(encoding="utf-8")
+    assert "Simulink model: simple" in html
+    assert "<h3 id=\"blocks\">Blocks</h3>" in html
+    assert "<svg" in html
+    assert "figcaption" in html
