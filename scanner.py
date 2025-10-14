@@ -26,7 +26,10 @@ def _is_subpath(path: Path, parent: Path) -> bool:
 
 
 def scan_directory(base_path: str, ignore: List[str], show_progress: bool = False) -> List[str]:
-    """Recursively discover ``.py``, ``.m``, ``.cpp``, ``.h``, and ``.java`` files under *base_path*.
+    """Recursively discover supported source files under *base_path*.
+
+    The scanner recognises Python (``.py``), MATLAB (``.m``), C++ (``.cpp``/``.h``),
+    Java (``.java``), and Simulink models (``.slx`` and ``.mdl``).
 
     Parameters
     ----------
@@ -59,7 +62,7 @@ def scan_directory(base_path: str, ignore: List[str], show_progress: bool = Fals
         ]
 
         for name in files:
-            if not name.endswith((".py", ".m", ".cpp", ".h", ".java")):
+            if not name.endswith((".py", ".m", ".cpp", ".h", ".java", ".slx", ".mdl")):
                 continue
             file_path = root_path / name
             if any(_is_subpath(file_path, ig) for ig in ignore_paths):

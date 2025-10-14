@@ -31,6 +31,7 @@ from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from parser_cpp import parse_cpp_file
 from parser_java import parse_java_file
+from parser_simulink import parse_simulink_file
 from scanner import scan_directory, _is_subpath
 
 
@@ -674,27 +675,38 @@ def main(argv: list[str] | None = None) -> int:
             modules.append(progress[path])
             continue
         try:
-            text = Path(path).read_text(encoding="utf-8")
-        except UnicodeDecodeError as exc:  # skip files with invalid encoding
-            print(f"Skipping {path}: {exc}", file=sys.stderr)
-            continue
-
-        try:
-            if path.endswith(".py"):
-                parsed = parse_python_file(path)
-                language = "python"
-            elif path.endswith((".cpp", ".h")):
-                parsed = parse_cpp_file(path)
-                language = "cpp"
-            elif path.endswith(".java"):
-                parsed = parse_java_file(path)
-                language = "java"
+            if path.endswith((".slx", ".mdl")):
+                parsed = parse_simulink_file(path)
+                text = parsed.pop("source_text", "")
+                language = "simulink"
             else:
-                parsed = parse_matlab_file(path)
-                language = "matlab"
+                try:
+                    text = Path(path).read_text(encoding="utf-8")
+                except UnicodeDecodeError as exc:  # skip files with invalid encoding
+                    print(f"Skipping {path}: {exc}", file=sys.stderr)
+                    continue
+
+                if path.endswith(".py"):
+                    parsed = parse_python_file(path)
+                    language = "python"
+                elif path.endswith((".cpp", ".h")):
+                    parsed = parse_cpp_file(path)
+                    language = "cpp"
+                elif path.endswith(".java"):
+                    parsed = parse_java_file(path)
+                    language = "java"
+                elif path.endswith(".m"):
+                    parsed = parse_matlab_file(path)
+                    language = "matlab"
+                else:
+                    # skip unsupported file types discovered in scan
+                    continue
         except SyntaxError as exc:  # malformed file should be ignored
             print(f"Skipping {path}: {exc}", file=sys.stderr)
             continue
+
+        if not text:
+            text = parsed.get("module_docstring", "")
 
         key = ResponseCache.make_key(path, text)
         summary = _summarize_module_chunked(
