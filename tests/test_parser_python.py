@@ -149,3 +149,54 @@ def test_class_inside_method(tmp_path: Path) -> None:
     assert b["name"] == "B"
     assert b["methods"][0]["name"] == "m"
 
+
+def test_parse_calls_and_qualnames(tmp_path: Path) -> None:
+    src = textwrap.dedent(
+        '''
+        def outer():
+            helper()
+
+            def inner():
+                return helper()
+
+            inner()
+
+        def helper():
+            return 42
+
+        class Greeter:
+            def greet(self):
+                helper()
+                self._format()
+                super().finish()
+
+            def _format(self):
+                return "hi"
+        '''
+    )
+    file = tmp_path / "calls.py"
+    file.write_text(src)
+
+    result = parse_python_file(str(file))
+
+    outer = next(func for func in result["functions"] if func["name"] == "outer")
+    assert outer["qualname"] == "outer"
+    assert outer["calls"] == ["helper", "inner"]
+
+    inner = outer["subfunctions"][0]
+    assert inner["qualname"] == "outer.inner"
+    assert inner["calls"] == ["helper"]
+
+    helper = next(func for func in result["functions"] if func["name"] == "helper")
+    assert helper["qualname"] == "helper"
+    assert helper["calls"] == []
+
+    greeter = next(cls for cls in result["classes"] if cls["name"] == "Greeter")
+    greet = next(method for method in greeter["methods"] if method["name"] == "greet")
+    assert greet["qualname"] == "Greeter.greet"
+    assert greet["calls"] == ["helper", "self._format", "super.finish"]
+
+    formatter = next(method for method in greeter["methods"] if method["name"] == "_format")
+    assert formatter["qualname"] == "Greeter._format"
+    assert formatter["calls"] == []
+

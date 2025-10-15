@@ -5,7 +5,7 @@ Renders documentation pages using simple template substitution.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Iterable, Tuple, Dict
+from typing import Any, Iterable, Tuple, Dict, List, Optional
 from collections import defaultdict, deque
 import html
 
@@ -96,6 +96,500 @@ def _slugify(value: str) -> str:
     slug = "".join(ch.lower() if ch.isalnum() else "-" for ch in value)
     slug = "-".join(part for part in slug.split("-") if part)
     return slug or "simulink-model"
+
+
+def _collect_callables(module_data: dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """Return a mapping of qualified names to callable metadata."""
+
+    callables: Dict[str, Dict[str, Any]] = {}
+
+    def add_function(
+        func: dict[str, Any], parent_qual: Optional[str] = None
+    ) -> None:
+        name = func.get("name")
+        if not name:
+            return
+        qualname = func.get("qualname") or (
+            f"{parent_qual}.{name}" if parent_qual else name
+        )
+        signature = func.get("signature") or name
+        display_prefix = f"{parent_qual}." if parent_qual else ""
+        display = f"{display_prefix}{signature}" if signature else qualname
+        callables[qualname] = {
+            "qualname": qualname,
+            "anchor": name,
+            "display": display,
+            "calls": list(func.get("calls", [])),
+        }
+
+        for sub in func.get("subfunctions", []):
+            add_function(sub, qualname)
+        for nested_cls in func.get("subclasses", []):
+            add_class(nested_cls, qualname)
+
+    def add_class(cls: dict[str, Any], parent_qual: Optional[str] = None) -> None:
+        cls_name = cls.get("name")
+        if not cls_name:
+            return
+        class_qual = cls.get("qualname") or (
+            f"{parent_qual}.{cls_name}" if parent_qual else cls_name
+        )
+        for method in cls.get("methods", []):
+            add_function(method, class_qual)
+        for sub in cls.get("subclasses", []):
+            add_class(sub, class_qual)
+
+    for func in module_data.get("functions", []):
+        add_function(func)
+    for cls in module_data.get("classes", []):
+        add_class(cls)
+
+    return callables
+
+
+def _build_callgraph(module_data: dict[str, Any]) -> Dict[str, Any]:
+    """Return structured call graph data for ``module_data``."""
+
+    callables = _collect_callables(module_data)
+    if not callables:
+        return {"nodes": [], "edges": []}
+
+    name_index: Dict[str, List[str]] = defaultdict(list)
+    for qual in callables:
+        simple = qual.split(".")[-1]
+        name_index[simple].append(qual)
+
+    def resolve_call(raw: str, source_qual: str) -> Optional[str]:
+        if raw in callables:
+            return raw
+        simple = raw.split(".")[-1]
+        candidates = name_index.get(simple, [])
+        if not candidates:
+            return None
+        if len(candidates) == 1:
+            return candidates[0]
+        source_parts = source_qual.split(".")
+        for length in range(len(source_parts), 0, -1):
+            prefix = ".".join(source_parts[:length])
+            for candidate in candidates:
+                if candidate.startswith(f"{prefix}."):
+                    return candidate
+        return None
+
+    graph: Dict[str, Dict[str, Any]] = {}
+    for qual, info in callables.items():
+        resolved: List[str] = []
+        unresolved: List[str] = []
+        seen_targets: set[str] = set()
+        for raw in info.get("calls", []):
+            target = resolve_call(raw, qual)
+            if target and target != qual:
+                if target not in seen_targets:
+                    resolved.append(target)
+                    seen_targets.add(target)
+            else:
+                if raw not in unresolved:
+                    unresolved.append(raw)
+        graph[qual] = {
+            "info": info,
+            "calls": resolved,
+            "called_by": [],
+            "external_calls": unresolved,
+        }
+
+    for qual, data in graph.items():
+        for target in data["calls"]:
+            if target in graph:
+                graph[target]["called_by"].append(qual)
+
+    internal_nodes: Dict[str, Dict[str, Any]] = {}
+    external_nodes: Dict[str, Dict[str, Any]] = {}
+
+    for qual, data in graph.items():
+        if not (data["calls"] or data["called_by"] or data["external_calls"]):
+            continue
+        info = data["info"]
+        internal_nodes[qual] = {
+            "qualname": qual,
+            "display": info["display"],
+            "anchor": info["anchor"],
+            "calls": list(data["calls"]),
+            "called_by": list(data["called_by"]),
+        }
+        for raw in data["external_calls"]:
+            if raw not in external_nodes:
+                external_nodes[raw] = {
+                    "qualname": raw,
+                    "display": raw,
+                    "anchor": None,
+                    "external": True,
+                }
+
+    nodes: List[Dict[str, Any]] = []
+    nodes.extend(
+        {
+            "qualname": qual,
+            "display": info["display"],
+            "anchor": info["anchor"],
+            "external": False,
+        }
+        for qual, info in sorted(internal_nodes.items(), key=lambda item: item[0])
+    )
+    nodes.extend(
+        external_nodes[key]
+        for key in sorted(external_nodes)
+    )
+
+    edge_set: set[Tuple[str, str, bool]] = set()
+    for qual, info in internal_nodes.items():
+        for target in info["calls"]:
+            if target in internal_nodes and (qual, target, False) not in edge_set:
+                edge_set.add((qual, target, False))
+        unresolved = graph[qual]["external_calls"]
+        for raw in unresolved:
+            edge_set.add((qual, raw, True))
+
+    edges = [
+        {"source": src, "target": dst, "external": ext}
+        for src, dst, ext in sorted(edge_set)
+    ]
+
+    return {"nodes": nodes, "edges": edges}
+
+
+def _wrap_label(text: str, max_length: int = 26, max_lines: int = 3) -> List[str]:
+    """Return ``text`` wrapped into lines for SVG labels."""
+
+    text = text.strip()
+    if not text:
+        return [""]
+
+    words = text.split()
+    lines: List[str] = []
+    current_words: List[str] = []
+    index = 0
+    truncated = False
+
+    while index < len(words):
+        word = words[index]
+        candidate = " ".join(current_words + [word]) if current_words else word
+        if current_words and len(candidate) > max_length:
+            lines.append(" ".join(current_words))
+            current_words = []
+            if len(lines) >= max_lines:
+                truncated = True
+                break
+            continue
+        current_words.append(word)
+        index += 1
+
+    if current_words and len(lines) < max_lines:
+        lines.append(" ".join(current_words))
+
+    if index < len(words):
+        truncated = True
+
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        truncated = True
+
+    if truncated and lines:
+        last = lines[-1]
+        if len(last) >= max_length:
+            last = last[: max(0, max_length - 1)].rstrip()
+        lines[-1] = last + "…"
+
+    return lines or [text]
+
+
+def _wrap_display_text(text: str) -> List[str]:
+    cleaned = text.replace("(", " (")  # assist wrapping function for call signatures
+    lines = _wrap_label(cleaned.strip(), max_length=28)
+    formatted = [line.strip().replace(" (", "(") for line in lines if line.strip()]
+    return formatted or [text]
+
+
+def _layout_callgraph(
+    graph: Dict[str, Any],
+) -> Tuple[Dict[str, Tuple[float, float]], float, float, Dict[str, List[str]]]:
+    """Return positions and metadata for rendering a call graph."""
+
+    nodes = graph["nodes"]
+    edges = graph["edges"]
+    internal = [node for node in nodes if not node.get("external")]
+    external = [node for node in nodes if node.get("external")]
+
+    if not internal:
+        # Render external callers as a simple column.
+        positions = {
+            node["qualname"]: (0.0, idx * 120.0)
+            for idx, node in enumerate(external)
+        }
+        height = max(200.0, len(external) * 120.0)
+        width = 220.0
+        return positions, width, height, {}
+
+    node_width = 220.0
+    node_height = 72.0
+    h_spacing = 90.0
+    v_spacing = 48.0
+    margin_x = 40.0
+    margin_y = 40.0
+    component_gap = 160.0
+
+    internal_ids = {node["qualname"] for node in internal}
+
+    directed: Dict[str, List[str]] = {node: [] for node in internal_ids}
+    undirected: Dict[str, set[str]] = {node: set() for node in internal_ids}
+
+    for edge in edges:
+        src = edge["source"]
+        dst = edge["target"]
+        if src in internal_ids and dst in internal_ids:
+            directed[src].append(dst)
+            undirected[src].add(dst)
+            undirected[dst].add(src)
+
+    components: List[List[str]] = []
+    seen: set[str] = set()
+    for node in sorted(internal_ids):
+        if node in seen:
+            continue
+        stack = [node]
+        component: List[str] = []
+        while stack:
+            current = stack.pop()
+            if current in seen:
+                continue
+            seen.add(current)
+            component.append(current)
+            stack.extend(sorted(undirected[current] - seen))
+        components.append(component)
+
+    positions: Dict[str, Tuple[float, float]] = {}
+    y_offset = 0.0
+    max_component_width = 0.0
+    clusters: Dict[str, List[str]] = defaultdict(list)
+
+    def assign_layers(nodes_in_comp: List[str]) -> Dict[str, int]:
+        indegree = {node: 0 for node in nodes_in_comp}
+        for src in nodes_in_comp:
+            for dst in directed.get(src, []):
+                if dst in indegree:
+                    indegree[dst] += 1
+
+        remaining = set(nodes_in_comp)
+        layers: Dict[str, int] = {}
+        current_layer = 0
+        queue: deque[str] = deque(
+            sorted(node for node, deg in indegree.items() if deg == 0)
+        )
+
+        while remaining:
+            if not queue:
+                candidate = min(remaining, key=lambda item: (indegree.get(item, 0), item))
+                queue.append(candidate)
+            layer_nodes = sorted(set(queue))
+            queue.clear()
+            for node in layer_nodes:
+                if node not in remaining:
+                    continue
+                layers[node] = current_layer
+                remaining.remove(node)
+                for dst in directed.get(node, []):
+                    if dst in remaining:
+                        indegree[dst] = max(0, indegree.get(dst, 0) - 1)
+                        if indegree[dst] == 0:
+                            queue.append(dst)
+            current_layer += 1
+
+        return layers
+
+    for component in components:
+        layers = assign_layers(component)
+        columns: Dict[int, List[str]] = defaultdict(list)
+        for node, layer in layers.items():
+            columns[layer].append(node)
+
+        if not columns:
+            continue
+
+        ordered_layers = [columns[index] for index in sorted(columns)]
+        max_rows = max(len(layer) for layer in ordered_layers)
+        total_height = max_rows * node_height + max(0, max_rows - 1) * v_spacing
+        component_width = len(ordered_layers) * node_width + max(0, len(ordered_layers) - 1) * h_spacing
+
+        for layer_index, layer_nodes in enumerate(ordered_layers):
+            layer_nodes.sort()
+            layer_height = len(layer_nodes) * node_height + max(0, len(layer_nodes) - 1) * v_spacing
+            start_y = (total_height - layer_height) / 2 if total_height > layer_height else 0.0
+            for idx, qualname in enumerate(layer_nodes):
+                x = layer_index * (node_width + h_spacing)
+                y = start_y + idx * (node_height + v_spacing) + y_offset
+                positions[qualname] = (x, y)
+                parts = qualname.split(".")
+                if len(parts) > 1:
+                    clusters[parts[0]].append(qualname)
+
+        y_offset += total_height + component_gap
+        max_component_width = max(max_component_width, component_width)
+
+    total_internal_height = y_offset - component_gap if y_offset else 0.0
+    total_internal_height = max(total_internal_height, node_height)
+
+    external_total_height = len(external) * node_height + max(0, len(external) - 1) * v_spacing
+    external_start_y = max(0.0, (total_internal_height - external_total_height) / 2)
+    external_x = max_component_width + h_spacing
+
+    for idx, node in enumerate(external):
+        positions[node["qualname"]] = (
+            external_x,
+            external_start_y + idx * (node_height + v_spacing),
+        )
+
+    width = max_component_width + (node_width if external else 0.0) + (h_spacing if external else 0.0)
+    width = max(width, node_width)
+    height = max(total_internal_height, external_total_height)
+    height = max(height, node_height)
+
+    for key in list(clusters.keys()):
+        if len(clusters[key]) < 2:
+            clusters.pop(key, None)
+
+    cluster_map: Dict[str, List[str]] = clusters
+
+    return positions, width + margin_x * 2, height + margin_y * 2, cluster_map
+
+
+def _render_callgraph_svg(module_data: dict[str, Any]) -> str:
+    """Return an inline SVG visualising the module call graph."""
+
+    graph = _build_callgraph(module_data)
+    nodes = graph.get("nodes", [])
+    edges = graph.get("edges", [])
+    if not nodes or not edges:
+        return ""
+
+    module_name = module_data.get("name") or "module"
+    positions, width, height, clusters = _layout_callgraph(graph)
+
+    node_width = 220.0
+    node_height = 72.0
+    margin_x = 40.0
+    margin_y = 40.0
+
+    title_id = f"callgraph-{_slugify(module_name)}-title"
+    desc_id = f"callgraph-{_slugify(module_name)}-desc"
+
+    svg_parts = [
+        '<svg class="callgraph-svg" role="img" '
+        f'aria-labelledby="{title_id} {desc_id}" '
+        f'viewBox="0 0 {width:.0f} {height:.0f}" '
+        'xmlns="http://www.w3.org/2000/svg" '
+        'xmlns:xlink="http://www.w3.org/1999/xlink">',
+        f"<title id=\"{title_id}\">Call graph for {html.escape(module_name)}</title>",
+        f"<desc id=\"{desc_id}\">Directed graph of internal call relationships and external dependencies.</desc>",
+        "<defs>",
+        "<marker id=\"callgraph-arrow\" markerWidth=\"12\" markerHeight=\"8\" refX=\"12\" refY=\"4\" orient=\"auto\">",
+        "<polygon points=\"0 0, 12 4, 0 8\" fill=\"#314866\" />",
+        "</marker>",
+        "</defs>",
+    ]
+
+    cluster_padding = 24.0
+    for cluster, members in clusters.items():
+        xs = []
+        ys = []
+        for member in members:
+            x, y = positions.get(member, (0.0, 0.0))
+            xs.extend([x, x + node_width])
+            ys.extend([y, y + node_height])
+        if not xs or not ys:
+            continue
+        left = min(xs)
+        right = max(xs)
+        top = min(ys)
+        bottom = max(ys)
+        svg_parts.append(
+            f'<rect class="callgraph-cluster" x="{left + margin_x - cluster_padding:.1f}" '
+            f'y="{top + margin_y - cluster_padding:.1f}" '
+            f'width="{(right - left) + cluster_padding * 2:.1f}" '
+            f'height="{(bottom - top) + cluster_padding * 2:.1f}" rx="18" ry="18" />'
+        )
+        svg_parts.append(
+            f'<text class="callgraph-cluster-label" '
+            f'x="{left + margin_x - cluster_padding + 12:.1f}" '
+            f'y="{top + margin_y - cluster_padding + 22:.1f}">{html.escape(cluster)}</text>'
+        )
+
+    def edge_path(src: str, dst: str) -> str:
+        sx, sy = positions[src]
+        tx, ty = positions[dst]
+        sx += margin_x + node_width
+        sy += margin_y + node_height / 2
+        tx += margin_x
+        ty += margin_y + node_height / 2
+
+        if tx >= sx + 30:
+            return (
+                f"M {sx:.1f} {sy:.1f} C {sx + 60:.1f} {sy:.1f} "
+                f"{tx - 60:.1f} {ty:.1f} {tx:.1f} {ty:.1f}"
+            )
+        # Route backwards edges above the nodes.
+        mid_x = max(sx, tx) + 80.0
+        control_y = min(sy, ty) - 80.0
+        return (
+            f"M {sx:.1f} {sy:.1f} C {mid_x:.1f} {sy - 40:.1f} "
+            f"{mid_x:.1f} {control_y:.1f} {tx:.1f} {ty:.1f}"
+        )
+
+    for edge in edges:
+        src = edge["source"]
+        dst = edge["target"]
+        if src not in positions or dst not in positions:
+            continue
+        cls = "callgraph-edge external" if edge.get("external") else "callgraph-edge"
+        svg_parts.append(
+            f'<path class="{cls}" d="{edge_path(src, dst)}" marker-end="url(#callgraph-arrow)" />'
+        )
+
+    for node in nodes:
+        name = node["qualname"]
+        if name not in positions:
+            continue
+        x, y = positions[name]
+        x += margin_x
+        y += margin_y
+        node_id = f"callgraph-node-{_slugify(name)}"
+        is_external = node.get("external", False)
+        node_class = "callgraph-node external" if is_external else "callgraph-node"
+        anchor = node.get("anchor")
+        if anchor:
+            svg_parts.append(f'<a xlink:href="#{anchor}" tabindex="0">')
+        svg_parts.append(
+            f'<g id="{node_id}" class="{node_class}" transform="translate({x:.1f}, {y:.1f})">'
+        )
+        svg_parts.append(f"<title>{html.escape(node['display'])}</title>")
+        svg_parts.append(
+            f'<rect width="{node_width:.1f}" height="{node_height:.1f}" rx="14" ry="14" />'
+        )
+        label_lines = _wrap_display_text(node["display"])
+        total_lines = len(label_lines)
+        line_height = 18
+        start_y = node_height / 2 - (total_lines - 1) * line_height / 2
+        for idx, line in enumerate(label_lines):
+            text_y = start_y + idx * line_height
+            svg_parts.append(
+                f'<text x="{node_width / 2:.1f}" y="{text_y:.1f}" text-anchor="middle" '
+                "dominant-baseline=\"middle\">"
+                f"{html.escape(line)}</text>"
+            )
+        svg_parts.append("</g>")
+        if anchor:
+            svg_parts.append("</a>")
+
+    svg_parts.append("</svg>")
+    return "\n".join(svg_parts)
 
 
 def _render_simulink_diagram(model: Dict[str, Any]) -> str:
@@ -357,6 +851,17 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Di
     body_parts: list[str] = []
     if summary_html:
         body_parts.append(summary_html)
+
+    callgraph_svg = _render_callgraph_svg(module_data)
+    if callgraph_svg:
+        body_parts.append('<h2 id="callgraph">Call Graph</h2>')
+        body_parts.append('<figure class="callgraph-diagram">')
+        body_parts.append(callgraph_svg)
+        body_parts.append(
+            "<figcaption>Internal call relationships are shown as blue nodes with arrows; "
+            "external dependencies appear in purple.</figcaption>"
+        )
+        body_parts.append("</figure>")
 
     for cls in module_data.get("classes", []):
         body_parts.extend(_render_class(cls, language, 2))

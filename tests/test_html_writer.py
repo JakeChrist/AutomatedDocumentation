@@ -173,6 +173,66 @@ def test_subclass_rendering(tmp_path: Path) -> None:
     assert html.count("<pre><code>") == 1
 
 
+def test_callgraph_rendering(tmp_path: Path) -> None:
+    tree = {}
+    module_data = {
+        "name": "mod",
+        "summary": "",
+        "functions": [
+            {
+                "name": "alpha",
+                "signature": "alpha()",
+                "qualname": "alpha",
+                "calls": ["beta", "external.other"],
+                "subfunctions": [],
+            },
+            {
+                "name": "beta",
+                "signature": "beta()",
+                "qualname": "beta",
+                "calls": [],
+                "subfunctions": [],
+            },
+        ],
+        "classes": [
+            {
+                "name": "Widget",
+                "qualname": "Widget",
+                "methods": [
+                    {
+                        "name": "build",
+                        "signature": "build(self)",
+                        "qualname": "Widget.build",
+                        "calls": ["self.render", "alpha"],
+                        "subfunctions": [],
+                    },
+                    {
+                        "name": "render",
+                        "signature": "render(self)",
+                        "qualname": "Widget.render",
+                        "calls": [],
+                        "subfunctions": [],
+                    },
+                ],
+                "subclasses": [],
+            }
+        ],
+    }
+
+    write_module_page(str(tmp_path), module_data, tree)
+    html = (tmp_path / "mod.html").read_text(encoding="utf-8")
+
+    assert '<h2 id="callgraph">Call Graph</h2>' in html
+    assert '<figure class="callgraph-diagram">' in html
+    assert 'class="callgraph-svg"' in html
+    assert 'Widget.build(self)' in html
+    assert 'xlink:href="#build"' in html
+    assert 'xlink:href="#alpha"' in html
+    assert 'xlink:href="#beta"' in html
+    assert 'class="callgraph-edge external"' in html
+    assert 'external.other' in html
+
+
 def test_cpp_java_highlighting() -> None:
     cpp_html = _highlight("int main() { return 0; }", "cpp")
     java_html = _highlight("class T { int x; }", "java")
