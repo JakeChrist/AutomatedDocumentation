@@ -84,11 +84,13 @@ def _format_summary(text: str) -> str:
     paragraphs = [p for p in escaped.split("\n\n") if p.strip()]
     if not paragraphs:
         if escaped.strip():
-            return f"<p>{escaped.replace('\n', '<br/>')}</p>"
+            single_paragraph = escaped.replace("\n", "<br/>")
+            return f"<p>{single_paragraph}</p>"
         return ""
     formatted: list[str] = []
     for para in paragraphs:
-        formatted.append(f"<p>{para.replace('\n', '<br/>')}</p>")
+        formatted_para = para.replace("\n", "<br/>")
+        formatted.append(f"<p>{formatted_para}</p>")
     return "\n".join(formatted)
 
 
