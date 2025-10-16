@@ -223,7 +223,10 @@ def test_callgraph_rendering(tmp_path: Path) -> None:
     html = (tmp_path / "mod.html").read_text(encoding="utf-8")
 
     assert '<h2 id="callgraph">Call Graph</h2>' in html
-    assert '<figure class="callgraph-diagram">' in html
+    assert '<figure class="callgraph-diagram" data-callgraph>' in html
+    assert 'class="callgraph-toolbar"' in html
+    assert 'class="callgraph-viewport"' in html
+    assert 'class="callgraph-zoom callgraph-zoom-in"' in html
     assert 'class="callgraph-svg"' in html
     assert 'Widget.build(self)' in html
     assert 'xlink:href="#build"' in html
