@@ -857,8 +857,24 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Di
     callgraph_svg = _render_callgraph_svg(module_data)
     if callgraph_svg:
         body_parts.append('<h2 id="callgraph">Call Graph</h2>')
-        body_parts.append('<figure class="callgraph-diagram">')
+        body_parts.append('<figure class="callgraph-diagram" data-callgraph>')
+        body_parts.append(
+            '<div class="callgraph-toolbar" role="toolbar" '
+            'aria-label="Call graph controls">'
+            '<button type="button" class="callgraph-zoom callgraph-zoom-in" '
+            'aria-label="Zoom in" title="Zoom in">+'
+            '</button>'
+            '<button type="button" class="callgraph-zoom callgraph-zoom-out" '
+            'aria-label="Zoom out" title="Zoom out">−'
+            '</button>'
+            '<button type="button" class="callgraph-zoom callgraph-zoom-reset" '
+            'aria-label="Reset zoom" title="Reset zoom">Reset'
+            '</button>'
+            "</div>"
+        )
+        body_parts.append('<div class="callgraph-viewport">')
         body_parts.append(callgraph_svg)
+        body_parts.append("</div>")
         body_parts.append(
             "<figcaption>Internal call relationships are shown as blue nodes with arrows; "
             "external dependencies appear in purple.</figcaption>"
