@@ -78,8 +78,25 @@
             adjustZoom(factor, event);
         }
 
+        function isInteractiveTarget(element) {
+            if (!element) {
+                return false;
+            }
+            return (
+                element.closest('a') !== null ||
+                element.closest('button') !== null ||
+                element.closest('input') !== null ||
+                element.closest('select') !== null ||
+                element.closest('textarea') !== null
+            );
+        }
+
         function onPointerDown(event) {
             if (event.button !== 0) {
+                return;
+            }
+
+            if (isInteractiveTarget(event.target)) {
                 return;
             }
             pan.active = true;
