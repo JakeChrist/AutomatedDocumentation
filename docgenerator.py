@@ -19,14 +19,72 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, IO
 
 from cache import ResponseCache
 from html_writer import write_index, write_module_page
 from llm_client import LLMClient, sanitize_summary, SYSTEM_PROMPT, PROMPT_TEMPLATES
 from chunk_utils import get_tokenizer, chunk_text
 from summarize_utils import summarize_chunked, MAX_CHUNK_TOKENS
-from tqdm import tqdm
+
+
+class ProgressReporter:
+    """Track and print simple textual progress updates."""
+
+    def __init__(self, label: str, total: int, *, stream: IO[str] | None = None) -> None:
+        self.label = label
+        self.total = total
+        self.stream = stream or sys.stdout
+        self.current = 0
+        self._last_detail = ""
+        self._last_len = 0
+        self._completed = False
+
+    def _format(self, detail: str) -> str:
+        if self.total > 0:
+            percent = (self.current / self.total) * 100 if self.total else 0
+            base = f"{self.label}: {self.current}/{self.total} ({percent:5.1f}%)"
+        else:
+            base = f"{self.label}: {self.current}"
+        if detail:
+            base = f"{base} - {detail}"
+        return base
+
+    def _write(self, line: str, *, end: str = "") -> None:
+        padding = " " * max(0, self._last_len - len(line))
+        print("\r" + line + padding, end=end, file=self.stream, flush=True)
+        self._last_len = len(line)
+
+    def advance(self, detail: str = "") -> None:
+        if self.total > 0:
+            self.current = min(self.current + 1, self.total)
+        else:
+            self.current += 1
+        self._last_detail = detail
+        end = "\n" if self.total > 0 and self.current >= self.total else ""
+        self._write(self._format(detail), end=end)
+        if self.total > 0 and self.current >= self.total:
+            self._completed = True
+
+    def pause(self) -> None:
+        if not self._last_len:
+            return
+        print("\r" + " " * self._last_len + "\r", end="", file=self.stream, flush=True)
+
+    def resume(self) -> None:
+        if self.total > 0 and self.current >= self.total:
+            return
+        if self._last_detail or self.current:
+            self._write(self._format(self._last_detail))
+
+    def finish(self) -> None:
+        if self._completed:
+            return
+        if self.total > 0 and self.current < self.total:
+            self.current = self.total
+        self._write(self._format(self._last_detail), end="\n")
+        self._completed = True
+
 from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from parser_cpp import parse_cpp_file
@@ -150,14 +208,18 @@ def _summarize_module_chunked(
             return sanitize_summary("")
 
     partials = []
-    for idx, part in enumerate(
-        tqdm(parts, desc="Summarizing chunks", leave=False)
-    ):
+    chunk_progress = ProgressReporter("Summarizing chunks", len(parts))
+    for idx, part in enumerate(parts):
         key = ResponseCache.make_key(f"{key_prefix}:part{idx}", part)
         try:
             partials.append(_summarize(client, cache, key, part, "module"))
         except Exception as exc:  # pragma: no cover - network failure
+            chunk_progress.pause()
             print(f"[WARN] Summarization failed for chunk {idx}: {exc}", file=sys.stderr)
+            chunk_progress.resume()
+        finally:
+            chunk_progress.advance(detail=f"chunk {idx + 1}")
+    chunk_progress.finish()
     if not partials:
         return sanitize_summary("")
 
@@ -415,7 +477,7 @@ def _summarize_members_recursive(
 ) -> None:
     """Summarize methods and variables of ``class_data`` and any subclasses."""
 
-    for method in tqdm(class_data.get("methods", []), desc="methods", leave=False):
+    for method in class_data.get("methods", []):
         src = method.get("source") or method.get("signature") or method.get("name", "")
         key = ResponseCache.make_key(
             f"{path}:{class_data.get('name')}:{method.get('name')}", src
@@ -444,7 +506,7 @@ def _summarize_members_recursive(
             rewrite=False,
         )
 
-    for var in tqdm(class_data.get("variables", []), desc="variables", leave=False):
+    for var in class_data.get("variables", []):
         src = var.get("source") or var.get("name", "")
         key = ResponseCache.make_key(
             f"{path}:{class_data.get('name')}:{var.get('name')}", src
@@ -669,10 +731,13 @@ def main(argv: list[str] | None = None) -> int:
 
     source_root = Path(args.source).resolve()
     files = scan_directory(args.source, args.ignore)
-    modules = []
-    for path in tqdm(files, desc="Processing modules"):
+    modules: list[dict[str, Any]] = []
+    module_progress = ProgressReporter("Processing modules", len(files))
+    for path in files:
+        detail = Path(path).name
         if path in processed_paths:
             modules.append(progress[path])
+            module_progress.advance(detail=f"{detail} (cached)")
             continue
         try:
             if path.endswith((".slx", ".mdl")):
@@ -683,7 +748,10 @@ def main(argv: list[str] | None = None) -> int:
                 try:
                     text = Path(path).read_text(encoding="utf-8")
                 except UnicodeDecodeError as exc:  # skip files with invalid encoding
+                    module_progress.pause()
                     print(f"Skipping {path}: {exc}", file=sys.stderr)
+                    module_progress.resume()
+                    module_progress.advance(detail=f"{detail} (encoding error)")
                     continue
 
                 if path.endswith(".py"):
@@ -700,9 +768,13 @@ def main(argv: list[str] | None = None) -> int:
                     language = "matlab"
                 else:
                     # skip unsupported file types discovered in scan
+                    module_progress.advance(detail=f"{detail} (unsupported)")
                     continue
         except SyntaxError as exc:  # malformed file should be ignored
+            module_progress.pause()
             print(f"Skipping {path}: {exc}", file=sys.stderr)
+            module_progress.resume()
+            module_progress.advance(detail=f"{detail} (syntax error)")
             continue
 
         if not text:
@@ -720,6 +792,8 @@ def main(argv: list[str] | None = None) -> int:
             chunk_token_budget,
         )
 
+        module_progress.advance(detail=f"{detail} ({language})")
+
         module = {
             "name": Path(path).stem,
             "language": language,
@@ -731,7 +805,7 @@ def main(argv: list[str] | None = None) -> int:
         module.update(parsed)
 
         # summarize methods now so class summaries can reference them later
-        for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
+        for cls in module.get("classes", []):
             _summarize_members_recursive(
                 cls,
                 path,
@@ -744,10 +818,12 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         # and for standalone functions (summarized later with project context)
-        for func in tqdm(module.get("functions", []), desc="methods", leave=False):
+        for func in module.get("functions", []):
             func["summary"] = ""
 
         modules.append(module)
+
+    module_progress.finish()
 
     nav_tree: dict[str, Any] = {}
 
@@ -868,11 +944,16 @@ def main(argv: list[str] | None = None) -> int:
 
     # Now that the project summary is available, generate class and function summaries
     # and rewrite method/function docstrings with context.
-    for module in modules:
+    remaining_modules = [
+        module for module in modules if module.get("path", "") not in processed_paths
+    ]
+    module_summary_progress = ProgressReporter(
+        "Summarizing modules", len(remaining_modules)
+    )
+    for module in remaining_modules:
         path = module.get("path", "")
-        if path in processed_paths:
-            continue
-        for cls in tqdm(module.get("classes", []), desc=f"{module['name']}: classes", leave=False):
+        module_name = module.get("name", Path(path).stem)
+        for cls in module.get("classes", []):
             _summarize_class_recursive(
                 cls,
                 path,
@@ -883,7 +964,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_context_tokens,
                 chunk_token_budget,
             )
-        for func in tqdm(module.get("functions", []), desc="functions", leave=False):
+        for func in module.get("functions", []):
             _summarize_function_recursive(
                 func,
                 path,
@@ -894,6 +975,8 @@ def main(argv: list[str] | None = None) -> int:
                 chunk_token_budget,
                 project_summary=project_summary,
             )
+        module_summary_progress.advance(detail=module_name)
+    module_summary_progress.finish()
 
     module_summaries = {m["name"]: m.get("summary", "") for m in modules}
     write_index(str(output_dir), project_summary, nav_tree, module_summaries)
