@@ -243,6 +243,13 @@ def test_cpp_java_highlighting() -> None:
     assert "<span" in java_html
 
 
+def test_javascript_typescript_highlighting() -> None:
+    js_html = _highlight("export function hi() { return 1; }", "javascript")
+    ts_html = _highlight("export function hi(name: string): void { return; }", "typescript")
+    assert "<span" in js_html
+    assert "<span" in ts_html
+
+
 def test_simulink_rendering(tmp_path: Path) -> None:
     tree = {"__files__": [("simple_model", "simple_model.html")]}
     module_data = {

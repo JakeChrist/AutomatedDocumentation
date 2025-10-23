@@ -11,7 +11,15 @@ import html
 
 
 from pygments import highlight
-from pygments.lexers import PythonLexer, MatlabLexer, TextLexer, CppLexer, JavaLexer
+from pygments.lexers import (
+    PythonLexer,
+    MatlabLexer,
+    TextLexer,
+    CppLexer,
+    JavaLexer,
+    JavascriptLexer,
+    TypeScriptLexer,
+)
 from pygments.formatters import HtmlFormatter
 
 _TEMPLATE_PATH = Path(__file__).parent / "templates" / "template.html"
@@ -58,6 +66,10 @@ def _highlight(code: str, language: str) -> str:
         lexer = CppLexer()
     elif language.lower() == "java":
         lexer = JavaLexer()
+    elif language.lower() in {"javascript", "js"}:
+        lexer = JavascriptLexer()
+    elif language.lower() in {"typescript", "ts"}:
+        lexer = TypeScriptLexer()
     else:
         lexer = TextLexer()
     formatter = HtmlFormatter(noclasses=True, nowrap=True)

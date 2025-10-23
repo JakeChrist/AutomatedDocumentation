@@ -1,6 +1,6 @@
 # DocGen-LM
 
-DocGen-LM generates static HTML documentation for Python, MATLAB, C++, and Java projects by analyzing source files and summarizing them with a local LLM. It now captures and renders **nested functions** and **subclasses**, so complex structures appear in the output as expandable sections.
+DocGen-LM generates static HTML documentation for Python, MATLAB, C++, Java, JavaScript, and TypeScript projects by analyzing source files and summarizing them with a local LLM. It now captures and renders **nested functions** and **subclasses**, so complex structures appear in the output as expandable sections.
 
 ## Prerequisites
 
@@ -136,13 +136,13 @@ python gui_wrapper.py
 The interface provides:
 
 - Project and output directory selectors
-- DocGen options such as including private functions and choosing languages (Python, MATLAB, C++, Java)
+- DocGen options such as including private functions and choosing languages (Python, MATLAB, C++, Java, JavaScript, TypeScript)
 - A **Resume DocGen** button to continue generating documentation from cached progress
 - ExplainCode options for selecting the output format and adding an optional data file
 
 DocGen-LM auto-detects supported languages, so selecting them in the GUI is optional and provided for clarity.
 
-To verify the new language options, launch the GUI and confirm that checkboxes for Python, MATLAB, C++, and Java are present under DocGen options.
+To verify the new language options, launch the GUI and confirm that checkboxes for Python, MATLAB, C++, Java, JavaScript, and TypeScript are present under DocGen options.
 
 ## Using LMStudio as the Backend
 

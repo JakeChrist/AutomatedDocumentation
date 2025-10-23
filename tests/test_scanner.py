@@ -85,9 +85,13 @@ def test_scan_directory_supports_cpp_h_java(tmp_path: Path) -> None:
             "main.cpp",
             "header.h",
             "Program.java",
+            "script.js",
+            "types.ts",
             os.path.join("nested", "util.cpp"),
             os.path.join("nested", "helper.h"),
             os.path.join("nested", "Example.java"),
+            os.path.join("nested", "widget.js"),
+            os.path.join("nested", "models.ts"),
             "skip.txt",
         ],
     )
@@ -98,8 +102,12 @@ def test_scan_directory_supports_cpp_h_java(tmp_path: Path) -> None:
         str(tmp_path / "main.cpp"),
         str(tmp_path / "header.h"),
         str(tmp_path / "Program.java"),
+        str(tmp_path / "script.js"),
+        str(tmp_path / "types.ts"),
         str(tmp_path / "nested" / "util.cpp"),
         str(tmp_path / "nested" / "helper.h"),
         str(tmp_path / "nested" / "Example.java"),
+        str(tmp_path / "nested" / "widget.js"),
+        str(tmp_path / "nested" / "models.ts"),
     }
     assert set(result) == expected

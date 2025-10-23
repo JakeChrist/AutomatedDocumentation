@@ -1,8 +1,8 @@
 """Command line interface for DocGen-LM.
 
-This script scans a source tree for Python, MATLAB, C++, and Java files,
-parses them, requests summaries from a running LLM, and writes HTML
-documentation.
+This script scans a source tree for Python, MATLAB, C++, Java,
+JavaScript, and TypeScript files, parses them, requests summaries from a
+running LLM, and writes HTML documentation.
 
 Examples
 --------
@@ -89,6 +89,7 @@ from parser_python import parse_python_file
 from parser_matlab import parse_matlab_file
 from parser_cpp import parse_cpp_file
 from parser_java import parse_java_file
+from parser_javascript import parse_javascript_file, parse_typescript_file
 from parser_simulink import parse_simulink_file
 from scanner import scan_directory, _is_subpath
 
@@ -763,6 +764,12 @@ def main(argv: list[str] | None = None) -> int:
                 elif path.endswith(".java"):
                     parsed = parse_java_file(path)
                     language = "java"
+                elif path.endswith(".js"):
+                    parsed = parse_javascript_file(path)
+                    language = "javascript"
+                elif path.endswith(".ts"):
+                    parsed = parse_typescript_file(path)
+                    language = "typescript"
                 elif path.endswith(".m"):
                     parsed = parse_matlab_file(path)
                     language = "matlab"
