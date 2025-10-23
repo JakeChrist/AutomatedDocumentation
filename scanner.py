@@ -29,7 +29,8 @@ def scan_directory(base_path: str, ignore: List[str], show_progress: bool = Fals
     """Recursively discover supported source files under *base_path*.
 
     The scanner recognises Python (``.py``), MATLAB (``.m``), C++ (``.cpp``/``.h``),
-    Java (``.java``), and Simulink models (``.slx`` and ``.mdl``).
+    Java (``.java``), JavaScript (``.js``), TypeScript (``.ts``), and Simulink
+    models (``.slx`` and ``.mdl``).
 
     Parameters
     ----------
@@ -62,7 +63,9 @@ def scan_directory(base_path: str, ignore: List[str], show_progress: bool = Fals
         ]
 
         for name in files:
-            if not name.endswith((".py", ".m", ".cpp", ".h", ".java", ".slx", ".mdl")):
+            if not name.endswith(
+                (".py", ".m", ".cpp", ".h", ".java", ".js", ".ts", ".slx", ".mdl")
+            ):
                 continue
             file_path = root_path / name
             if any(_is_subpath(file_path, ig) for ig in ignore_paths):

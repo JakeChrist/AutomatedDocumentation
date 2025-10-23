@@ -31,6 +31,14 @@ def test_docgenerator_generates_html(tmp_path: Path) -> None:
         "    }\n"
         "}\n"
     )
+    # simple JavaScript file
+    (project_dir / "helper.js").write_text(
+        "// JS helper\nexport function shout(value) {\n    return value.toUpperCase();\n}\n"
+    )
+    # simple TypeScript file
+    (project_dir / "types.ts").write_text(
+        "/** Person data */\nexport class Person {\n    /** greet */\n    greet(name: string): string {\n        return `hi ${name}`;\n    }\n}\n"
+    )
 
     output_dir = tmp_path / "out"
 
@@ -47,13 +55,19 @@ def test_docgenerator_generates_html(tmp_path: Path) -> None:
     assert (output_dir / "util.html").exists()
     assert (output_dir / "math.html").exists()
     assert (output_dir / "Greeter.html").exists()
+    assert (output_dir / "helper.html").exists()
+    assert (output_dir / "types.html").exists()
 
     html = (output_dir / "hello.html").read_text(encoding="utf-8")
     assert "summary" in html
     cpp_html = (output_dir / "math.html").read_text(encoding="utf-8")
     java_html = (output_dir / "Greeter.html").read_text(encoding="utf-8")
+    js_html = (output_dir / "helper.html").read_text(encoding="utf-8")
+    ts_html = (output_dir / "types.html").read_text(encoding="utf-8")
     assert "summary" in cpp_html
     assert "summary" in java_html
+    assert "summary" in js_html
+    assert "summary" in ts_html
 
 
 def test_static_copied_from_any_cwd(tmp_path: Path, monkeypatch) -> None:
