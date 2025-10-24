@@ -298,6 +298,36 @@ def test_extract_snippets_skips_large_file(
     assert "file size" in log and "exceeds limit" in log
 
 
+def test_extract_snippets_includes_top_level_code(tmp_path: Path) -> None:
+    src = tmp_path / "config.py"
+    src.write_text(
+        textwrap.dedent(
+            '''\
+            """Example module."""
+            THRESHOLD = 42
+            settings = {"mode": "fast"}
+            print("start")
+            if True:
+                value = THRESHOLD * 2
+            '''
+        ),
+        encoding="utf-8",
+    )
+
+    snippets = explaincode.extract_snippets(
+        [src], max_files=1, time_budget=5, max_bytes=200_000
+    )
+
+    assert src in snippets
+    text = snippets[src]
+    assert "Top-level variables" in text
+    assert "THRESHOLD = 42" in text
+    assert "settings = {\"mode\": \"fast\"}" in text
+    assert "Top-level code" in text
+    assert "print(\"start\")" in text
+    assert "if True:" in text and "value = THRESHOLD * 2" in text
+
+
 def test_scan_code_skips_non_source_dirs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

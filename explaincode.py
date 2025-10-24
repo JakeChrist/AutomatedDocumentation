@@ -454,6 +454,75 @@ def extract_snippets(
                 module_doc = ast.get_docstring(tree)
                 if module_doc:
                     parts.append(f"Module docstring:\n{module_doc}")
+
+                lines = text.splitlines()
+
+                def _get_segment(node: ast.AST) -> str | None:
+                    """Return the source segment for ``node``."""
+
+                    segment = ast.get_source_segment(text, node)
+                    if segment is not None:
+                        return segment
+                    start = getattr(node, "lineno", None)
+                    end = getattr(node, "end_lineno", None)
+                    if start is None:
+                        return None
+                    if end is None:
+                        end = start
+                    # ``lineno`` is 1-indexed
+                    return "\n".join(lines[start - 1 : end])
+
+                top_level_assignments: list[str] = []
+                top_level_statements: list[str] = []
+
+                for node in tree.body:
+                    if isinstance(node, (ast.Expr, ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant):
+                            # Skip module docstring (already captured above)
+                            if isinstance(node.value.value, str):
+                                continue
+                        segment = _get_segment(node)
+                        if not segment:
+                            continue
+                        segment = segment.strip()
+                        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                            top_level_assignments.append(segment)
+                        else:
+                            top_level_statements.append(segment)
+                    elif isinstance(node, (ast.Import, ast.ImportFrom, ast.If)):
+                        segment = _get_segment(node)
+                        if not segment:
+                            continue
+                        segment = segment.strip()
+                        if "__name__" in segment and "__main__" in segment:
+                            # Handled separately below.
+                            continue
+                        top_level_statements.append(segment)
+                    else:
+                        segment = _get_segment(node)
+                        if not segment:
+                            continue
+                        segment = segment.strip()
+                        top_level_statements.append(segment)
+
+                if top_level_assignments:
+                    formatted = []
+                    for snippet in top_level_assignments[:10]:
+                        lines_snippet = snippet.splitlines()
+                        if len(lines_snippet) > 5:
+                            lines_snippet = lines_snippet[:5] + ["..."]
+                        formatted.append("\n".join(lines_snippet))
+                    parts.append("Top-level variables:\n" + "\n\n".join(formatted))
+
+                if top_level_statements:
+                    formatted_statements: list[str] = []
+                    for snippet in top_level_statements[:10]:
+                        lines_snippet = snippet.splitlines()
+                        if len(lines_snippet) > 10:
+                            lines_snippet = lines_snippet[:10] + ["..."]
+                        formatted_statements.append("\n".join(lines_snippet))
+                    parts.append("Top-level code:\n" + "\n\n".join(formatted_statements))
+
                 for node in ast.walk(tree):
                     if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
                         doc = ast.get_docstring(node)
