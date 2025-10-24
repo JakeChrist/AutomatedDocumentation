@@ -21,8 +21,11 @@ except Exception:  # pragma: no cover - optional import
 FIM_RE = re.compile(r"<\|fim_(?:prefix|middle|suffix)\|>")
 
 
-def strip_fim_tokens(text: str) -> str:
+def strip_fim_tokens(text: Optional[str]) -> str:
     """Return ``text`` with any FIM special tokens removed."""
+
+    if text is None:
+        return ""
 
     return FIM_RE.sub("", text)
 
