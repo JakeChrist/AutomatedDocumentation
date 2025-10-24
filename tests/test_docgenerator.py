@@ -356,6 +356,25 @@ def test_structured_chunker_keeps_functions_atomic(tmp_path: Path) -> None:
         assert set(chunks) == func_sources
 
 
+def test_chunker_includes_module_variables_and_statements() -> None:
+    from chunk_utils import get_tokenizer
+    from docgenerator import _chunk_module_by_structure
+
+    tokenizer = get_tokenizer()
+    module = {
+        "module_docstring": None,
+        "classes": [],
+        "functions": [],
+        "variables": [{"source": "VALUE = 1", "order": 0}],
+        "statements": [{"source": "if True:\n    pass", "order": 1}],
+    }
+
+    blocks = _chunk_module_by_structure(module, tokenizer, 100)
+
+    assert any("VALUE = 1" in block for block in blocks)
+    assert any("if True" in block for block in blocks)
+
+
 def test_structured_chunker_splits_large_class_by_method(tmp_path: Path) -> None:
     from cache import ResponseCache
     from parser_python import parse_python_file

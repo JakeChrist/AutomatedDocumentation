@@ -76,6 +76,15 @@ def test_write_module_page(tmp_path: Path) -> None:
                 "source": "def foo():\n    pass",
             }
         ],
+        "statements": [
+            {
+                "name": "if __name__ == '__main__'",
+                "kind": "if statement",
+                "summary": "Main entry",
+                "source": "if __name__ == '__main__':\n    main()",
+                "order": 1,
+            }
+        ],
     }
     write_module_page(str(tmp_path), module_data, tree)
     html = (tmp_path / "module1.html").read_text(encoding="utf-8")
@@ -98,7 +107,10 @@ def test_write_module_page(tmp_path: Path) -> None:
     assert "Func summary &amp; stuff" in html
     assert "<h2>Functions" in html
     assert "def foo(): pass" in html
-    assert html.count("<pre><code>") == 4
+    assert "<h2 id=\"top-level-code\">Top-level Code</h2>" in html
+    assert "if __name__ == &#x27;__main__&#x27;" in html
+    assert "Main entry" in html
+    assert html.count("<pre><code>") == 5
 
 
 def test_subfunction_rendering(tmp_path: Path) -> None:

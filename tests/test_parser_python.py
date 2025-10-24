@@ -200,3 +200,35 @@ def test_parse_calls_and_qualnames(tmp_path: Path) -> None:
     assert formatter["qualname"] == "Greeter._format"
     assert formatter["calls"] == []
 
+
+def test_collects_module_level_items(tmp_path: Path) -> None:
+    src = textwrap.dedent(
+        '''
+        """Example."""
+
+        VALUE = 42
+        import os
+
+        if __name__ == "__main__":
+            print("hi")
+        '''
+    )
+    file = tmp_path / "module.py"
+    file.write_text(src)
+
+    result = parse_python_file(str(file))
+
+    variables = result.get("variables", [])
+    assert variables
+    names = [item["name"] for item in variables]
+    assert "VALUE" in names
+    var_entry = variables[names.index("VALUE")]
+    assert var_entry["kind"] == "assignment"
+    assert "VALUE = 42" in var_entry["source"]
+
+    statements = result.get("statements", [])
+    assert statements
+    statement_names = [item["name"] for item in statements]
+    assert any(name.startswith("import os") for name in statement_names)
+    assert any(name.startswith("if __name__ ==") for name in statement_names)
+

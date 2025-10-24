@@ -137,6 +137,16 @@ def _chunk_module_by_structure(module: dict, tokenizer, chunk_size_tokens: int):
                 v_src = var.get("source", var.get("name", ""))
                 blocks.append(v_src)
 
+    for var in sorted(module.get("variables", []), key=lambda item: item.get("order", 0)):
+        v_src = var.get("source", var.get("name", ""))
+        if v_src:
+            blocks.append(v_src)
+
+    for stmt in sorted(module.get("statements", []), key=lambda item: item.get("order", 0)):
+        s_src = stmt.get("source", stmt.get("name", ""))
+        if s_src:
+            blocks.append(s_src)
+
     for func in module.get("functions", []):
         blocks.append(func.get("source", func.get("signature", "")))
 
@@ -840,6 +850,12 @@ def main(argv: list[str] | None = None) -> int:
         for func in module.get("functions", []):
             func["summary"] = ""
 
+        for var in module.get("variables", []):
+            var["summary"] = ""
+
+        for stmt in module.get("statements", []):
+            stmt["summary"] = ""
+
         modules.append(module)
 
     module_progress.finish()
@@ -994,6 +1010,40 @@ def main(argv: list[str] | None = None) -> int:
                 chunk_token_budget,
                 project_summary=project_summary,
             )
+        for var in sorted(module.get("variables", []), key=lambda item: item.get("order", 0)):
+            src = var.get("source") or var.get("name", "")
+            key = ResponseCache.make_key(
+                f"{path}:GLOBAL:{var.get('name', var.get('lineno', ''))}", src
+            )
+            summary = _summarize_chunked(
+                client,
+                cache,
+                key,
+                src,
+                "function",
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
+            )
+            var["summary"] = summary
+            var["docstring"] = summary
+        for stmt in sorted(module.get("statements", []), key=lambda item: item.get("order", 0)):
+            src = stmt.get("source") or stmt.get("name", "")
+            if not src:
+                continue
+            key = ResponseCache.make_key(
+                f"{path}:STATEMENT:{stmt.get('name', stmt.get('lineno', ''))}", src
+            )
+            summary = _summarize_chunked(
+                client,
+                cache,
+                key,
+                src,
+                "function",
+                max_context_tokens=max_context_tokens,
+                chunk_token_budget=chunk_token_budget,
+            )
+            stmt["summary"] = summary
+            stmt["docstring"] = summary
         module_summary_progress.advance(detail=module_name)
     module_summary_progress.finish()
 
