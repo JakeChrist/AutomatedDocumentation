@@ -28,9 +28,10 @@ class ResponseCache:
         self._data.setdefault("__progress__", {})
 
     @staticmethod
-    def make_key(file_path: str, content: str) -> str:
+    def make_key(file_path: str, content: Optional[str]) -> str:
         """Return a deterministic key for *file_path* and *content*."""
-        digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        to_hash = "<None>" if content is None else content
+        digest = hashlib.sha256(to_hash.encode("utf-8")).hexdigest()
         return f"{file_path}:{digest}"
 
     def get(self, key: str) -> Optional[str]:

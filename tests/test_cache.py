@@ -34,3 +34,10 @@ def test_progress_tracking(tmp_path: Path) -> None:
 
     new_cache.clear_progress()
     assert new_cache.get_progress() == {}
+
+
+def test_make_key_handles_none_content() -> None:
+    none_key = ResponseCache.make_key("file.py", None)
+    empty_key = ResponseCache.make_key("file.py", "")
+
+    assert none_key != empty_key
