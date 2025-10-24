@@ -45,3 +45,8 @@ def test_chunk_text_preserves_code_blocks() -> None:
     for chunk in chunks:
         assert chunk.count("```") in (0, 2)
 
+
+def test_chunk_text_handles_optional_arguments() -> None:
+    chunks = chunk_text(None, None, 10)
+    assert chunks == []
+

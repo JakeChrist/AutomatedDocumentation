@@ -11,7 +11,7 @@ sending chunks to a language model for processing.
 
 import re
 import sys
-from typing import List
+from typing import List, Optional, Protocol
 
 try:  # optional dependency used for token counting
     import tiktoken
@@ -27,7 +27,17 @@ def strip_fim_tokens(text: str) -> str:
     return FIM_RE.sub("", text)
 
 
-def get_tokenizer():
+class _TokenizerProtocol(Protocol):
+    """Minimal protocol representing the tokenizer interface we rely on."""
+
+    def encode(self, text: str, **kwargs):  # pragma: no cover - structural
+        ...
+
+    def decode(self, tokens, **kwargs):  # pragma: no cover - structural
+        ...
+
+
+def get_tokenizer() -> _TokenizerProtocol:
     """Return a tokenizer object used for estimating token counts."""
 
     if tiktoken is not None:  # pragma: no cover - optional branch
@@ -141,14 +151,26 @@ def _split_long_block(block: str, tokenizer, chunk_size_tokens: int) -> List[str
     return [block[i : i + max_chars] for i in range(0, len(block), max_chars)]
 
 
-def chunk_text(text: str, tokenizer, chunk_size_tokens: int) -> List[str]:
+def chunk_text(
+    text: Optional[str],
+    tokenizer: Optional[_TokenizerProtocol],
+    chunk_size_tokens: int,
+) -> List[str]:
     """Split ``text`` into chunks roughly ``chunk_size_tokens`` each.
 
     Natural break points such as blank lines, Markdown headings and fenced code
     blocks are honoured.  If a single block still exceeds ``chunk_size_tokens``
     the function falls back to splitting that block by approximate character
-    length.
+    length.  ``text`` and ``tokenizer`` are optional for convenience; passing
+    ``None`` for either will default to an empty string and the shared
+    :func:`get_tokenizer` respectively.
     """
+
+    if text is None:
+        text = ""
+
+    if tokenizer is None:
+        tokenizer = get_tokenizer()
 
     blocks = _split_blocks(text)
     chunks: List[str] = []
