@@ -692,6 +692,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    source_root = Path(args.source).resolve()
+    output_dir = Path(args.output).resolve()
+    if output_dir == source_root:
+        parser.error("--output directory must be different from the source directory")
+    try:
+        relative_output = output_dir.relative_to(source_root)
+    except ValueError:
+        relative_output = None
+    else:
+        if relative_output != Path("."):
+            relative_str = str(relative_output)
+            if relative_str not in args.ignore:
+                args.ignore.append(relative_str)
+
     client = LLMClient(base_url=args.llm_url, model=args.model)
     try:
         client.ping()
@@ -717,7 +731,6 @@ def main(argv: list[str] | None = None) -> int:
         chunk_token_budget = default_chunk_budget
     chunk_token_budget = min(chunk_token_budget, MAX_CHUNK_TOKENS)
 
-    output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
     clean_output_dir(str(output_dir))
     static_dir = Path(__file__).parent / "static"
@@ -730,7 +743,6 @@ def main(argv: list[str] | None = None) -> int:
     progress = cache.get_progress()
     processed_paths = set(progress.keys())
 
-    source_root = Path(args.source).resolve()
     files = scan_directory(args.source, args.ignore)
     modules: list[dict[str, Any]] = []
     module_progress = ProgressReporter("Processing modules", len(files))

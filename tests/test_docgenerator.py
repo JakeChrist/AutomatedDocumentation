@@ -161,6 +161,30 @@ def test_clean_output_dir(tmp_path: Path) -> None:
     assert asset.exists()
 
 
+def test_output_dir_is_ignored(tmp_path: Path) -> None:
+    project_dir = tmp_path / "proj"
+    project_dir.mkdir()
+    (project_dir / "mod.py").write_text("def foo():\n    pass\n")
+
+    output_dir = project_dir / "docs"
+
+    with patch("docgenerator.scan_directory") as mock_scan, patch(
+        "docgenerator.LLMClient"
+    ) as MockClient:
+        instance = MockClient.return_value
+        instance.ping.return_value = True
+        instance.summarize.return_value = "summary"
+        mock_scan.return_value = []
+
+        ret = main([str(project_dir), "--output", str(output_dir)])
+        assert ret == 0
+
+    assert mock_scan.call_count == 1
+    _, ignore_arg = mock_scan.call_args[0]
+    expected_ignore = str(output_dir.relative_to(project_dir))
+    assert expected_ignore in ignore_arg
+
+
 def test_summarize_chunked_splits_long_text(tmp_path: Path) -> None:
     from cache import ResponseCache
     from chunk_utils import get_tokenizer
