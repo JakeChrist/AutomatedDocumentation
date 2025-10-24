@@ -896,16 +896,46 @@ def write_module_page(output_dir: str, module_data: dict[str, Any], nav_tree: Di
     for cls in module_data.get("classes", []):
         body_parts.extend(_render_class(cls, language, 2))
 
-    module_vars = module_data.get("variables", [])
+    module_vars = sorted(
+        module_data.get("variables", []), key=lambda item: item.get("order", 0)
+    )
     if module_vars:
         body_parts.append('<h2 id="variables">Variables</h2>')
         for var in module_vars:
             var_name = var.get("name", "")
-            body_parts.append(f'<h3 id="{var_name}">{html.escape(var_name)}</h3>')
+            display_name = html.escape(var_name) if var_name else "Variable"
+            kind = var.get("kind")
+            if kind:
+                display_name += f" <small>({html.escape(kind)})</small>"
+            anchor = var_name or _slugify(display_name)
+            body_parts.append(f'<h3 id="{anchor}">{display_name}</h3>')
             summary = var.get("summary") or var.get("docstring")
             if summary:
                 body_parts.append(f"<p>{html.escape(summary)}</p>")
             src = var.get("source")
+            if src:
+                body_parts.append(_highlight(src, language))
+
+    statements = sorted(
+        module_data.get("statements", []), key=lambda item: item.get("order", 0)
+    )
+    if statements:
+        body_parts.append('<h2 id="top-level-code">Top-level Code</h2>')
+        for idx, stmt in enumerate(statements):
+            name = stmt.get("name", "")
+            display = html.escape(name) if name else "Statement"
+            kind = stmt.get("kind")
+            if kind:
+                display += f" <small>({html.escape(kind)})</small>"
+            anchor_source = name or stmt.get("kind") or f"statement-{idx}"
+            anchor = _slugify(anchor_source)
+            if not anchor:
+                anchor = f"statement-{idx}"
+            body_parts.append(f'<h3 id="{anchor}">{display}</h3>')
+            summary = stmt.get("summary") or stmt.get("docstring")
+            if summary:
+                body_parts.append(f"<p>{html.escape(summary)}</p>")
+            src = stmt.get("source")
             if src:
                 body_parts.append(_highlight(src, language))
 

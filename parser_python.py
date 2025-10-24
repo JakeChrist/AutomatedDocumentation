@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 def _format_arg(arg: ast.arg) -> str:
@@ -199,6 +199,156 @@ def parse_function(
     return func_info
 
 
+def _is_docstring_expr(node: ast.AST) -> bool:
+    """Return ``True`` if ``node`` represents a docstring expression."""
+
+    if not isinstance(node, ast.Expr):
+        return False
+    value = node.value
+    if isinstance(value, ast.Constant) and isinstance(value.value, str):
+        return True
+    return False
+
+
+def _format_import_alias(alias: ast.alias) -> str:
+    """Return a readable representation of an import ``alias``."""
+
+    name = alias.name
+    if alias.asname:
+        return f"{name} as {alias.asname}"
+    return name
+
+
+def _statement_kind(node: ast.AST) -> str:
+    """Return a human-readable kind label for ``node``."""
+
+    mapping: List[Tuple[type, str]] = [
+        (ast.Assign, "assignment"),
+        (ast.AnnAssign, "annotated assignment"),
+        (ast.AugAssign, "augmented assignment"),
+        (ast.Import, "import"),
+        (ast.ImportFrom, "import"),
+        (ast.If, "if statement"),
+        (ast.For, "for loop"),
+        (ast.AsyncFor, "async for loop"),
+        (ast.While, "while loop"),
+        (ast.With, "with statement"),
+        (ast.AsyncWith, "async with statement"),
+        (ast.Try, "try statement"),
+        (ast.Expr, "expression"),
+        (ast.Return, "return statement"),
+        (ast.Delete, "delete statement"),
+        (ast.Raise, "raise statement"),
+        (ast.Assert, "assertion"),
+        (ast.Global, "global declaration"),
+        (ast.Nonlocal, "nonlocal declaration"),
+        (ast.Pass, "pass statement"),
+    ]
+
+    for node_type, label in mapping:
+        if isinstance(node, node_type):
+            return label
+    return type(node).__name__.replace("_", " ").lower() + " statement"
+
+
+def _statement_name(node: ast.AST) -> str:
+    """Return a display name for a top-level ``node``."""
+
+    if isinstance(node, ast.Assign):
+        parts = [ast.unparse(target).strip() for target in node.targets]
+        if parts:
+            return ", ".join(parts)
+    elif isinstance(node, ast.AnnAssign):
+        return ast.unparse(node.target).strip()
+    elif isinstance(node, ast.AugAssign):
+        return ast.unparse(node.target).strip()
+    elif isinstance(node, ast.Import):
+        names = ", ".join(_format_import_alias(alias) for alias in node.names)
+        return f"import {names}"
+    elif isinstance(node, ast.ImportFrom):
+        module = node.module or "."
+        names = ", ".join(_format_import_alias(alias) for alias in node.names)
+        return f"from {module} import {names}"
+    elif isinstance(node, ast.If):
+        return f"if {ast.unparse(node.test).strip()}"
+    elif isinstance(node, ast.For):
+        target = ast.unparse(node.target).strip()
+        iterator = ast.unparse(node.iter).strip()
+        return f"for {target} in {iterator}"
+    elif isinstance(node, ast.AsyncFor):
+        target = ast.unparse(node.target).strip()
+        iterator = ast.unparse(node.iter).strip()
+        return f"async for {target} in {iterator}"
+    elif isinstance(node, ast.While):
+        return f"while {ast.unparse(node.test).strip()}"
+    elif isinstance(node, ast.With):
+        items = ", ".join(ast.unparse(item).strip() for item in node.items)
+        return f"with {items}"
+    elif isinstance(node, ast.AsyncWith):
+        items = ", ".join(ast.unparse(item).strip() for item in node.items)
+        return f"async with {items}"
+    elif isinstance(node, ast.Try):
+        return "try block"
+    elif isinstance(node, ast.Expr):
+        return ast.unparse(node.value).strip()
+    elif isinstance(node, ast.Assert):
+        return f"assert {ast.unparse(node.test).strip()}"
+    elif isinstance(node, ast.Raise) and node.exc is not None:
+        return f"raise {ast.unparse(node.exc).strip()}"
+    elif isinstance(node, ast.Return):
+        return "return"
+    elif isinstance(node, ast.Pass):
+        return "pass"
+    elif isinstance(node, ast.Delete):
+        targets = ", ".join(ast.unparse(t).strip() for t in node.targets)
+        return f"del {targets}" if targets else "del"
+    elif isinstance(node, (ast.Global, ast.Nonlocal)):
+        names = ", ".join(node.names)
+        return names
+
+    lineno = getattr(node, "lineno", None)
+    label = type(node).__name__
+    if lineno is not None:
+        return f"{label} at line {lineno}"
+    return label
+
+
+def _module_items(module: ast.Module, source: str) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Return lists of module-level variables and statements."""
+
+    variables: List[Dict[str, Any]] = []
+    statements: List[Dict[str, Any]] = []
+
+    body = list(getattr(module, "body", []))
+    if body and _is_docstring_expr(body[0]):
+        body = body[1:]
+
+    order = 0
+    for node in body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        if _is_docstring_expr(node):
+            continue
+
+        entry = {
+            "name": _statement_name(node),
+            "kind": _statement_kind(node),
+            "docstring": None,
+            "source": ast.get_source_segment(source, node) or ast.unparse(node),
+            "order": order,
+        }
+        if hasattr(node, "lineno"):
+            entry["lineno"] = getattr(node, "lineno")
+
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            variables.append(entry)
+        else:
+            statements.append(entry)
+        order += 1
+
+    return variables, statements
+
+
 def parse_class(
     node: ast.ClassDef,
     source: str,
@@ -247,6 +397,12 @@ def parse_python_file(path: str) -> Dict[str, Any]:
         "classes": [],
         "functions": [],
     }
+
+    variables, statements = _module_items(module, source)
+    if variables:
+        parsed["variables"] = variables
+    if statements:
+        parsed["statements"] = statements
 
     for node in module.body:
         if isinstance(node, ast.ClassDef):
